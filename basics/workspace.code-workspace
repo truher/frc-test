@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "..\\..\\swerve100\\swerve100"
+		},
+		{
+			"path": "..\\frc-test"
+		}
+	],
+	"settings": {
+		"java.configuration.updateBuildConfiguration": "automatic",
+		"java.server.launchMode": "Standard"
+	}
+}
