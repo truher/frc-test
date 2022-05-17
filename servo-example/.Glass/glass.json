@@ -1,0 +1,19 @@
+{
+  "NetworkTables": {
+    "SmartDashboard": {
+      "Example Subsystem": {
+        "open": true
+      },
+      "open": true
+    },
+    "types": {
+      "/FMSInfo": "FMSInfo",
+      "/LiveWindow/Ungrouped/Scheduler": "Scheduler",
+      "/SmartDashboard/Example Subsystem": "Subsystem"
+    }
+  },
+  "NetworkTables Settings": {
+    "mode": "Client",
+    "serverTeam": "100"
+  }
+}
