@@ -17,13 +17,13 @@ public class ExampleSubsystem2 extends ProfiledPIDSubsystem {
   public final DutyCycleEncoder m_input;
   // public final SimpleMotorFeedforward m_feedForward;
 
-  public ExampleSubsystem2() {
+  public ExampleSubsystem2(int channel) {
     super(
         new ProfiledPIDController(4, 1, 0.1,
             new TrapezoidProfile.Constraints(100, 10)),
         0);
-    m_motor = new Parallax360("example 2", 1);
-    m_input = new DutyCycleEncoder(1);
+    m_motor = new Parallax360("example 2", channel);
+    m_input = new DutyCycleEncoder(channel);
     m_input.setDutyCycleRange(0.027, 0.971);
     getController().enableContinuousInput(0, 1);
     // m_feedForward = new SimpleMotorFeedforward(1, 1);
