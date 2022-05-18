@@ -22,28 +22,29 @@ public class ExampleSubsystem2 extends ProfiledPIDSubsystem {
         new ProfiledPIDController(4, 1, 0.1,
             new TrapezoidProfile.Constraints(100, 10)),
         0);
-    m_motor = new Parallax360("example 2", channel);
+    setName(String.format("Example Subsystem 2 %d", channel));
+    m_motor = new Parallax360(String.format("Motor %d", channel), channel);
     m_input = new DutyCycleEncoder(channel);
     m_input.setDutyCycleRange(0.027, 0.971);
     getController().enableContinuousInput(0, 1);
     // m_feedForward = new SimpleMotorFeedforward(1, 1);
-    SmartDashboard.putData("Example Subsystem 2", this);
+    SmartDashboard.putData(getName(), this);
   }
 
   public double motorState() {
     return m_motor.get();
   }
 
-  public double sensor() {
-    return -1 * m_input.getAbsolutePosition();
-  }
-
   public boolean isConnected() {
     return m_input.isConnected();
   }
 
-  public double getGoal() {
+  public double getGoalPosition() {
     return getController().getGoal().position;
+  }
+
+  public double getGoalVelocity() {
+    return getController().getGoal().velocity;
   }
 
   @Override
@@ -55,8 +56,8 @@ public class ExampleSubsystem2 extends ProfiledPIDSubsystem {
   }
 
   @Override
-  protected double getMeasurement() {
-    return sensor();
+  public double getMeasurement() {
+    return -1 * m_input.getAbsolutePosition();
   }
 
   public double error() {
@@ -67,8 +68,9 @@ public class ExampleSubsystem2 extends ProfiledPIDSubsystem {
   public void initSendable(SendableBuilder builder) {
     super.initSendable(builder);
     builder.addDoubleProperty("motor state", this::motorState, null);
-    builder.addDoubleProperty("input", this::sensor, null);
-    builder.addDoubleProperty("goal", this::getGoal, null);
+    builder.addDoubleProperty("measurement", this::getMeasurement, null);
+    builder.addDoubleProperty("goal position", this::getGoalPosition, null);
+    builder.addDoubleProperty("goal velocity", this::getGoalVelocity, null);
     builder.addBooleanProperty("connected", this::isConnected, null);
     builder.addDoubleProperty("error", this::error, null);
   }

@@ -5,6 +5,7 @@
 package frc.robot.commands;
 
 import frc.robot.subsystems.SubsystemGroup;
+import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.CommandBase;
 
@@ -20,7 +21,9 @@ public class ExampleCommand extends CommandBase {
 
   @Override
   public void execute() {
-    double input = (m_input.getRightX() + 1) / 2;
-    m_subsystem.setGoal(input);
+    double desiredPosition = (m_input.getRightX() + 1) / 2;
+    double desiredVelocity = (m_input.getLeftX() + 1) / 2;
+    TrapezoidProfile.State state = new TrapezoidProfile.State(desiredPosition, desiredVelocity);
+    m_subsystem.setGoal(state);
   }
 }
