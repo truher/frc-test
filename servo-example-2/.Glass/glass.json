@@ -1,0 +1,52 @@
+{
+  "NetworkTables": {
+    "LiveWindow": {
+      "Ungrouped": {
+        "Servo[0]": {
+          "open": true
+        },
+        "example 2[1]": {
+          "open": true
+        }
+      }
+    },
+    "SmartDashboard": {
+      "Example Subsystem 2": {
+        "open": true
+      },
+      "open": true
+    },
+    "types": {
+      "/FMSInfo": "FMSInfo",
+      "/LiveWindow/Ungrouped/DigitalInput[1]": "Digital Input",
+      "/LiveWindow/Ungrouped/Scheduler": "Scheduler",
+      "/LiveWindow/Ungrouped/example 2[1]": "Motor Controller",
+      "/SmartDashboard/Example Subsystem": "Subsystem",
+      "/SmartDashboard/Example Subsystem 2": "Subsystem"
+    }
+  },
+  "NetworkTables Settings": {
+    "mode": "Client",
+    "serverTeam": "100"
+  },
+  "Plots": {
+    "Plot <0>": {
+      "plots": [
+        {
+          "height": 338,
+          "series": [
+            {
+              "color": [
+                0.2980392277240753,
+                0.44705885648727417,
+                0.6901960968971252,
+                1.0
+              ],
+              "id": "NT:/SmartDashboard/Example Subsystem 2/input"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
