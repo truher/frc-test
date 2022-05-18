@@ -30,6 +30,7 @@ public class RobotContainer {
     m_driverController = new XboxController(1);
     m_exampleSubsystem = new ExampleSubsystem();
     m_exampleSubsystem2 = new ExampleSubsystem2();
+    m_exampleSubsystem2.enable();
     //m_autoCommand = new ExampleCommand(m_exampleSubsystem);
     m_exampleSubsystem.setDefaultCommand(
       new RunCommand(
@@ -45,7 +46,7 @@ public class RobotContainer {
       new RunCommand(
         () -> {
           m_exampleSubsystem2.move(
-            m_driverController.getRightX()
+            (m_driverController.getRightX()+1)/2
           );
         },
         m_exampleSubsystem2
