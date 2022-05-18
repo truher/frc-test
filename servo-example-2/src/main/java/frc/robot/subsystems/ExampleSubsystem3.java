@@ -11,6 +11,7 @@ public class ExampleSubsystem3 extends PIDSubsystem {
     public final Parallax360 m_motor;
     public final DutyCycleEncoder m_input;
     private final LinearFilter m_filter;
+    private final LinearFilter m_averagePeriod;
     private double m_previousValue;
     private long m_previousTimeNs;
 
@@ -21,7 +22,11 @@ public class ExampleSubsystem3 extends PIDSubsystem {
         m_input = new DutyCycleEncoder(channel);
         m_input.setDutyCycleRange(0.027, 0.971);
         getController().enableContinuousInput(0, 1);
-        m_filter = LinearFilter.singlePoleIIR(10, 1);
+        // average velocity per period
+        m_filter = new LinearFilter(
+                new double[] { 0.25, 0, 0, 0, -0.25 }, new double[0]);
+        m_averagePeriod = new LinearFilter(
+                new double[] { 0.25, 0.25, 0.25, 0.25 }, new double[0]);
         SmartDashboard.putData(getName(), this);
     }
 
