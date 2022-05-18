@@ -30,10 +30,6 @@ public class ExampleSubsystem2 extends ProfiledPIDSubsystem {
     SmartDashboard.putData("Example Subsystem 2", this);
   }
 
-  public void move(double input) {
-    setGoal(input);
-  }
-
   public double motorState() {
     return m_motor.get();
   }
