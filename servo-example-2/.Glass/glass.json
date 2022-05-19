@@ -8,9 +8,13 @@
         "example 2[1]": {
           "open": true
         }
-      }
+      },
+      "open": true
     },
     "SmartDashboard": {
+      "Example Command": {
+        "open": true
+      },
       "Example Subsystem 2": {
         "open": true
       },
@@ -20,22 +24,52 @@
       "Example Subsystem 2 1": {
         "open": true
       },
+      "Example Subsystem 3 1": {
+        "open": true
+      },
+      "Turning 0": {
+        "open": true
+      },
       "open": true
     },
     "types": {
       "/FMSInfo": "FMSInfo",
+      "/LiveWindow/DriveSubsystem/Drive 1": "Subsystem",
+      "/LiveWindow/DriveSubsystem/Drive 3": "Subsystem",
+      "/LiveWindow/DriveSubsystem/Drive 5": "Subsystem",
+      "/LiveWindow/DriveSubsystem/PID Controller": "PIDController",
       "/LiveWindow/ExampleSubsystem2/Example Subsystem 2 0": "Subsystem",
       "/LiveWindow/ExampleSubsystem2/Example Subsystem 2 1": "Subsystem",
       "/LiveWindow/ExampleSubsystem2/Example Subsystem 2 2": "Subsystem",
       "/LiveWindow/ExampleSubsystem2/Example Subsystem 2 3": "Subsystem",
       "/LiveWindow/ExampleSubsystem2/Example Subsystem 2 4": "Subsystem",
       "/LiveWindow/ExampleSubsystem2/Example Subsystem 2 5": "Subsystem",
+      "/LiveWindow/ExampleSubsystem3/Example Subsystem 2 1": "Subsystem",
+      "/LiveWindow/ExampleSubsystem3/Example Subsystem 2 3": "Subsystem",
+      "/LiveWindow/ExampleSubsystem3/Example Subsystem 2 5": "Subsystem",
+      "/LiveWindow/ExampleSubsystem3/Example Subsystem 3 1": "Subsystem",
+      "/LiveWindow/ExampleSubsystem3/Example Subsystem 3 3": "Subsystem",
+      "/LiveWindow/ExampleSubsystem3/Example Subsystem 3 5": "Subsystem",
+      "/LiveWindow/ExampleSubsystem3/PID Controller": "PIDController",
+      "/LiveWindow/SubsystemGroup": "Subsystem",
+      "/LiveWindow/TurningSubsystem/Turning 0": "Subsystem",
+      "/LiveWindow/TurningSubsystem/Turning 2": "Subsystem",
+      "/LiveWindow/TurningSubsystem/Turning 4": "Subsystem",
       "/LiveWindow/Ungrouped/DigitalInput[0]": "Digital Input",
       "/LiveWindow/Ungrouped/DigitalInput[1]": "Digital Input",
       "/LiveWindow/Ungrouped/DigitalInput[2]": "Digital Input",
       "/LiveWindow/Ungrouped/DigitalInput[3]": "Digital Input",
       "/LiveWindow/Ungrouped/DigitalInput[4]": "Digital Input",
       "/LiveWindow/Ungrouped/DigitalInput[5]": "Digital Input",
+      "/LiveWindow/Ungrouped/Drive Motor 1[1]": "Motor Controller",
+      "/LiveWindow/Ungrouped/Drive Motor 3[3]": "Motor Controller",
+      "/LiveWindow/Ungrouped/Drive Motor 5[5]": "Motor Controller",
+      "/LiveWindow/Ungrouped/Motor 0[0]": "Motor Controller",
+      "/LiveWindow/Ungrouped/Motor 1[1]": "Motor Controller",
+      "/LiveWindow/Ungrouped/Motor 2[2]": "Motor Controller",
+      "/LiveWindow/Ungrouped/Motor 3[3]": "Motor Controller",
+      "/LiveWindow/Ungrouped/Motor 4[4]": "Motor Controller",
+      "/LiveWindow/Ungrouped/Motor 5[5]": "Motor Controller",
       "/LiveWindow/Ungrouped/PIDController[1]": "PIDController",
       "/LiveWindow/Ungrouped/PIDController[2]": "PIDController",
       "/LiveWindow/Ungrouped/PIDController[3]": "PIDController",
@@ -43,12 +77,19 @@
       "/LiveWindow/Ungrouped/PIDController[5]": "PIDController",
       "/LiveWindow/Ungrouped/PIDController[6]": "PIDController",
       "/LiveWindow/Ungrouped/Scheduler": "Scheduler",
+      "/LiveWindow/Ungrouped/Turn Motor 0[0]": "Motor Controller",
+      "/LiveWindow/Ungrouped/Turn Motor 2[2]": "Motor Controller",
+      "/LiveWindow/Ungrouped/Turn Motor 4[4]": "Motor Controller",
       "/LiveWindow/Ungrouped/example 2[0]": "Motor Controller",
       "/LiveWindow/Ungrouped/example 2[1]": "Motor Controller",
       "/LiveWindow/Ungrouped/example 2[2]": "Motor Controller",
       "/LiveWindow/Ungrouped/example 2[3]": "Motor Controller",
       "/LiveWindow/Ungrouped/example 2[4]": "Motor Controller",
       "/LiveWindow/Ungrouped/example 2[5]": "Motor Controller",
+      "/SmartDashboard/Drive 1": "Subsystem",
+      "/SmartDashboard/Drive 3": "Subsystem",
+      "/SmartDashboard/Drive 5": "Subsystem",
+      "/SmartDashboard/Example Command": "Command",
       "/SmartDashboard/Example Subsystem": "Subsystem",
       "/SmartDashboard/Example Subsystem 2": "Subsystem",
       "/SmartDashboard/Example Subsystem 2 0": "Subsystem",
@@ -56,7 +97,13 @@
       "/SmartDashboard/Example Subsystem 2 2": "Subsystem",
       "/SmartDashboard/Example Subsystem 2 3": "Subsystem",
       "/SmartDashboard/Example Subsystem 2 4": "Subsystem",
-      "/SmartDashboard/Example Subsystem 2 5": "Subsystem"
+      "/SmartDashboard/Example Subsystem 2 5": "Subsystem",
+      "/SmartDashboard/Example Subsystem 3 1": "Subsystem",
+      "/SmartDashboard/Example Subsystem 3 3": "Subsystem",
+      "/SmartDashboard/Example Subsystem 3 5": "Subsystem",
+      "/SmartDashboard/Turning 0": "Subsystem",
+      "/SmartDashboard/Turning 2": "Subsystem",
+      "/SmartDashboard/Turning 4": "Subsystem"
     }
   },
   "NetworkTables Settings": {
@@ -82,10 +129,22 @@
                 1.0
               ],
               "id": "NT:/SmartDashboard/Example Subsystem 2 0/measurement"
+            },
+            {
+              "color": [
+                0.8666667342185974,
+                0.5176470875740051,
+                0.32156863808631897,
+                1.0
+              ],
+              "id": "NT:/SmartDashboard/Example Subsystem 2 1/measurement"
             }
           ]
         }
-      ]
+      ],
+      "window": {
+        "visible": false
+      }
     }
   }
 }

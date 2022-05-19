@@ -173,10 +173,10 @@ public class VelocityTest {
     @Test
     public void testAverage() {
         LinearFilter x = new LinearFilter(
-            new double[] { 0.25, 0.25, 0.52, 0.25 }, new double[0]);
+            new double[] { 0.25, 0.25, 0.25, 0.25 }, new double[0]);
         assertEquals(0, x.calculate(0), DELTA);
-        assertEquals(0.5, x.calculate(1), DELTA);
-        assertEquals(1.0, x.calculate(2), DELTA);
+        assertEquals(0.25, x.calculate(1), DELTA);
+        assertEquals(0.75, x.calculate(2), DELTA);
         assertEquals(1.5, x.calculate(3), DELTA);
         assertEquals(2.25, x.calculate(3), DELTA);
         assertEquals(2.75, x.calculate(3), DELTA);

@@ -5,6 +5,7 @@
 package frc.robot.subsystems;
 
 import edu.wpi.first.math.controller.ProfiledPIDController;
+import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.math.trajectory.TrapezoidProfile.State;
 import edu.wpi.first.util.sendable.SendableBuilder;
@@ -12,22 +13,22 @@ import edu.wpi.first.wpilibj.DutyCycleEncoder;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.ProfiledPIDSubsystem;
 
-public class ExampleSubsystem2 extends ProfiledPIDSubsystem {
+public class TurningSubsystem extends ProfiledPIDSubsystem {
   public final Parallax360 m_motor;
   public final DutyCycleEncoder m_input;
-  // public final SimpleMotorFeedforward m_feedForward;
+  public final SimpleMotorFeedforward m_feedForward;
 
-  public ExampleSubsystem2(int channel) {
+  public TurningSubsystem(int channel) {
     super(
-        new ProfiledPIDController(4, 1, 0.1,
-            new TrapezoidProfile.Constraints(100, 10)),
+        new ProfiledPIDController(3, 0.5, 1,
+            new TrapezoidProfile.Constraints(5, 0.5)),
         0);
-    setName(String.format("Example Subsystem 2 %d", channel));
-    m_motor = new Parallax360(String.format("Motor %d", channel), channel);
+    setName(String.format("Turning %d", channel));
+    m_motor = new Parallax360(String.format("Turn Motor %d", channel), channel);
     m_input = new DutyCycleEncoder(channel);
     m_input.setDutyCycleRange(0.027, 0.971);
     getController().enableContinuousInput(0, 1);
-    // m_feedForward = new SimpleMotorFeedforward(1, 1);
+    m_feedForward = new SimpleMotorFeedforward(0.1, 0.01);
     SmartDashboard.putData(getName(), this);
   }
 
@@ -49,10 +50,10 @@ public class ExampleSubsystem2 extends ProfiledPIDSubsystem {
 
   @Override
   protected void useOutput(double output, State setpoint) {
-    // double feedForward = m_feedForward.calculate(setpoint.position,
-    // setpoint.velocity);
-    // m_motor.set(output + feedForward);
-    m_motor.set(output);
+    double feedForward = m_feedForward.calculate(setpoint.velocity);
+    m_motor.set(output + feedForward);
+   // m_motor.set(output);
+//    m_motor.set(0);
   }
 
   @Override
@@ -64,6 +65,18 @@ public class ExampleSubsystem2 extends ProfiledPIDSubsystem {
     return getController().getPositionError();
   }
 
+  public double getGetPositionError() {
+    return getController().getPositionError();
+}
+
+public double getGetVelocityError() {
+    return getController().getVelocityError();
+}
+
+  public double getDistance() {
+    return m_input.getDistance();
+}
+
   @Override
   public void initSendable(SendableBuilder builder) {
     super.initSendable(builder);
@@ -72,6 +85,8 @@ public class ExampleSubsystem2 extends ProfiledPIDSubsystem {
     builder.addDoubleProperty("goal position", this::getGoalPosition, null);
     builder.addDoubleProperty("goal velocity", this::getGoalVelocity, null);
     builder.addBooleanProperty("connected", this::isConnected, null);
-    builder.addDoubleProperty("error", this::error, null);
+    builder.addDoubleProperty("position error", this::getGetPositionError, null);
+    builder.addDoubleProperty("distance", this::getDistance, null);
+    builder.addDoubleProperty("velocity error", this::getGetVelocityError, null);
   }
 }
