@@ -21,8 +21,11 @@ public class TurningSubsystem extends ProfiledPIDSubsystem {
   // for logging
   private double m_feedForwardOutput;
   private double m_controllerOutput;
+  private double m_position;
+  private double m_velocity;
+  private double m_acceleration;
   // for feedforward
-  private double m_accel;
+  private double m_setpointAccel;
   private double m_prevSetpointVelocity;
   private long m_prevTimeUs;
   private long m_dtUs;
@@ -38,8 +41,10 @@ public class TurningSubsystem extends ProfiledPIDSubsystem {
     m_motor = new Parallax360(String.format("Turn Motor %d", channel), channel);
     m_input = new DutyCycleEncoder(channel);
     m_input.setDutyCycleRange(0.027, 0.971);
-//    m_feedForward = new SimpleMotorFeedforward(0.08, 0.5, 0.15);  // observed is KS=0.1, KV=0.588, KA=0.133.
-    m_feedForward = new SimpleMotorFeedforward(0.1, 0.1, 0.25);  // observed is KS=0.1, KV=0.588, KA=0.133.
+    // observed is KS=0.1, KV=0.588, KA=0.133.
+    // TODO: why does KV seem wrong?
+    // m_feedForward = new SimpleMotorFeedforward(0.08, 0.5, 0.15);
+    m_feedForward = new SimpleMotorFeedforward(0.1, 0.1, 0.13);
     SmartDashboard.putData(getName(), this);
   }
 
@@ -51,6 +56,7 @@ public class TurningSubsystem extends ProfiledPIDSubsystem {
   public double getCurrent6V() {
     return RobotController.getCurrent6V();
   }
+
   public double getMotorOutput() {
     return m_motor.get();
   }
@@ -77,12 +83,12 @@ public class TurningSubsystem extends ProfiledPIDSubsystem {
     m_dtUs = tUs - m_prevTimeUs;
     double dtS = 1e-6 * m_dtUs;
     m_prevTimeUs = tUs;
-    m_accel = (setpoint.velocity - m_prevSetpointVelocity) / 0.02; // dtS;
+    m_setpointAccel = (setpoint.velocity - m_prevSetpointVelocity) / 0.02; // dtS;
     m_controllerOutput = output;
-    //m_feedForwardOutput = m_feedForward.calculate(setpoint.velocity, m_accel);
+    // m_feedForwardOutput = m_feedForward.calculate(setpoint.velocity, m_accel);
     m_feedForwardOutput = m_feedForward.calculate(m_prevSetpointVelocity, setpoint.velocity, 0.02); // dtS);
     setMotorOutput(m_controllerOutput + m_feedForwardOutput);
-    //m_motor.set(m_controllerOutput);
+    // m_motor.set(m_controllerOutput);
     // m_motor.set(0);
     m_prevSetpointVelocity = setpoint.velocity;
   }
@@ -99,13 +105,17 @@ public class TurningSubsystem extends ProfiledPIDSubsystem {
     return m_controllerOutput;
   }
 
-  // return [0,1]
+  // returns [0,1], inverting absolute position
+  // also update positions etc
   @Override
   public double getMeasurement() {
-    // position is measured in turns [0,1].
-    // this needs to also return [0,1] but inverted, so it's not -1*position
-    // it's 1-position.
-    return 1 - m_input.getAbsolutePosition();
+    double newPosition = 1 - m_input.getAbsolutePosition();
+    double newVelocity = (newPosition - m_position) / 0.02; // todo: adjustable period?
+    double newAcceleration = (newVelocity - m_velocity) / 0.02; // todo: adjustable period?
+    m_position = newPosition;
+    m_velocity = newVelocity;
+    m_acceleration = newAcceleration;
+    return m_position;
   }
 
   // what the PID thinks the difference is between the measurement and the
@@ -128,7 +138,19 @@ public class TurningSubsystem extends ProfiledPIDSubsystem {
   }
 
   public double getSetpointAccel() {
-    return m_accel;
+    return m_setpointAccel;
+  }
+
+  public double getPosition() {
+    return m_position;
+  }
+
+  public double getVelocity() {
+    return m_velocity;
+  }
+
+  public double getAcceleration() {
+    return m_acceleration;
   }
 
   @Override
@@ -149,5 +171,8 @@ public class TurningSubsystem extends ProfiledPIDSubsystem {
     builder.addDoubleProperty("velocity error", this::getGetVelocityError, null);
     builder.addBooleanProperty("connected", this::isConnected, null);
     builder.addDoubleProperty("dt us", this::getDtUs, null);
+    builder.addDoubleProperty("position", this::getPosition, null);
+    builder.addDoubleProperty("velocity", this::getVelocity, null);
+    builder.addDoubleProperty("acceleration", this::getAcceleration, null);
   }
 }

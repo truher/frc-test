@@ -26,21 +26,15 @@ public class ExampleCommand extends CommandBase {
 
   @Override
   public void execute() {
-    m_steer_input = (m_input.getLeftX() + 1) / 2;
-    boolean button = m_input.getAButton();
-    if (button) {
-      m_subsystem.setTurningGoal(m_steer_input/2);
-    } else {
-      m_subsystem.setTurningGoal(m_steer_input);
-    }
+    // test mode
+    m_subsystem.setTurningGoal(m_input.getAButton()?0.25:0.7);
+
+    // normal mode
+    //m_steer_input = (m_input.getLeftX() + 1) / 2;
+    //m_subsystem.setTurningGoal(m_steer_input);
 
     m_drive_input = m_input.getRightX();
     m_subsystem.setDriveGoal(m_drive_input);
-
-    // double desiredPosition = (m_input.getRightX() + 1) / 2;
-    // double desiredVelocity = (m_input.getLeftX() + 1) / 2;
-    // m_subsystem.setGoal(
-    // new TrapezoidProfile.State(desiredPosition, desiredVelocity));
   }
 
   public double getSteerInput() {
