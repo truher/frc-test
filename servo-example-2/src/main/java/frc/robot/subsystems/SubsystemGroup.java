@@ -50,6 +50,12 @@ public class SubsystemGroup extends SubsystemBase {
         m_steers.get(2).setMotorOutput(0);
     }
 
+    public void runTest3(boolean value) {
+        m_steers.get(0).setGoal(value?0.1:0.5);
+        m_steers.get(1).setMotorOutput(0);
+        m_steers.get(2).setMotorOutput(0);     
+    }
+
     //@Override
     //public void periodic() {
         // do this here because the scheduler only knows

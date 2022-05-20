@@ -29,8 +29,8 @@ public class TurningSubsystem extends ProfiledPIDSubsystem {
 
   public TurningSubsystem(int channel) {
     super(
-        new ProfiledPIDController(3, 0.5, 1,
-            new TrapezoidProfile.Constraints(1.53, 6.75)), // observed max v is 1.7 t/s, max a is 7.5 t/s/s
+        new ProfiledPIDController(3, 0, 0,
+            new TrapezoidProfile.Constraints(1.3, 5)), // observed max v is 1.7 t/s, max a is 7.5 t/s/s
         0);
     getController().enableContinuousInput(0, 1);
     getController().setTolerance(0.01, 0.01); // 3.6 degrees
@@ -38,7 +38,8 @@ public class TurningSubsystem extends ProfiledPIDSubsystem {
     m_motor = new Parallax360(String.format("Turn Motor %d", channel), channel);
     m_input = new DutyCycleEncoder(channel);
     m_input.setDutyCycleRange(0.027, 0.971);
-    m_feedForward = new SimpleMotorFeedforward(0.06, 0.4, 0.1);  // observed is 0.1, 0.588, 0.133.
+//    m_feedForward = new SimpleMotorFeedforward(0.08, 0.5, 0.15);  // observed is KS=0.1, KV=0.588, KA=0.133.
+    m_feedForward = new SimpleMotorFeedforward(0.1, 0.1, 0.25);  // observed is KS=0.1, KV=0.588, KA=0.133.
     SmartDashboard.putData(getName(), this);
   }
 
@@ -77,13 +78,13 @@ public class TurningSubsystem extends ProfiledPIDSubsystem {
     double dtS = 1e-6 * m_dtUs;
     m_prevTimeUs = tUs;
     m_accel = (setpoint.velocity - m_prevSetpointVelocity) / 0.02; // dtS;
-    m_prevSetpointVelocity = setpoint.velocity;
     m_controllerOutput = output;
     //m_feedForwardOutput = m_feedForward.calculate(setpoint.velocity, m_accel);
-    m_feedForwardOutput = m_feedForward.calculate(setpoint.velocity, m_prevSetpointVelocity, 0.02); // dtS);
+    m_feedForwardOutput = m_feedForward.calculate(m_prevSetpointVelocity, setpoint.velocity, 0.02); // dtS);
     setMotorOutput(m_controllerOutput + m_feedForwardOutput);
     //m_motor.set(m_controllerOutput);
     // m_motor.set(0);
+    m_prevSetpointVelocity = setpoint.velocity;
   }
 
   public double getDtUs() {
