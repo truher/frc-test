@@ -4,6 +4,7 @@
 
 package frc.robot;
 
+import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.XboxController;
 import frc.robot.commands.ExampleCommand;
 import frc.robot.subsystems.SubsystemGroup;
@@ -15,6 +16,7 @@ public class RobotContainer {
   private final Command m_teleopCommand;
 
   public RobotContainer() {
+    DataLogManager.start();
     m_driverController = new XboxController(1);
     m_subsystemGroup = new SubsystemGroup();
     m_teleopCommand = new ExampleCommand(m_driverController, m_subsystemGroup);
@@ -22,5 +24,11 @@ public class RobotContainer {
 
   public Command getTeleopCommand() {
     return m_teleopCommand;
+  }
+
+  public void runTest() {
+    boolean button = m_driverController.getAButton();
+    //m_subsystemGroup.runTest(button?1:0);
+    m_subsystemGroup.runTest2(button);
   }
 }
