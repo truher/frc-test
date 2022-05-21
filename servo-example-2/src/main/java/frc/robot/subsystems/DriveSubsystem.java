@@ -59,6 +59,10 @@ public class DriveSubsystem extends PIDSubsystem {
         return m_input.getDistance();
     }
 
+    public void setMotorOutput(double value) {
+        m_motor.set(value);
+      }
+
     @Override
     protected void useOutput(double output, double setpoint) {
         m_motor.set(output); // positive == counterclockwise.

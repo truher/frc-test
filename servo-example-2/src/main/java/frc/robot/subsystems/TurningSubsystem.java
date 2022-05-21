@@ -13,6 +13,7 @@ import edu.wpi.first.wpilibj.DutyCycleEncoder;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.ProfiledPIDSubsystem;
+import frc.math.Dither;
 
 public class TurningSubsystem extends ProfiledPIDSubsystem {
   public final Parallax360 m_motor;
@@ -29,10 +30,11 @@ public class TurningSubsystem extends ProfiledPIDSubsystem {
   private double m_prevSetpointVelocity;
   private long m_prevTimeUs;
   private long m_dtUs;
+  private Dither m_dither;
 
   public TurningSubsystem(int channel) {
     super(
-        new ProfiledPIDController(3, 0, 0,
+        new ProfiledPIDController(1, 0, 0,
             new TrapezoidProfile.Constraints(1.3, 5)), // observed max v is 1.7 t/s, max a is 7.5 t/s/s
         0);
     getController().enableContinuousInput(0, 1);
@@ -41,10 +43,12 @@ public class TurningSubsystem extends ProfiledPIDSubsystem {
     m_motor = new Parallax360(String.format("Turn Motor %d", channel), channel);
     m_input = new DutyCycleEncoder(channel);
     m_input.setDutyCycleRange(0.027, 0.971);
-    // observed is KS=0.1, KV=0.588, KA=0.133.
-    // TODO: why does KV seem wrong?
+    // observed is KS=0.1, KV=0.588, KA=0.133
+    // TODO: why do KV and KA seem wrong?  use LQR instead.
     // m_feedForward = new SimpleMotorFeedforward(0.08, 0.5, 0.15);
-    m_feedForward = new SimpleMotorFeedforward(0.1, 0.1, 0.13);
+    // KS is a lie, don't tell feedforward about it.
+    m_feedForward = new SimpleMotorFeedforward(0, 0.5, 0.1);
+    m_dither = new Dither(-0.15, 0.15);
     SmartDashboard.putData(getName(), this);
   }
 
@@ -87,10 +91,14 @@ public class TurningSubsystem extends ProfiledPIDSubsystem {
     m_controllerOutput = output;
     // m_feedForwardOutput = m_feedForward.calculate(setpoint.velocity, m_accel);
     m_feedForwardOutput = m_feedForward.calculate(m_prevSetpointVelocity, setpoint.velocity, 0.02); // dtS);
-    setMotorOutput(m_controllerOutput + m_feedForwardOutput);
+    m_prevSetpointVelocity = setpoint.velocity;
+
+    double desiredMotorOutput = m_controllerOutput + m_feedForwardOutput;
+    double ditheredOutput = m_dither.calculate(desiredMotorOutput);
+
+    setMotorOutput(ditheredOutput);
     // m_motor.set(m_controllerOutput);
     // m_motor.set(0);
-    m_prevSetpointVelocity = setpoint.velocity;
   }
 
   public double getDtUs() {
