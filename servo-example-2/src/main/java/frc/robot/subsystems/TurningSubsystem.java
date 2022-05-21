@@ -34,7 +34,7 @@ public class TurningSubsystem extends ProfiledPIDSubsystem {
 
   public TurningSubsystem(int channel) {
     super(
-        new ProfiledPIDController(1, 0, 0,
+        new ProfiledPIDController(2, 0, 0.2,
             new TrapezoidProfile.Constraints(1.3, 5)), // observed max v is 1.7 t/s, max a is 7.5 t/s/s
         0);
     getController().enableContinuousInput(0, 1);
