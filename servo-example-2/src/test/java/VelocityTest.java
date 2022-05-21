@@ -1,7 +1,4 @@
 import static org.junit.Assert.assertEquals;
-
-import java.beans.Transient;
-
 import org.junit.Test;
 
 import edu.wpi.first.math.filter.LinearFilter;
