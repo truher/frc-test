@@ -20,6 +20,7 @@ public class Parallax360 extends PWMMotorController {
     protected Parallax360(String name, int channel) {
         super(name, channel);
         m_pwm.setBounds(1.72, 1.52, 1.5, 1.48, 1.28);
+        //m_pwm.enableDeadbandElimination(true);
         m_pwm.setPeriodMultiplier(PWM.PeriodMultiplier.k4X);
         m_pwm.setSpeed(0.0);
         m_pwm.setZeroLatch();
