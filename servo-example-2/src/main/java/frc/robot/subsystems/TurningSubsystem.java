@@ -43,12 +43,12 @@ public class TurningSubsystem extends ProfiledPIDSubsystem {
     m_motor = new Parallax360(String.format("Turn Motor %d", channel), channel);
     m_input = new DutyCycleEncoder(channel);
     m_input.setDutyCycleRange(0.027, 0.971);
-    // observed is KS=0.1, KV=0.588, KA=0.133
+    // observed is KS=0.03, KV=0.588, KA=0.133
     // TODO: why do KV and KA seem wrong?  use LQR instead.
     // m_feedForward = new SimpleMotorFeedforward(0.08, 0.5, 0.15);
     // KS is a lie, don't tell feedforward about it.
-    m_feedForward = new SimpleMotorFeedforward(0, 0.5, 0.1);
-    m_dither = new Dither(-0.15, 0.15);
+    m_feedForward = new SimpleMotorFeedforward(0, 0.4, 0.033);
+    m_dither = new Dither(-0.05, 0.05);
     SmartDashboard.putData(getName(), this);
   }
 
@@ -85,12 +85,11 @@ public class TurningSubsystem extends ProfiledPIDSubsystem {
   protected void useOutput(double output, State setpoint) {
     long tUs = RobotController.getFPGATime();
     m_dtUs = tUs - m_prevTimeUs;
-    double dtS = 1e-6 * m_dtUs;
     m_prevTimeUs = tUs;
-    m_setpointAccel = (setpoint.velocity - m_prevSetpointVelocity) / 0.02; // dtS;
+    m_setpointAccel = (setpoint.velocity - m_prevSetpointVelocity) / 0.02;
+    if (m_setpointAccel > 0) m_setpointAccel *= 1.06;  // forward seems sluggish?
     m_controllerOutput = output;
-    // m_feedForwardOutput = m_feedForward.calculate(setpoint.velocity, m_accel);
-    m_feedForwardOutput = m_feedForward.calculate(m_prevSetpointVelocity, setpoint.velocity, 0.02); // dtS);
+    m_feedForwardOutput = m_feedForward.calculate(setpoint.velocity, m_setpointAccel);
     m_prevSetpointVelocity = setpoint.velocity;
 
     double desiredMotorOutput = m_controllerOutput + m_feedForwardOutput;
@@ -169,7 +168,6 @@ public class TurningSubsystem extends ProfiledPIDSubsystem {
     builder.addDoubleProperty("controller output", this::getControllerOutput, null);
     builder.addDoubleProperty("feed forward output", this::getFeedForwardOutput, null);
     builder.addDoubleProperty("motor output", this::getMotorOutput, null);
-    builder.addDoubleProperty("measurement", this::getMeasurement, null);
     builder.addDoubleProperty("goal position", this::getGoalPosition, null);
     builder.addDoubleProperty("goal velocity", this::getGoalVelocity, null);
     builder.addDoubleProperty("setpoint position", this::getSetpointPosition, null);

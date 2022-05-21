@@ -47,7 +47,7 @@ public class SubsystemGroup extends SubsystemBase {
     public double getTestOutput() {
         return m_testOutput;
     }
-    private Dither m_dither = new Dither(-0.1, 0.1);
+    //private Dither m_dither = new Dither(-0.1, 0.1);
 
     double m_fullAhead = 1.72;
     double m_highDeadband = 1.52; // 1.5225;
