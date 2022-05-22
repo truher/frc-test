@@ -4,9 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import edu.wpi.first.util.sendable.SendableBuilder;
-import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.math.Dither;
 
 public class SubsystemGroup extends SubsystemBase {
     private final List<TurningSubsystem> m_steers;
@@ -108,20 +106,6 @@ public class SubsystemGroup extends SubsystemBase {
         m_drives.get(1).setMotorOutput(0);  
         m_drives.get(2).setMotorOutput(0);  
     }
-
-    //@Override
-    //public void periodic() {
-        // do this here because the scheduler only knows
-        // about the top level subsystem
-        // TODO This is not true; not sure how the periodic
-        // method is called but this is bad, don't do it.
-        //for (Subsystem steer : m_steers) {
-        //    steer.periodic();
-        //}
-        //for (Subsystem drive : m_drives) {
-        //    drive.periodic();
-        //}
-    //}
 
     @Override
     public void initSendable(SendableBuilder builder) {

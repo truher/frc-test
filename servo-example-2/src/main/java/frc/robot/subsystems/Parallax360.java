@@ -15,11 +15,12 @@ import edu.wpi.first.wpilibj.motorcontrol.PWMMotorController;
  *   <li>1.480ms = low deadband
  *   <li>1.280ms = "full reverse"
  * </ul>
+ * 
+ * I used a scope to verify these bounds; they seem good.  Maybe 1.520 should be 1.525?
  */
 public class Parallax360 extends PWMMotorController {
     protected Parallax360(String name, int channel) {
         super(name, channel);
-        // TODO: verify these bounds
         m_pwm.setBounds(1.72, 1.52, 1.5, 1.48, 1.28);
         m_pwm.enableDeadbandElimination(true);  
         m_pwm.setPeriodMultiplier(PWM.PeriodMultiplier.k4X);
