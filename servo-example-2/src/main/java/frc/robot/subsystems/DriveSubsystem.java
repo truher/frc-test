@@ -20,7 +20,7 @@ public class DriveSubsystem extends PIDSubsystem {
         m_motor = new Parallax360(String.format("Drive Motor %d", channel), channel);
         m_input = new DutyCycleEncoder(channel);
         m_input.setDutyCycleRange(0.027, 0.971);
-        m_input.setDistancePerRotation(-1);
+        m_input.setDistancePerRotation(-1 * Math.PI * 0.07); // wheels are 70mm
         //getController().enableContinuousInput(0, 1);
         // these gains yield dx per period, averaged over a few periods.
         double[] gains = new double[5];
