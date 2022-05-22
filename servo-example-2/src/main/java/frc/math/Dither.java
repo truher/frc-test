@@ -10,10 +10,16 @@ public class Dither {
     private final double m_max;
     private final SplittableRandom m_random;
 
+    /**
+     * Dither around the deadband specified by min and max.
+     */
     public Dither(double min, double max) {
         this(42, min, max);
     }
 
+    /**
+     * Dither around the deadband specified by min and max. Random seed for testing.
+     */
     public Dither(long seed, double min, double max) {
         m_min = min;
         m_max = max;
@@ -26,10 +32,13 @@ public class Dither {
      * based on the input position in the deadband.
      */
     public double calculate(double in) {
-        if (in <= m_min) return in;
-        if (in >= m_max) return in;
+        if (in <= m_min)
+            return in;
+        if (in >= m_max)
+            return in;
         double r = m_random.nextDouble(m_min, m_max);
-        if (in >= r) return m_max;
+        if (in >= r)
+            return m_max;
         return m_min;
     }
 }
