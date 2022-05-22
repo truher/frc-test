@@ -27,11 +27,11 @@ public class ExampleCommand extends CommandBase {
   @Override
   public void execute() {
     // test mode
-    m_subsystem.setTurningGoal(m_input.getAButton()?0.25:0.7);
+    // m_subsystem.setTurningGoal(m_input.getAButton()?0.25:0.7);
 
     // normal mode
-    //m_steer_input = (m_input.getLeftX() + 1) / 2;
-    //m_subsystem.setTurningGoal(m_steer_input);
+    m_steer_input = (m_input.getLeftX() + 1) / 2;
+    m_subsystem.setTurningGoal(m_steer_input);
 
     m_drive_input = m_input.getRightX();
     m_subsystem.setDriveGoal(m_drive_input);

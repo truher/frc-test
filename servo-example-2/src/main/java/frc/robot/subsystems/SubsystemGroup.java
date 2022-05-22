@@ -38,6 +38,7 @@ public class SubsystemGroup extends SubsystemBase {
     }
 
     public void runTest(double value) {
+        m_steers.get(0).periodic();  // for logging
         m_steers.get(0).setMotorOutput(value);
         m_steers.get(1).setMotorOutput(0);
         m_steers.get(2).setMotorOutput(0);

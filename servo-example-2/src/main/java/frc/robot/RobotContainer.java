@@ -28,9 +28,9 @@ public class RobotContainer {
 
   public void runTest() {
     boolean button = m_driverController.getAButton();
-    //m_subsystemGroup.runTest(button?1:0);
+    m_subsystemGroup.runTest(button?0.3:-0.3);
     //m_subsystemGroup.runTest2(button);
     //m_subsystemGroup.runTest3(button);
-    m_subsystemGroup.runTest4();
+    //m_subsystemGroup.runTest4();
   }
 }

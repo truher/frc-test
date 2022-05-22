@@ -5,7 +5,7 @@
 package frc.robot.subsystems;
 
 import edu.wpi.first.math.controller.ProfiledPIDController;
-import edu.wpi.first.math.controller.SimpleMotorFeedforward;
+//import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.math.trajectory.TrapezoidProfile.State;
 import edu.wpi.first.util.sendable.SendableBuilder;
@@ -18,7 +18,7 @@ import frc.math.Dither;
 public class TurningSubsystem extends ProfiledPIDSubsystem {
   public final Parallax360 m_motor;
   public final DutyCycleEncoder m_input;
-  public final SimpleMotorFeedforward m_feedForward;
+  // public final SimpleMotorFeedforward m_feedForward;
   // for logging
   private double m_feedForwardOutput;
   private double m_controllerOutput;
@@ -31,11 +31,16 @@ public class TurningSubsystem extends ProfiledPIDSubsystem {
   private long m_prevTimeUs;
   private long m_dtUs;
   private Dither m_dither;
+  private static final double m_gearRatio = 4;
 
   public TurningSubsystem(int channel) {
     super(
-        new ProfiledPIDController(2, 0, 0.2,
-            new TrapezoidProfile.Constraints(1.3, 5)), // observed max v is 1.7 t/s, max a is 7.5 t/s/s
+        new ProfiledPIDController(2 * m_gearRatio, 0, 0.2 * m_gearRatio,
+            // new TrapezoidProfile.Constraints(1.3, 5)), //
+            // observed max v is 1.7 t/s, max a is 7.5 t/s/s
+            new TrapezoidProfile.Constraints(2.1 / m_gearRatio, 8 / m_gearRatio)), // observed max v is 1.7 t/s, max a
+                                                                                   // is 7.5 t/s/s
+
         0);
     getController().enableContinuousInput(0, 1);
     getController().setTolerance(0.01, 0.01); // 3.6 degrees
@@ -43,11 +48,13 @@ public class TurningSubsystem extends ProfiledPIDSubsystem {
     m_motor = new Parallax360(String.format("Turn Motor %d", channel), channel);
     m_input = new DutyCycleEncoder(channel);
     m_input.setDutyCycleRange(0.027, 0.971);
+    m_input.setDistancePerRotation(1 / m_gearRatio);
     // observed is KS=0.03, KV=0.588, KA=0.133
-    // TODO: why do KV and KA seem wrong?  use LQR instead.
+    // TODO: why do KV and KA seem wrong? use LQR instead.
     // m_feedForward = new SimpleMotorFeedforward(0.08, 0.5, 0.15);
     // KS is a lie, don't tell feedforward about it.
-    m_feedForward = new SimpleMotorFeedforward(0, 0.4, 0.033);
+    // m_feedForward = new SimpleMotorFeedforward(0, 0.4 * m_gearRatio, 0.033 *
+    // m_gearRatio);
     m_dither = new Dither(-0.05, 0.05);
     SmartDashboard.putData(getName(), this);
   }
@@ -81,15 +88,28 @@ public class TurningSubsystem extends ProfiledPIDSubsystem {
     return getController().getGoal().velocity;
   }
 
+  // the motor is itself velocity controlled with ~max-accel transitions.
+  public static double feedForward(double v, double a) {
+    // return 0.4 * m_gearRatio * v + 0.033 * m_gearRatio * a;
+    return 0.4 * m_gearRatio * v;
+    // return 0.4 * m_gearRatio * v + 0.0125 * m_gearRatio * a; // it just doesn't
+    // help, the controller is going to do what it's going to do.
+
+  }
+
   @Override
   protected void useOutput(double output, State setpoint) {
     long tUs = RobotController.getFPGATime();
     m_dtUs = tUs - m_prevTimeUs;
     m_prevTimeUs = tUs;
     m_setpointAccel = (setpoint.velocity - m_prevSetpointVelocity) / 0.02;
-    if (m_setpointAccel > 0) m_setpointAccel *= 1.06;  // forward seems sluggish?
+    if (m_setpointAccel > 0)
+      m_setpointAccel *= 1.06; // forward seems sluggish?
     m_controllerOutput = output;
-    m_feedForwardOutput = m_feedForward.calculate(setpoint.velocity, m_setpointAccel);
+    // m_feedForwardOutput = m_feedForward.calculate(setpoint.velocity,
+    // m_setpointAccel);
+    m_feedForwardOutput = feedForward(setpoint.velocity, m_setpointAccel);
+
     m_prevSetpointVelocity = setpoint.velocity;
 
     double desiredMotorOutput = m_controllerOutput + m_feedForwardOutput;
@@ -116,7 +136,8 @@ public class TurningSubsystem extends ProfiledPIDSubsystem {
   // also update positions etc
   @Override
   public double getMeasurement() {
-    double newPosition = 1 - m_input.getAbsolutePosition();
+    // double newPosition = 1 - m_input.getAbsolutePosition();
+    double newPosition = 1 - (m_input.getDistance() % 1); // distance mod 1
     double newVelocity = (newPosition - m_position) / 0.02; // todo: adjustable period?
     double newAcceleration = (newVelocity - m_velocity) / 0.02; // todo: adjustable period?
     m_position = newPosition;
