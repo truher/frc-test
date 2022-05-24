@@ -15,7 +15,7 @@ import edu.wpi.first.wpilibj2.command.ProfiledPIDSubsystem;
 //import frc.math.Dither;
 
 public class TurningSubsystem extends ProfiledPIDSubsystem {
-  private static final int kP = 2;
+  private static final double kP = 2;
   private static final double kD = 0.2;
   private static final double kMaxVelocity = 2.1;
   private static final int kMaxAcceleration = 8;
