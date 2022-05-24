@@ -28,6 +28,7 @@ public class DriveSubsystem extends PIDSubsystem {
         gains[4] = -0.25;
         m_dx = new LinearFilter(gains, new double[0]);
         m_dt = new LinearFilter(gains, new double[0]);
+        enable();
         SmartDashboard.putData(getName(), this);
     }
 

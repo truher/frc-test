@@ -51,4 +51,9 @@ public class ExampleCommand extends CommandBase {
     builder.addDoubleProperty("steer input", this::getSteerInput, null);
     builder.addDoubleProperty("drive input", this::getDriveInput, null);
   }
+
+  @Override
+  public void initialize() {
+    m_subsystem.initialize();
+  }
 }

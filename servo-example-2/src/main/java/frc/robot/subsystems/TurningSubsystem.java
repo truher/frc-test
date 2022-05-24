@@ -12,7 +12,7 @@ import edu.wpi.first.wpilibj.DutyCycleEncoder;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.ProfiledPIDSubsystem;
-import frc.math.Dither;
+//import frc.math.Dither;
 
 public class TurningSubsystem extends ProfiledPIDSubsystem {
   private static final int kP = 2;
@@ -21,6 +21,8 @@ public class TurningSubsystem extends ProfiledPIDSubsystem {
   private static final int kMaxAcceleration = 8;
   private static final double kV = 0.4;
   private static final double kGearRatio = 4;
+  // avoids moving from 0 to 0.5 on startup
+  private static final double kInitialPosition = 0.5;
 
   public final Parallax360 m_motor;
   public final DutyCycleEncoder m_input;
@@ -33,21 +35,24 @@ public class TurningSubsystem extends ProfiledPIDSubsystem {
   private double m_acceleration;
   private double m_setpointAccel;
   private double m_prevSetpointVelocity;
-  private Dither m_dither;
+  private final double m_offset;
+  // private Dither m_dither;
 
-  public TurningSubsystem(int channel) {
+  public TurningSubsystem(int channel, double offset) {
     super(
         new ProfiledPIDController(kP * kGearRatio, 0, kD * kGearRatio,
             new TrapezoidProfile.Constraints(kMaxVelocity / kGearRatio, kMaxAcceleration / kGearRatio)),
         0);
     getController().enableContinuousInput(0, 1);
-    getController().setTolerance(0.01, 0.01); // 3.6 degrees
+    getController().setTolerance(0.005, 0.005); // 1.8 degrees
     setName(String.format("Turning %d", channel));
     m_motor = new Parallax360(String.format("Turn Motor %d", channel), channel);
     m_input = new DutyCycleEncoder(channel);
     m_input.setDutyCycleRange(0.027, 0.971);
     m_input.setDistancePerRotation(1 / kGearRatio);
-    m_dither = new Dither(-0.05, 0.05);
+    m_offset = offset;
+    m_input.setPositionOffset(offset);
+    // m_dither = new Dither(-0.05, 0.05);
     SmartDashboard.putData(getName(), this);
   }
 
@@ -85,7 +90,8 @@ public class TurningSubsystem extends ProfiledPIDSubsystem {
     // between setpoints, so simple velocity control is good enough.
     m_feedForwardOutput = kV * kGearRatio * setpoint.velocity;
     // dithering overcomes friction for very low outputs.
-    setMotorOutput(m_dither.calculate(m_controllerOutput + m_feedForwardOutput));
+    // setMotorOutput(m_dither.calculate(m_controllerOutput + m_feedForwardOutput));
+    setMotorOutput(m_controllerOutput + m_feedForwardOutput);
   }
 
   public double getFeedForwardOutput() {
@@ -100,7 +106,9 @@ public class TurningSubsystem extends ProfiledPIDSubsystem {
   // also update positions etc
   @Override
   public double getMeasurement() {
-    double newPosition = 1 - (m_input.getDistance() % 1);
+    double distanceWrapped = (m_input.getDistance() - kInitialPosition) % 1; // might be negative
+    distanceWrapped = Math.signum(distanceWrapped) >=0 ? distanceWrapped : distanceWrapped + 1;
+    double newPosition = 1 - distanceWrapped;
     double newVelocity = (newPosition - m_position) / 0.02;
     double newAcceleration = (newVelocity - m_velocity) / 0.02;
     m_position = newPosition;
@@ -162,5 +170,11 @@ public class TurningSubsystem extends ProfiledPIDSubsystem {
     builder.addDoubleProperty("position", this::getPosition, null);
     builder.addDoubleProperty("velocity", this::getVelocity, null);
     builder.addDoubleProperty("acceleration", this::getAcceleration, null);
+  }
+
+  public void initialize() {
+    m_input.reset(); // erase the counter to remove quarter-turn error
+    m_input.setPositionOffset(m_offset);
+    enable();
   }
 }
