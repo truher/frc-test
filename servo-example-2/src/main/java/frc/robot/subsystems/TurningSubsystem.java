@@ -4,6 +4,7 @@
 
 package frc.robot.subsystems;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.math.trajectory.TrapezoidProfile.State;
@@ -69,12 +70,7 @@ public class TurningSubsystem extends ProfiledPIDSubsystem {
   // control input [-1,1]
   public void setTurnRate(double input) {
     m_userInput = input;
-    double goal = m_position + input;
-    if (goal > 1)
-      goal = goal % 1;
-    else if (goal < 0)
-      goal = 1 - (goal % 1);
-    setGoal(goal);
+    setGoal(MathUtil.inputModulus(m_position + input, 0, 1));
   }
 
   public double getMotorOutput() {
