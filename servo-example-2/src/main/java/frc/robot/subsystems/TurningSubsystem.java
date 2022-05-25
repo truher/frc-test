@@ -35,6 +35,7 @@ public class TurningSubsystem extends ProfiledPIDSubsystem {
   private double m_acceleration;
   private double m_setpointAccel;
   private double m_prevSetpointVelocity;
+  private double m_userInput; // [-1,1]
   private final double m_offset;
   // private Dither m_dither;
 
@@ -56,13 +57,24 @@ public class TurningSubsystem extends ProfiledPIDSubsystem {
     SmartDashboard.putData(getName(), this);
   }
 
-  // TODO: use this in motor output calcs.
+  // TODO: measure the effect of 6V voltage on accel and velocity.
   public double getVoltage6V() {
     return RobotController.getVoltage6V();
   }
 
   public double getCurrent6V() {
     return RobotController.getCurrent6V();
+  }
+
+  // control input [-1,1]
+  public void setTurnRate(double input) {
+    m_userInput = input;
+    double goal = m_position + input;
+    if (goal > 1)
+      goal = goal % 1;
+    else if (goal < 0)
+      goal = 1 - (goal % 1);
+    setGoal(goal);
   }
 
   public double getMotorOutput() {
@@ -107,7 +119,7 @@ public class TurningSubsystem extends ProfiledPIDSubsystem {
   @Override
   public double getMeasurement() {
     double distanceWrapped = (m_input.getDistance() - kInitialPosition) % 1; // might be negative
-    distanceWrapped = Math.signum(distanceWrapped) >=0 ? distanceWrapped : distanceWrapped + 1;
+    distanceWrapped = Math.signum(distanceWrapped) >= 0 ? distanceWrapped : distanceWrapped + 1;
     double newPosition = 1 - distanceWrapped;
     double newVelocity = (newPosition - m_position) / 0.02;
     double newAcceleration = (newVelocity - m_velocity) / 0.02;

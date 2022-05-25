@@ -45,7 +45,7 @@ public class DriveSubsystem extends PIDSubsystem {
         SmartDashboard.putData(getName(), this);
     }
 
-    // control input
+    // control input [-1,1]
     public void setThrottle(double input) {
         m_userInput = input;
         // 1.7 turn/sec, 70mm, 0.02 sec

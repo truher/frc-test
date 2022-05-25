@@ -20,19 +20,15 @@ public class SubsystemGroup extends SubsystemBase {
         };
     }
 
-    // set the angular position goal for turning
-    public void setTurningGoal(double goal) {
+    public void setTurnRate(double input) {
         for (TurningSubsystem subsystem : m_steers) {
-            subsystem.setGoal(goal);
+            subsystem.setTurnRate(input);
         }
     }
 
-    private static final double kV = 3.0; // turns per sec?
-    // set the velocity goal for driving
-    public void setDriveGoal(double goal) {
-        double velocity = goal * kV; 
+    public void setThrottle(double input) {
         for (DriveSubsystem drive : m_drives) {
-            drive.setThrottle(velocity);
+            drive.setThrottle(input);
         }
     }
 
