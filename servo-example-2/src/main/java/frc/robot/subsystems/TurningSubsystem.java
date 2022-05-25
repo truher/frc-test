@@ -178,6 +178,7 @@ public class TurningSubsystem extends ProfiledPIDSubsystem {
     builder.addDoubleProperty("position", this::getPosition, null);
     builder.addDoubleProperty("velocity", this::getVelocity, null);
     builder.addDoubleProperty("acceleration", this::getAcceleration, null);
+    builder.addDoubleProperty("user input", () -> m_userInput, null);
   }
 
   public void initialize() {

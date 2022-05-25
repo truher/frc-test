@@ -20,9 +20,17 @@ public class SubsystemGroup extends SubsystemBase {
         };
     }
 
+    // for drone mode, set angle goal directly
+    public void setTurnGoal(double input) {
+        for (TurningSubsystem steer : m_steers) {
+            steer.setGoal(input);
+        }
+    }
+    
+    // for normal mode, increment angle goal
     public void setTurnRate(double input) {
-        for (TurningSubsystem subsystem : m_steers) {
-            subsystem.setTurnRate(input);
+        for (TurningSubsystem steer : m_steers) {
+            steer.setTurnRate(input);
         }
     }
 

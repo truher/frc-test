@@ -5,6 +5,8 @@
 package frc.robot.commands;
 
 import frc.robot.subsystems.SubsystemGroup;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -26,15 +28,20 @@ public class ExampleCommand extends CommandBase {
 
   @Override
   public void execute() {
-    // test mode
+    // test mode, steering response to goal step
     // m_subsystem.setTurningGoal(m_input.getAButton()?0.25:0.7);
 
-    // normal mode
-    m_steer_input = (-1 * m_input.getLeftX() + 1) / 2;
-    m_subsystem.setTurnRate(m_steer_input);
+    // normal mode, right Y drives, left X steers
+    // m_steer_input = (-1 * m_input.getLeftX() + 1) / 2;
+    // m_drive_input = -1 * m_input.getRightY();
+    // m_subsystem.setTurnRate(m_steer_input);
+    // m_subsystem.setThrottle(m_drive_input);
 
-    m_drive_input = -1 * m_input.getRightY();
-    m_subsystem.setThrottle(m_drive_input);
+    // drone mode, right X/Y is everything
+    double xInput = -1 * m_input.getRightX(); // [-1,1]
+    double yInput = m_input.getRightY(); // [-1,1]
+    m_subsystem.setTurnGoal(Units.radiansToRotations(new Rotation2d(xInput, yInput).getRadians()));
+    m_subsystem.setThrottle(Math.hypot(xInput, yInput));
   }
 
   public double getSteerInput() {
