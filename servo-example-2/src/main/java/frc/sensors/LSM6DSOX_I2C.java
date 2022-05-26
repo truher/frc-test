@@ -7,6 +7,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj.I2C;
+import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.interfaces.Gyro;
 
 /**
@@ -70,9 +71,11 @@ public class LSM6DSOX_I2C implements Gyro, Sendable {
         }
     }
 
+    private long m_prevTimeUs;
     private final I2C m_i2c;
 
     public LSM6DSOX_I2C() {
+        m_prevTimeUs =  = RobotController.getFPGATime();
         m_i2c = new I2C(I2C.Port.kMXP, LSM6DSOX_I2C_ADD_L >>> 1); // shift addr!
         setGyroDataRate(LSM6DSOX_ODR_G_T.LSM6DSOX_GY_ODR_104Hz); // medium speed
         setGyroScale(LSM6DSOX_FS_G_T.LSM6DSOX_2000dps); // fastest
@@ -104,12 +107,11 @@ public class LSM6DSOX_I2C implements Gyro, Sendable {
     // TODO: do it differently somehow?
     @Override
     public double getAngle() {
-        short newValue = getYawRateRaw();
-        // at 2000dps full scale, 104 hz update rate means
-        // 19.231 degrees per update full scale, 16 bits signed
-        // means 0.00058687 degrees.
-        // TODO: use the config for this
-        double angleIncrement = (double) newValue * 0.00058687;
+        long timeUs = RobotController.getFPGATime();
+        long timeDiffUs = timeUs - m_prevTimeUs;
+        m_prevTimeUs = timeUs;
+        double degPerSec = getYawRateRaw()  * 0.00058687;
+        double angleIncrement = degPerSec * timeDiffUs / 1e6;
         m_angle = m_angle.plus(new Rotation2d(angleIncrement));
         return m_angle.getRadians();
     }
@@ -131,11 +133,17 @@ public class LSM6DSOX_I2C implements Gyro, Sendable {
 
     }
 
+    // degrees per second
     @Override
     public double getRate() {
-        return (double) getYawRateRaw();
+        // at 2000dps full scale, 104 hz update rate means
+        // 19.231 degrees per update full scale, 16 bits signed
+        // means 0.00058687 dps per unit
+        // TODO: use the config for this
+        return (double) getYawRateRaw()  * 0.00058687;
     }
 
+    // unit depends on config
     private short getYawRateRaw() {
         ByteBuffer data = ByteBuffer.allocate(2);
         m_i2c.read(LSM6DSOX_OUTZ_L_G, 2, data);
