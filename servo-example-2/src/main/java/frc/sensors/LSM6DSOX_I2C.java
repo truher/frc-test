@@ -75,7 +75,7 @@ public class LSM6DSOX_I2C implements Gyro, Sendable {
     private final I2C m_i2c;
 
     public LSM6DSOX_I2C() {
-        m_prevTimeUs =  = RobotController.getFPGATime();
+        m_prevTimeUs = RobotController.getFPGATime();
         m_i2c = new I2C(I2C.Port.kMXP, LSM6DSOX_I2C_ADD_L >>> 1); // shift addr!
         setGyroDataRate(LSM6DSOX_ODR_G_T.LSM6DSOX_GY_ODR_104Hz); // medium speed
         setGyroScale(LSM6DSOX_FS_G_T.LSM6DSOX_2000dps); // fastest
