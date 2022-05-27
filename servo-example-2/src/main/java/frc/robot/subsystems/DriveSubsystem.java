@@ -7,6 +7,7 @@ import edu.wpi.first.wpilibj.DutyCycleEncoder;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.PIDSubsystem;
+import frc.motorcontrol.Parallax360;
 
 public class DriveSubsystem extends PIDSubsystem {
     private static final double kV = 0.4; // turns/sec

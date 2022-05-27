@@ -1,4 +1,4 @@
-package frc.robot.subsystems;
+package frc.motorcontrol;
 
 import edu.wpi.first.wpilibj.PWM;
 import edu.wpi.first.wpilibj.motorcontrol.PWMMotorController;
