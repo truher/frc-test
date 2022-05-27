@@ -22,10 +22,10 @@ public class FusedHeading implements Angle, Sendable {
     // output is [position, velocity] as measured by mag, gyro
     private static final Matrix<N2, N2> kC = Matrix.mat(Nat.N2(), Nat.N2()).fill(1, 0, 0, 1);
     private static final Matrix<N2, N1> kD = Matrix.mat(Nat.N2(), Nat.N1()).fill(0, 0);
-    // system state is pretty firm
-    private static final Matrix<N2, N1> kStateStdDevs = Matrix.mat(Nat.N2(), Nat.N1()).fill(0.1, 0.1);
-    // observations are kinda iffy
-    private static final Matrix<N2, N1> kOutputStdDevs = Matrix.mat(Nat.N2(), Nat.N1()).fill(1, 1);
+    // system state should respond to sensors
+    private static final Matrix<N2, N1> kStateStdDevs = Matrix.mat(Nat.N2(), Nat.N1()).fill(2, 2);
+    // observations are pretty good, especially velocity
+    private static final Matrix<N2, N1> kOutputStdDevs = Matrix.mat(Nat.N2(), Nat.N1()).fill(0.5, 0.1);
     // for now there is no input
     private static final Matrix<N1, N1> kControlInput = Matrix.mat(Nat.N1(), Nat.N1()).fill(0);
 
