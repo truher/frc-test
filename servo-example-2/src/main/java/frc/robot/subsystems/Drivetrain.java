@@ -7,17 +7,20 @@ import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.sensors.Angle;
+
 import frc.sensors.FusedHeading;
 
 public class Drivetrain extends SubsystemBase {
+    // Base is an equilateral triangle 0.2794m (11 inches) on a side. Positive
+    // directions are x forward, y left, theta counterclockwise, measured from the x
+    // axis.
     private static final SwerveDriveKinematics kDriveKinematics = new SwerveDriveKinematics(
-            new Translation2d(0.11, 0),
-            new Translation2d(-0.11, 0.14),
-            new Translation2d(-0.11, -0.14));
+            new Translation2d(0.1613, 0), // front
+            new Translation2d(-0.0807, 0.1397), // left rear
+            new Translation2d(-0.0807, -0.1397)); // right rear
     private final Module[] m_modules;
     private final SwerveDriveOdometry m_odometry;
-    private final Angle m_gyro;
+    private final FusedHeading m_gyro;
 
     public Drivetrain() {
         m_modules = new Module[] {
@@ -27,15 +30,22 @@ public class Drivetrain extends SubsystemBase {
         };
         m_odometry = new SwerveDriveOdometry(kDriveKinematics, new Rotation2d(0));
         m_gyro = new FusedHeading();
+        m_gyro.reset();
+    }
+
+    // this is just for logging.
+    // remove me
+    public void periodic() {
+        m_gyro.get();
     }
 
     public void drive(double xSpeed, double ySpeed, double rot) {
-        SwerveModuleState[] swerveModuleStates =
-         kDriveKinematics.toSwerveModuleStates(ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, rot, new Rotation2d(m_gyro.getAngle())));
-         SwerveDriveKinematics.desaturateWheelSpeeds(swerveModuleStates, 0.2);
-         m_modules[0].setDesiredState(swerveModuleStates[0]);
-         m_modules[1].setDesiredState(swerveModuleStates[1]);
-         m_modules[2].setDesiredState(swerveModuleStates[2]);
+        SwerveModuleState[] swerveModuleStates = kDriveKinematics.toSwerveModuleStates(
+                ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, rot, m_gyro.get()));
+        SwerveDriveKinematics.desaturateWheelSpeeds(swerveModuleStates, 0.2);
+        m_modules[0].setDesiredState(swerveModuleStates[0]);
+        m_modules[1].setDesiredState(swerveModuleStates[1]);
+        m_modules[2].setDesiredState(swerveModuleStates[2]);
     }
 
     // for drone mode, set angle goal directly

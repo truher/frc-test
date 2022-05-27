@@ -10,8 +10,7 @@ import edu.wpi.first.wpilibj.I2C;
 /**
  * Adafruit 4517 contains this gyro, interfaced with I2C.
  * 
- * The detector is clockwise-negative, so this class inverts it to match
- * the WPI convention and the compass.
+ * It uses NWU coordinates, clockwise-negative, like most of WPILIB.
  * 
  * Constants come from github.com/stm32duino/LSM6DSOX/lsm6dsox_reg.h
  */
@@ -24,11 +23,12 @@ public class LSM6DSOX_I2C implements Sendable {
     // for now i only care about yaw
     private static final byte LSM6DSOX_OUTZ_L_G = (byte) 0x26;
 
-    // seems like raw is about 50 quiescent, so remove it.
+    // A quick look at bias; TODO: take another look.
     private static final int kRawOffset = -50;
 
-    // Output Data Rate
-    // these are the high 4 bits in CTRL2_G
+    /**
+     * Output Data Rate. These are the high 4 bits in CTRL2_G.
+     */
     public enum LSM6DSOX_ODR_G_T {
         LSM6DSOX_GY_ODR_OFF(0b0000_0000),
         LSM6DSOX_GY_ODR_12Hz5(0b0001_0000),
@@ -53,8 +53,9 @@ public class LSM6DSOX_I2C implements Sendable {
         }
     }
 
-    // Sensitivity
-    // these are bits 1-3 in CTRL2_G
+    /**
+     * Sensitivity. These are bits 1-3 in CTRL2_G.
+     */
     public enum LSM6DSOX_FS_G_T {
         LSM6DSOX_125dps(0b0000_0010, 4.375),
         LSM6DSOX_250dps(0b0000_0000, 8.75),
@@ -78,9 +79,17 @@ public class LSM6DSOX_I2C implements Sendable {
     private LSM6DSOX_FS_G_T m_scale;
 
     public LSM6DSOX_I2C() {
-        m_i2c = new I2C(I2C.Port.kMXP, LSM6DSOX_I2C_ADD_L >>> 1); // shift addr!
-        setGyroDataRate(LSM6DSOX_ODR_G_T.LSM6DSOX_GY_ODR_104Hz); // medium speed
-        setGyroScale(LSM6DSOX_FS_G_T.LSM6DSOX_250dps); // slowest
+        this(LSM6DSOX_I2C_ADD_L,
+                LSM6DSOX_ODR_G_T.LSM6DSOX_GY_ODR_104Hz, // medium speed
+                LSM6DSOX_FS_G_T.LSM6DSOX_250dps);// most sensitive
+    }
+
+    public LSM6DSOX_I2C(byte i2cAddress,
+            LSM6DSOX_ODR_G_T odr,
+            LSM6DSOX_FS_G_T fs) {
+        m_i2c = new I2C(I2C.Port.kMXP, i2cAddress >>> 1);
+        setGyroDataRate(odr);
+        setGyroScale(fs);
     }
 
     private void setGyroDataRate(LSM6DSOX_ODR_G_T data_rate) {
@@ -105,20 +114,20 @@ public class LSM6DSOX_I2C implements Sendable {
     }
 
     /**
-     * Yaw rate in radians/sec
+     * NWU yaw rate in radians/sec.
      */
     public double getRate() {
         return (double) getYawRateRaw() * m_scale.mdps * Math.PI / 180000;
     }
 
     /**
-     * Yaw rate unit depends on config
+     * NWU yaw rate, 16 bits, signed.  Unit depends on full-scale setting.
      */
     public int getYawRateRaw() {
         ByteBuffer buf = ByteBuffer.allocate(2);
         buf.order(ByteOrder.LITTLE_ENDIAN);
         m_i2c.read(LSM6DSOX_OUTZ_L_G, 2, buf);
-        return -1 * (buf.getShort() - kRawOffset);
+        return buf.getShort() - kRawOffset;
     }
 
     @Override
