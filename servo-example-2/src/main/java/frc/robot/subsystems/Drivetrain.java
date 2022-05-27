@@ -3,48 +3,42 @@ package frc.robot.subsystems;
 import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
-public class SubsystemGroup extends SubsystemBase {
-    private final TurningSubsystem[] m_steers;
-    private final DriveSubsystem[] m_drives;
+public class Drivetrain extends SubsystemBase {
+    private final Module[] m_modules;
 
-    public SubsystemGroup() {
-        m_steers = new TurningSubsystem[] {
-            new TurningSubsystem(0, 0.806),
-            new TurningSubsystem(2, 0.790),
-            new TurningSubsystem(4, 0.185)
-        };
-        m_drives = new DriveSubsystem[] {
-            new DriveSubsystem(1),
-            new DriveSubsystem(3),
-            new DriveSubsystem(5)
+    public Drivetrain() {
+        m_modules = new Module[] {
+            new Module(0, 0.806, 1),
+            new Module(2, 0.790, 3),
+            new Module(4, 0.185, 5)
         };
     }
 
     // for drone mode, set angle goal directly
     public void setTurnGoal(double input) {
-        for (TurningSubsystem steer : m_steers) {
-            steer.setGoal(input);
+        for (Module module : m_modules) {
+            module.m_steer.setGoal(input);
         }
     }
     
     // for normal mode, increment angle goal
     public void setTurnRate(double input) {
-        for (TurningSubsystem steer : m_steers) {
-            steer.setTurnRate(input);
+        for (Module module : m_modules) {
+            module.m_steer.setTurnRate(input);
         }
     }
 
     public void setThrottle(double input) {
-        for (DriveSubsystem drive : m_drives) {
-            drive.setThrottle(input);
+        for (Module module : m_modules) {
+            module.m_drive.setThrottle(input);
         }
     }
 
     public void runTest(double value) {
-        m_steers[0].periodic();  // for logging
-        m_steers[0].setMotorOutput(value);
-        m_steers[1].setMotorOutput(0);
-        m_steers[2].setMotorOutput(0);
+        m_modules[0].m_steer.periodic();  // for logging
+        m_modules[0].m_steer.setMotorOutput(value);
+        m_modules[1].m_steer.setMotorOutput(0);
+        m_modules[2].m_steer.setMotorOutput(0);
     }
 
     private double m_testOutput;
@@ -75,17 +69,17 @@ public class SubsystemGroup extends SubsystemBase {
 
     public void runTest2(boolean value) {
         m_testOutput += value ? 0.0005 : -0.0005;
-        m_steers[0].setMotorOutput(m_testOutput);  // is there still a deadband?
-        //m_steers.get(0).setMotorOutput(m_dither.calculate(m_testOutput));
-        //m_steers.get(0).setMotorOutput(m_dither.calculate(0));  // will it hold a position?
-        m_steers[1].setMotorOutput(0);
-        m_steers[2].setMotorOutput(0);
+        m_modules[0].m_steer.setMotorOutput(m_testOutput);  // is there still a deadband?
+        //m_modules[0].m_steer.setMotorOutput(m_dither.calculate(m_testOutput));
+        //m_modules[0].m_steer.setMotorOutput(m_dither.calculate(0));  // will it hold a position?
+        m_modules[1].m_steer.setMotorOutput(0);
+        m_modules[2].m_steer.setMotorOutput(0);
     }
 
     public void runTest3(boolean value) {
-        m_steers[0].setGoal(value?0.1:0.5);
-        m_steers[1].setMotorOutput(0);
-        m_steers[2].setMotorOutput(0);     
+        m_modules[0].m_steer.setGoal(value?0.1:0.5);
+        m_modules[1].m_steer.setMotorOutput(0);
+        m_modules[2].m_steer.setMotorOutput(0);     
     }
 
     private boolean direction = false;
@@ -103,13 +97,13 @@ public class SubsystemGroup extends SubsystemBase {
                 direction = true;
             }
         }
-        m_steers[0].m_motor.setBounds(m_fullAhead, m_highDeadband, m_center, m_lowDeadband, m_fullAstern);
-        m_steers[0].setMotorOutput(m_testOutput);
-        m_steers[1].setMotorOutput(0);
-        m_steers[2].setMotorOutput(0);
-        m_drives[0].setMotorOutput(0);  
-        m_drives[1].setMotorOutput(0);  
-        m_drives[2].setMotorOutput(0);  
+        m_modules[0].m_steer.m_motor.setBounds(m_fullAhead, m_highDeadband, m_center, m_lowDeadband, m_fullAstern);
+        m_modules[0].m_steer.setMotorOutput(m_testOutput);
+        m_modules[1].m_steer.setMotorOutput(0);
+        m_modules[2].m_steer.setMotorOutput(0);
+        m_modules[0].m_drive.setMotorOutput(0);  
+        m_modules[1].m_drive.setMotorOutput(0);  
+        m_modules[2].m_drive.setMotorOutput(0);  
     }
 
     @Override
@@ -121,8 +115,8 @@ public class SubsystemGroup extends SubsystemBase {
     }
 
     public void initialize() {
-        m_steers[0].initialize();
-        m_steers[1].initialize();
-        m_steers[2].initialize();
+        m_modules[0].m_steer.initialize();
+        m_modules[1].m_steer.initialize();
+        m_modules[2].m_steer.initialize();
     }
 }

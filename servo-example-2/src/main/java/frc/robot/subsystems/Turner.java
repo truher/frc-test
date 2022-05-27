@@ -16,7 +16,7 @@ import edu.wpi.first.wpilibj2.command.ProfiledPIDSubsystem;
 //import frc.math.Dither;
 import frc.motorcontrol.Parallax360;
 
-public class TurningSubsystem extends ProfiledPIDSubsystem {
+public class Turner extends ProfiledPIDSubsystem {
   private static final double kP = 2;
   private static final double kD = 0.2;
   private static final double kMaxVelocity = 2.1;
@@ -41,7 +41,7 @@ public class TurningSubsystem extends ProfiledPIDSubsystem {
   private final double m_offset;
   // private Dither m_dither;
 
-  public TurningSubsystem(int channel, double offset) {
+  public Turner(int channel, double offset) {
     super(
         new ProfiledPIDController(kP * kGearRatio, 0, kD * kGearRatio,
             new TrapezoidProfile.Constraints(kMaxVelocity / kGearRatio, kMaxAcceleration / kGearRatio)),

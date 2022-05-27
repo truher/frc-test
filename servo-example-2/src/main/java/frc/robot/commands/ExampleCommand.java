@@ -4,7 +4,7 @@
 
 package frc.robot.commands;
 
-import frc.robot.subsystems.SubsystemGroup;
+import frc.robot.subsystems.Drivetrain;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.util.sendable.SendableBuilder;
@@ -14,12 +14,12 @@ import edu.wpi.first.wpilibj2.command.CommandBase;
 
 public class ExampleCommand extends CommandBase {
   private final XboxController m_input;
-  private final SubsystemGroup m_subsystem;
+  private final Drivetrain m_subsystem;
 
   private double m_steer_input;
   private double m_drive_input;
 
-  public ExampleCommand(XboxController input, SubsystemGroup subsystem) {
+  public ExampleCommand(XboxController input, Drivetrain subsystem) {
     m_input = input;
     m_subsystem = subsystem;
     addRequirements(subsystem);

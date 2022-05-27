@@ -7,13 +7,13 @@ package frc.robot;
 //import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.XboxController;
 import frc.robot.commands.ExampleCommand;
-import frc.robot.subsystems.SubsystemGroup;
+import frc.robot.subsystems.Drivetrain;
 import frc.sensors.FusedHeading;
 import edu.wpi.first.wpilibj2.command.Command;
 
 public class RobotContainer {
   private final XboxController m_driverController;
-  private final SubsystemGroup m_subsystemGroup;
+  private final Drivetrain m_subsystemGroup;
   private final Command m_teleopCommand;
   private final FusedHeading m_heading;
 
@@ -21,7 +21,7 @@ public class RobotContainer {
     // turn off logging for now
     // DataLogManager.start();
     m_driverController = new XboxController(1);
-    m_subsystemGroup = new SubsystemGroup();
+    m_subsystemGroup = new Drivetrain();
     m_heading = new FusedHeading();
     m_heading.reset();
     m_teleopCommand = new ExampleCommand(m_driverController, m_subsystemGroup);

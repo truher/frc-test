@@ -9,7 +9,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.PIDSubsystem;
 import frc.motorcontrol.Parallax360;
 
-public class DriveSubsystem extends PIDSubsystem {
+public class Driver extends PIDSubsystem {
     private static final double kV = 0.4; // turns/sec
     private static final int kP = 0;
     private static final double kI = 0;
@@ -28,7 +28,7 @@ public class DriveSubsystem extends PIDSubsystem {
     private double m_userInput; // [-1,1]
     private double m_setpointPosition;
 
-    public DriveSubsystem(int channel) {
+    public Driver(int channel) {
         super(new PIDController(kP, kI, kD), 0);
         setName(String.format("Drive %d", channel));
         m_motor = new Parallax360(String.format("Drive Motor %d", channel), channel);
