@@ -84,6 +84,9 @@ public class FusedHeading implements Supplier<Rotation2d>, Sendable {
         return getState().get(1, 0);
     }
 
+    /**
+     * Yaw in radians referenced to magnetic north, NWU orientation.
+     */
     @Override
     public Rotation2d get() {
         m_filter.predict(kControlInput, kDtSec);

@@ -24,21 +24,41 @@ public class Drivetrain extends SubsystemBase {
 
     public Drivetrain() {
         m_modules = new Module[] {
-                new Module(0, 0.806, 1),
-                new Module(2, 0.790, 3),
-                new Module(4, 0.185, 5)
+                //new Module(0, 0.806, 1),
+                //new Module(2, 0.790, 3),
+                //new Module(4, 0.185, 5)
+                new Module(0, 0.48, 1),
+                new Module(2, 0.43, 3),
+                new Module(4, 0.85, 5)
         };
         m_odometry = new SwerveDriveOdometry(kDriveKinematics, new Rotation2d(0));
         m_gyro = new FusedHeading();
         m_gyro.reset();
     }
 
-    // this is just for logging.
-    // remove me
+    @Override
     public void periodic() {
-        m_gyro.get();
+      // Update the odometry in the periodic block
+      m_odometry.update(
+          m_gyro.get(),
+          m_modules[0].getState(),
+          m_modules[1].getState(),
+          m_modules[2].getState());
     }
 
+    // this just tries to keep the wheels pointing north
+    public void drive() {
+        Rotation2d yaw = m_gyro.get();
+//        SwerveModuleState desiredState = new SwerveModuleState(0, yaw.times(-1));
+        SwerveModuleState desiredState = new SwerveModuleState(0.01, new Rotation2d());
+
+        m_modules[0].setDesiredState(desiredState);
+        m_modules[1].setDesiredState(desiredState);
+        m_modules[2].setDesiredState(desiredState);
+    }
+
+    // this is the real one
+    /*
     public void drive(double xSpeed, double ySpeed, double rot) {
         SwerveModuleState[] swerveModuleStates = kDriveKinematics.toSwerveModuleStates(
                 ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, rot, m_gyro.get()));
@@ -47,6 +67,7 @@ public class Drivetrain extends SubsystemBase {
         m_modules[1].setDesiredState(swerveModuleStates[1]);
         m_modules[2].setDesiredState(swerveModuleStates[2]);
     }
+    */
 
     // for drone mode, set angle goal directly
     public void setTurnGoal(double input) {

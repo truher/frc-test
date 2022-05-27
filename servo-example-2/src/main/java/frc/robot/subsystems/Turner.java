@@ -13,18 +13,34 @@ import edu.wpi.first.wpilibj.DutyCycleEncoder;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.ProfiledPIDSubsystem;
-//import frc.math.Dither;
 import frc.motorcontrol.Parallax360;
 
+/**
+ * Turns the swerve module.
+ * 
+ * currently measures turns in units: one turn = 1, with an arbitrary zero.
+ * 
+ * TODO: convert to NWU radians, front of the robot is zero, +/- PI.
+ * 
+ * Note because of the gear reduction the modules need to be set up within 1/4
+ * turn of correct at startup.
+ */
 public class Turner extends ProfiledPIDSubsystem {
-  private static final double kP = 2;
-  private static final double kD = 0.2;
-  private static final double kMaxVelocity = 2.1;
-  private static final int kMaxAcceleration = 8;
-  private static final double kV = 0.4;
+  private static final double kP = 0.5;
+  private static final double kD = 0.1;
+  // private static final double kMaxVelocity = 2.1;
+  private static final double kMaxVelocity = 13.2; // scaled to radians
+  // private static final int kMaxAcceleration = 8;
+  private static final int kMaxAcceleration = 50; // scaled to radians
+  // private static final double kV = 0.4;
+  private static final double kV = 0.064; // scaled to radians
   private static final double kGearRatio = 4;
-  // avoids moving from 0 to 0.5 on startup
-  private static final double kInitialPosition = 0.5;
+  //// avoids moving from 0 to 0.5 on startup
+  // private static final double kInitialPosition = 0.5;
+  // point ahead
+  // actually fuck this
+  // private static final double kInitialPosition = 0.0;
+  private static final double kDtSec = 0.02;
 
   public final Parallax360 m_motor;
   public final DutyCycleEncoder m_input;
@@ -32,32 +48,127 @@ public class Turner extends ProfiledPIDSubsystem {
   // for logging
   private double m_feedForwardOutput;
   private double m_controllerOutput;
-  private double m_position;
-  private double m_velocity;
-  private double m_acceleration;
-  private double m_setpointAccel;
-  private double m_prevSetpointVelocity;
+  private double m_positionRadians;
+  private double m_velocityRadiansPerSec;
+  private double m_accelerationRadiansPerSecPerSec;
+  private double m_setpointAccelRadiansPerSecPerSec;
+  private double m_prevSetpointVelocityRadiansPerSec;
   private double m_userInput; // [-1,1]
-  private final double m_offset;
-  // private Dither m_dither;
+  private final double m_offsetInEncoderTurns;
 
-  public Turner(int channel, double offset) {
+  /**
+   * Offset is measured in sensor units, [0,1]. To adjust the module zero in the
+   * positive (anticlockwise) direction, reduce the offset.
+   * 
+   * @param channel
+   * @param offsetInEncoderTurns
+   */
+  public Turner(int channel, double offsetInEncoderTurns) {
     super(
         new ProfiledPIDController(kP * kGearRatio, 0, kD * kGearRatio,
             new TrapezoidProfile.Constraints(kMaxVelocity / kGearRatio, kMaxAcceleration / kGearRatio)),
         0);
-    getController().enableContinuousInput(0, 1);
+    getController().enableContinuousInput(-Math.PI, Math.PI);
     getController().setTolerance(0.005, 0.005); // 1.8 degrees
     setName(String.format("Turning %d", channel));
     m_motor = new Parallax360(String.format("Turn Motor %d", channel), channel);
     m_input = new DutyCycleEncoder(channel);
     m_input.setDutyCycleRange(0.027, 0.971);
-    m_input.setDistancePerRotation(1 / kGearRatio);
-    m_offset = offset;
-    m_input.setPositionOffset(offset);
-    // m_dither = new Dither(-0.05, 0.05);
+    m_input.setDistancePerRotation(2 * Math.PI / kGearRatio); // "distance" = radians
+    m_offsetInEncoderTurns = offsetInEncoderTurns;
+    m_input.setPositionOffset(offsetInEncoderTurns);
     SmartDashboard.putData(getName(), this);
   }
+
+  public void initialize() {
+    m_input.reset(); // erase the counter to remove quarter-turn error
+    m_input.setPositionOffset(m_offsetInEncoderTurns);
+    enable();
+  }
+
+  /**
+   * Set the profile goal in NWU radians.
+   */
+  @Override
+  public void setGoal(double goal) {
+    super.setGoal(goal);
+  }
+
+  @Override
+  protected void useOutput(double output, State setpoint) {
+    m_controllerOutput = output;
+    double velocityRadiansPerSec = setpoint.velocity;
+    m_setpointAccelRadiansPerSecPerSec = (velocityRadiansPerSec - m_prevSetpointVelocityRadiansPerSec) / kDtSec;
+    m_prevSetpointVelocityRadiansPerSec = velocityRadiansPerSec;
+    // the motor is itself velocity controlled with more-or-less max acceleration
+    // between setpoints, so simple velocity control is good enough.
+    m_feedForwardOutput = kV * kGearRatio * velocityRadiansPerSec;
+    setMotorOutput(m_controllerOutput + m_feedForwardOutput);
+  }
+
+  // returns [0,1], inverting absolute position
+  // also update positions etc
+  @Override
+  public double getMeasurement() {
+    double distanceRadians = m_input.getDistance();
+    double distanceWrapped = MathUtil.angleModulus(distanceRadians);
+    // double distanceWrapped = (distanceRadians - kInitialPosition) % 1; // might
+    // be negative
+    // distanceWrapped = Math.signum(distanceWrapped) >= 0 ? distanceWrapped :
+    // distanceWrapped + 1;
+    // note inversion here
+    // double newPosition = 1 - distanceWrapped;
+    double newPosition = -1.0 * distanceWrapped;
+    double newVelocity = (newPosition - m_positionRadians) / kDtSec;
+    double newAcceleration = (newVelocity - m_velocityRadiansPerSec) / kDtSec;
+    m_positionRadians = newPosition;
+    m_velocityRadiansPerSec = newVelocity;
+    m_accelerationRadiansPerSecPerSec = newAcceleration;
+    return m_positionRadians;
+  }
+
+  /**
+   * Set motor output from [-1, 1]
+   */
+  public void setMotorOutput(double value) {
+    m_motor.set(value);
+  }
+
+  //
+  //
+  //
+
+  /**
+   * an old form of input
+   */
+  // control input [-1,1]
+  public void setTurnRate(double input) {
+    m_userInput = input;
+    setGoal(MathUtil.inputModulus(m_positionRadians + input, 0, 1));
+  }
+
+  @Override
+  public void initSendable(SendableBuilder builder) {
+    super.initSendable(builder);
+    builder.addDoubleProperty("voltage 6v", this::getVoltage6V, null);
+    builder.addDoubleProperty("current 6v", this::getCurrent6V, null);
+    builder.addDoubleProperty("controller output -1 to 1", this::getControllerOutput, null);
+    builder.addDoubleProperty("feed forward output -1 to 1", this::getFeedForwardOutput, null);
+    builder.addDoubleProperty("motor output -1 to 1", this::getMotorOutput, null);
+    builder.addDoubleProperty("goal position nwu radians", this::getGoalPosition, null);
+    builder.addDoubleProperty("goal velocity nwu radians per sec", this::getGoalVelocity, null);
+    builder.addDoubleProperty("setpoint position nwu radians", this::getSetpointPosition, null);
+    builder.addDoubleProperty("setpoint velocity nwu radians per sec", this::getSetpointVelocity, null);
+    builder.addDoubleProperty("setpoint accel nwu radians per sec per sec", this::getSetpointAccel, null);
+    builder.addDoubleProperty("position error nwu radians", this::getGetPositionError, null);
+    builder.addDoubleProperty("velocity error nwu radians per sec", this::getGetVelocityError, null);
+    builder.addDoubleProperty("position nwu radians", this::getPosition, null);
+    builder.addDoubleProperty("velocity nwu radians per sec", this::getVelocity, null);
+    builder.addDoubleProperty("acceleration nwu radians per sec per sec", this::getAcceleration, null);
+    builder.addDoubleProperty("user input -1 to 1", () -> m_userInput, null);
+  }
+
+  // methods below are just for logging/dashboards
 
   // TODO: measure the effect of 6V voltage on accel and velocity.
   public double getVoltage6V() {
@@ -68,123 +179,99 @@ public class Turner extends ProfiledPIDSubsystem {
     return RobotController.getCurrent6V();
   }
 
-  // control input [-1,1]
-  public void setTurnRate(double input) {
-    m_userInput = input;
-    setGoal(MathUtil.inputModulus(m_position + input, 0, 1));
-  }
-
-  public double getMotorOutput() {
-    return m_motor.get();
-  }
-
-  public void setMotorOutput(double value) {
-    m_motor.set(value);
-  }
-
-  public double getGoalPosition() {
-    return getController().getGoal().position;
-  }
-
-  public double getGoalVelocity() {
-    return getController().getGoal().velocity;
-  }
-
-  @Override
-  protected void useOutput(double output, State setpoint) {
-    m_controllerOutput = output;
-    m_setpointAccel = (setpoint.velocity - m_prevSetpointVelocity) / 0.02;
-    m_prevSetpointVelocity = setpoint.velocity;
-    // the motor is itself velocity controlled with more-or-less max acceleration
-    // between setpoints, so simple velocity control is good enough.
-    m_feedForwardOutput = kV * kGearRatio * setpoint.velocity;
-    // dithering overcomes friction for very low outputs.
-    // setMotorOutput(m_dither.calculate(m_controllerOutput + m_feedForwardOutput));
-    setMotorOutput(m_controllerOutput + m_feedForwardOutput);
-  }
-
+  /**
+   * should be motor units [-1, 1]
+   */
   public double getFeedForwardOutput() {
     return m_feedForwardOutput;
   }
 
+  /**
+   * should be motor units [-1, 1]
+   */
   public double getControllerOutput() {
     return m_controllerOutput;
   }
 
-  // returns [0,1], inverting absolute position
-  // also update positions etc
-  @Override
-  public double getMeasurement() {
-    double distanceWrapped = (m_input.getDistance() - kInitialPosition) % 1; // might be negative
-    distanceWrapped = Math.signum(distanceWrapped) >= 0 ? distanceWrapped : distanceWrapped + 1;
-    double newPosition = 1 - distanceWrapped;
-    double newVelocity = (newPosition - m_position) / 0.02;
-    double newAcceleration = (newVelocity - m_velocity) / 0.02;
-    m_position = newPosition;
-    m_velocity = newVelocity;
-    m_acceleration = newAcceleration;
-    return m_position;
+  /**
+   * NWU radians
+   */
+  public double getGoalPosition() {
+    return getController().getGoal().position;
   }
 
-  // what the PID thinks the difference is between the measurement and the
-  // setpoint
-  public double getGetPositionError() {
-    return getController().getPositionError();
+  /**
+   * NWU radians per second
+   */
+  public double getGoalVelocity() {
+    return getController().getGoal().velocity;
   }
 
-  public double getGetVelocityError() {
-    return getController().getVelocityError();
+  /**
+   * Radians per second per second
+   * 
+   * I log this to see if the controller is getting ahead of the motor.
+   */
+  public double getSetpointAccel() {
+    return m_setpointAccelRadiansPerSecPerSec;
   }
 
-  // what the trapezoid is telling the PID
-  public double getSetpointPosition() {
-    return getController().getSetpoint().position;
-  }
-
+  /**
+   * Radians per second
+   * 
+   * I log this to see if the controller is getting ahead of the motor.
+   */
   public double getSetpointVelocity() {
     return getController().getSetpoint().velocity;
   }
 
-  public double getSetpointAccel() {
-    return m_setpointAccel;
+  /**
+   * Get motor output from [-1, 1].
+   */
+  public double getMotorOutput() {
+    return m_motor.get();
   }
 
+  /**
+   * Radians. What the PID thinks the difference is between the measurement and
+   * the setpoint.
+   */
+  public double getGetPositionError() {
+    return getController().getPositionError();
+  }
+
+  /**
+   * Radians per second
+   */
+  public double getGetVelocityError() {
+    return getController().getVelocityError();
+  }
+
+  /**
+   * * radians
+   */
   public double getPosition() {
-    return m_position;
+    return m_positionRadians;
   }
 
+  /**
+   * * radians per sec
+   */
   public double getVelocity() {
-    return m_velocity;
+    return m_velocityRadiansPerSec;
   }
 
+  /**
+   * radians per sec per sec
+   */
   public double getAcceleration() {
-    return m_acceleration;
+    return m_accelerationRadiansPerSecPerSec;
   }
 
-  @Override
-  public void initSendable(SendableBuilder builder) {
-    super.initSendable(builder);
-    builder.addDoubleProperty("voltage 6v", this::getVoltage6V, null);
-    builder.addDoubleProperty("current 6v", this::getCurrent6V, null);
-    builder.addDoubleProperty("controller output", this::getControllerOutput, null);
-    builder.addDoubleProperty("feed forward output", this::getFeedForwardOutput, null);
-    builder.addDoubleProperty("motor output", this::getMotorOutput, null);
-    builder.addDoubleProperty("goal position", this::getGoalPosition, null);
-    builder.addDoubleProperty("goal velocity", this::getGoalVelocity, null);
-    builder.addDoubleProperty("setpoint position", this::getSetpointPosition, null);
-    builder.addDoubleProperty("setpoint velocity", this::getSetpointVelocity, null);
-    builder.addDoubleProperty("setpoint accel", this::getSetpointAccel, null);
-    builder.addDoubleProperty("position error", this::getGetPositionError, null);
-    builder.addDoubleProperty("velocity error", this::getGetVelocityError, null);
-    builder.addDoubleProperty("position", this::getPosition, null);
-    builder.addDoubleProperty("velocity", this::getVelocity, null);
-    builder.addDoubleProperty("acceleration", this::getAcceleration, null);
-    builder.addDoubleProperty("user input", () -> m_userInput, null);
-  }
-
-  public void initialize() {
-    m_input.reset(); // erase the counter to remove quarter-turn error
-    m_input.setPositionOffset(m_offset);
-    enable();
+  /**
+   * what the trapezoid profile is trying to get the pid to do.
+   */
+  public double getSetpointPosition() {
+    return getController().getSetpoint().position;
   }
 }

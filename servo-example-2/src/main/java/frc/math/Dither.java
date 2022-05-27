@@ -4,6 +4,10 @@ import java.util.SplittableRandom;
 
 /**
  * Dither around a deadband.
+ * 
+ * I wrote this before I discovered how to turn on deadband correction in the
+ * PWM controller, duh.  There's still a small frictional deadband, though,
+ * so it might turn out to be useful.
  */
 public class Dither {
     private final double m_min;

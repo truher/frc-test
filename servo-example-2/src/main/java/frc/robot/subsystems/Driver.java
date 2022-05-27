@@ -46,30 +46,18 @@ public class Driver extends PIDSubsystem {
         SmartDashboard.putData(getName(), this);
     }
 
-    // control input [-1,1]
-    public void setThrottle(double input) {
-        m_userInput = input;
-        // 1.7 turn/sec, 70mm, 0.02 sec
-        m_setpointVelocity = input * 1.7 * 0.07 * 0.02;
+    /**
+     * The example swerve code wants to use this to set *speed*, but i'm using
+     * the PID here to control *position*.  TODO: make speed PID work.
+     */
+    @Override
+    public void setSetpoint(double setpoint) {
+        super.setSetpoint(setpoint);
     }
 
-    public double motorState() {
-        return m_motor.get();
-    }
-
-    public double getSetpoint() {
-        return getController().getSetpoint();
-    }
-
-    public double getGetPositionError() {
-        return getController().getPositionError();
-    }
-
-    public double getGetVelocityError() {
-        return getController().getVelocityError();
-    }
-
-    // meters
+    /**
+     * Distance in meters.
+     */
     public double getDistance() {
         return m_input.getDistance();
     }
@@ -94,7 +82,9 @@ public class Driver extends PIDSubsystem {
         super.periodic();
     }
 
-    // return current position in meters
+    /**
+     * Current position in meters
+     */
     @Override
     protected double getMeasurement() {
         double distance = getDistance();
@@ -102,6 +92,15 @@ public class Driver extends PIDSubsystem {
         m_currentDx = m_dx.calculate(distance);
         m_velocity = 1e6 * m_currentDx / m_currentDt;
         return distance;
+    }
+
+    /**
+     * an old control method, input [-1,1]
+     */
+    public void setThrottle(double input) {
+        m_userInput = input;
+        // 1.7 turn/sec, 70mm, 0.02 sec
+        m_setpointVelocity = input * 1.7 * 0.07 * 0.02;
     }
 
     @Override
@@ -121,4 +120,36 @@ public class Driver extends PIDSubsystem {
         builder.addDoubleProperty("setpoint velocity", () -> m_setpointVelocity, null);
         builder.addDoubleProperty("setpoint position", () -> m_setpointPosition, null);
     }
+
+    // methods below are just for logging.
+
+    /**
+     * meters
+     */
+    public double getGetPositionError() {
+        return getController().getPositionError();
+    }
+
+    /**
+     * meters per sec
+     */
+    public double getGetVelocityError() {
+        return getController().getVelocityError();
+    }
+
+    /**
+     * Motor units [-1, 1]
+     */
+    public double motorState() {
+        return m_motor.get();
+    }
+
+    /**
+     * Setpoint in meters.
+     */
+    public double getSetpoint() {
+        return getController().getSetpoint();
+    }
+
+
 }

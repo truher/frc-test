@@ -1,6 +1,11 @@
 {
   "NetworkTables": {
     "LiveWindow": {
+      "Turner": {
+        "Turning 0": {
+          "open": true
+        }
+      },
       "Ungrouped": {
         "Servo[0]": {
           "open": true
@@ -12,6 +17,9 @@
       "open": true
     },
     "SmartDashboard": {
+      "Drive 1": {
+        "open": true
+      },
       "Example Subsystem 2": {
         "open": true
       },
@@ -24,7 +32,13 @@
       "Example Subsystem 3 1": {
         "open": true
       },
-      "heading": {
+      "Turning 0": {
+        "open": true
+      },
+      "Turning 2": {
+        "open": true
+      },
+      "Turning 4": {
         "open": true
       },
       "open": true
@@ -123,7 +137,18 @@
               "autoFit": true
             }
           ],
-          "height": 173
+          "height": 173,
+          "series": [
+            {
+              "color": [
+                0.2980392277240753,
+                0.44705885648727417,
+                0.6901960968971252,
+                1.0
+              ],
+              "id": "NT:/SmartDashboard/heading/gyro rate nwu radians per sec"
+            }
+          ]
         }
       ]
     },
@@ -145,6 +170,15 @@
                 1.0
               ],
               "id": "NT:/SmartDashboard/heading/unrolled mag nwu radians"
+            },
+            {
+              "color": [
+                0.8666667342185974,
+                0.5176470875740051,
+                0.32156863808631897,
+                1.0
+              ],
+              "id": "NT:/SmartDashboard/heading/model position"
             }
           ]
         }
@@ -153,11 +187,6 @@
     "Plot <2>": {
       "plots": [
         {
-          "axis": [
-            {
-              "autoFit": true
-            }
-          ],
           "height": 197,
           "series": [
             {
@@ -167,14 +196,11 @@
                 0.6901960968971252,
                 1.0
               ],
-              "id": "NT:/SmartDashboard/heading/heading"
+              "id": "NT:/SmartDashboard/Turning 0/position nwu radians"
             }
           ]
         }
-      ],
-      "window": {
-        "visible": false
-      }
+      ]
     }
   }
 }
