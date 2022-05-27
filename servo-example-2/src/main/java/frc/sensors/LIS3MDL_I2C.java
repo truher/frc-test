@@ -11,9 +11,11 @@ import edu.wpi.first.wpilibj.I2C;
 /**
  * Adafruit 4517 contains this magnetometer, interfaced with I2C.
  * 
+ * It's clockwise-positive, like a compass.
+ * 
  * Constants come from github.com/stm32duino/LIS3MDL/LIS3MDL_MAG_Driver.h
  */
-public class LIS3MDL_I2C implements Sendable {
+public class LIS3MDL_I2C implements Angle, Sendable {
     // 8-bit addr is 0x38 so 7-bit is shifted, 0x1C
     private static final byte LIS3MDL_MAG_I2C_ADDRESS_LOW = (byte) 0x38; // from Adafruit_LIS3MDL.h
     private static final byte LIS3MDL_MAG_CTRL_REG1 = (byte) 0x20;
@@ -144,9 +146,10 @@ public class LIS3MDL_I2C implements Sendable {
     // radians
     public double getAngle() {
         ByteBuffer buf = ByteBuffer.allocate(2);
-        buf.order(ByteOrder.LITTLE_ENDIAN); // TODO: check
+        buf.order(ByteOrder.LITTLE_ENDIAN);
         m_i2c.read(LIS3MDL_MAG_OUTX_L, 2, buf);
         short xValue = buf.getShort();
+        buf.clear();
         m_i2c.read(LIS3MDL_MAG_OUTY_L, 2, buf);
         short yValue = buf.getShort();
         return new Rotation2d(xValue, yValue).getRadians();
