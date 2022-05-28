@@ -11,7 +11,7 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.sensors.FusedHeading;
 
 public class Drivetrain extends SubsystemBase {
-    private static final double kMaxSpeedMetersPerSecond = 0.2;
+    private static final double kMaxSpeedMetersPerSecond = 0.54;
     // Base is an equilateral triangle 0.2794m (11 inches) on a side. Positive
     // directions are x forward, y left, theta counterclockwise, measured from the x
     // axis.

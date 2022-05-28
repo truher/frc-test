@@ -12,7 +12,7 @@ import frc.motorcontrol.Parallax360;
 public class Driver extends PIDSubsystem {
 
     private static final double kWheelDiameterMeters = 0.07;
-    private static final double kV = 0.43; // motor output per turns/sec
+    private static final double kV = 0.4; // motor output per turns/sec
     private static final int kP = 0;
     private static final double kI = 4;
     private static final double kD = 0;
@@ -29,6 +29,9 @@ public class Driver extends PIDSubsystem {
     private double m_velocityMetersPerSec;
     private double m_userInput; // [-1,1]
 
+    /**
+     * @param channel for PWM motor and duty cycle encoder.
+     */
     public Driver(int channel) {
         super(new PIDController(kP, kI, kD), 0);
         setName(String.format("Drive %d", channel));
@@ -57,7 +60,7 @@ public class Driver extends PIDSubsystem {
     }
 
     /**
-     * Distance in meters.  this is actually distance, odometry.
+     * Distance in meters. this is actually distance, odometry.
      */
     public double getDistance() {
         return m_input.getDistance();
@@ -79,12 +82,12 @@ public class Driver extends PIDSubsystem {
     protected void useOutput(double output, double setpoint) {
         m_controllerOutput = output;
         m_feedForwardOutput = kV * setpoint / (Math.PI * kWheelDiameterMeters);
-    //    m_feedForwardOutput = 0;
+        // m_feedForwardOutput = 0;
         setMotorOutput(m_controllerOutput + m_feedForwardOutput);
     }
 
     /**
-     * Current velocity in meters per second
+     * Velocity in meters per second, average over the past 80ms.
      */
     @Override
     protected double getMeasurement() {
@@ -123,7 +126,7 @@ public class Driver extends PIDSubsystem {
 
     /**
      * we actually give the pid velocity so asking it for position error yields
-     * velocity error in  meters per sec
+     * velocity error in meters per sec
      */
     public double getGetVelocityError() {
         return getController().getPositionError();

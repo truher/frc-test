@@ -11,6 +11,8 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.CommandBase;
 
 public class ExampleCommand extends CommandBase {
+  private static final double kMaxSpeedMetersPerSec = 0.54;
+  private static final double kRobotRadiusMeters = 0.1613;
   private final XboxController m_input;
   private final Drivetrain m_subsystem;
 
@@ -44,10 +46,11 @@ public class ExampleCommand extends CommandBase {
 
     // m_subsystem.keepWheelsPointingNorth();
 
+    // every axis of every joystick is backwards.
     m_subsystem.drive(
-        -0.3 * m_input.getRightY(),
-        -0.3 * m_input.getRightX(),
-        -2.0 * m_input.getLeftX());
+        -1.0 * kMaxSpeedMetersPerSec * m_input.getRightY(),
+        -1.0 * kMaxSpeedMetersPerSec * m_input.getRightX(),
+        -1.0 * kMaxSpeedMetersPerSec / kRobotRadiusMeters * m_input.getLeftX());
   }
 
   public double getSteerInput() {
