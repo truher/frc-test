@@ -45,9 +45,9 @@ public class ExampleCommand extends CommandBase {
     // m_subsystem.keepWheelsPointingNorth();
 
     m_subsystem.drive(
-        m_input.getRightY(),
-        m_input.getRightX(),
-        m_input.getLeftX());
+        -0.3 * m_input.getRightY(),
+        -0.3 * m_input.getRightX(),
+        -2.0 * m_input.getLeftX());
   }
 
   public double getSteerInput() {
