@@ -18,9 +18,7 @@ import frc.motorcontrol.Parallax360;
 /**
  * Turns the swerve module.
  * 
- * currently measures turns in units: one turn = 1, with an arbitrary zero.
- * 
- * TODO: convert to NWU radians, front of the robot is zero, +/- PI.
+ * currently measures turns in NWU radians, front of the robot is zero, +/- PI.
  * 
  * Note because of the gear reduction the modules need to be set up within 1/4
  * turn of correct at startup.
