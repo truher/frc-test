@@ -11,6 +11,8 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.sensors.FusedHeading;
 
 public class Drivetrain extends SubsystemBase {
+    // TODO: remember to increase this
+    private static final double kMaxSpeedMetersPerSecond = 0.43;
     // Base is an equilateral triangle 0.2794m (11 inches) on a side. Positive
     // directions are x forward, y left, theta counterclockwise, measured from the x
     // axis.
@@ -24,9 +26,6 @@ public class Drivetrain extends SubsystemBase {
 
     public Drivetrain() {
         m_modules = new Module[] {
-                //new Module(0, 0.806, 1),
-                //new Module(2, 0.790, 3),
-                //new Module(4, 0.185, 5)
                 new Module(0, 0.48, 1),
                 new Module(2, 0.43, 3),
                 new Module(4, 0.85, 5)
@@ -38,36 +37,41 @@ public class Drivetrain extends SubsystemBase {
 
     @Override
     public void periodic() {
-      // Update the odometry in the periodic block
-      m_odometry.update(
-          m_gyro.get(),
-          m_modules[0].getState(),
-          m_modules[1].getState(),
-          m_modules[2].getState());
+        // Update the odometry in the periodic block
+        m_odometry.update(
+                m_gyro.get(),
+                m_modules[0].getState(),
+                m_modules[1].getState(),
+                m_modules[2].getState());
     }
 
-    // this just tries to keep the wheels pointing north
-    public void drive() {
+    /**
+     * Tries to keep the wheels pointing north, and moving forward slowly so I can
+     * tell which way is forward.
+     */
+    public void keepWheelsPointingNorth() {
         Rotation2d yaw = m_gyro.get();
         SwerveModuleState desiredState = new SwerveModuleState(0.1, yaw.times(-1));
-//        SwerveModuleState desiredState = new SwerveModuleState(0.1, new Rotation2d());
-
         m_modules[0].setDesiredState(desiredState);
         m_modules[1].setDesiredState(desiredState);
         m_modules[2].setDesiredState(desiredState);
     }
 
-    // this is the real one
-    /*
+    /**
+     * Actually do the swerving.
+     * 
+     * @param xSpeed from user input
+     * @param ySpeed from user input
+     * @param rot    from user input
+     */
     public void drive(double xSpeed, double ySpeed, double rot) {
         SwerveModuleState[] swerveModuleStates = kDriveKinematics.toSwerveModuleStates(
                 ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, rot, m_gyro.get()));
-        SwerveDriveKinematics.desaturateWheelSpeeds(swerveModuleStates, 0.2);
+        SwerveDriveKinematics.desaturateWheelSpeeds(swerveModuleStates, kMaxSpeedMetersPerSecond);
         m_modules[0].setDesiredState(swerveModuleStates[0]);
         m_modules[1].setDesiredState(swerveModuleStates[1]);
         m_modules[2].setDesiredState(swerveModuleStates[2]);
     }
-    */
 
     // for drone mode, set angle goal directly
     public void setTurnGoal(double input) {

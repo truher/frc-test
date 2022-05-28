@@ -5,8 +5,6 @@
 package frc.robot.commands;
 
 import frc.robot.subsystems.Drivetrain;
-import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.util.Units;
 import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -38,13 +36,18 @@ public class ExampleCommand extends CommandBase {
     // m_subsystem.setThrottle(m_drive_input);
 
     // drone mode, right X/Y is everything
-    //double xInput = -1 * m_input.getRightX(); // [-1,1]
-    //double yInput = m_input.getRightY(); // [-1,1]
-    //m_subsystem.setTurnGoal(Units.radiansToRotations(new Rotation2d(xInput, yInput).getRadians()));
-    //m_subsystem.setThrottle(Math.hypot(xInput, yInput));
+    // double xInput = -1 * m_input.getRightX(); // [-1,1]
+    // double yInput = m_input.getRightY(); // [-1,1]
+    // m_subsystem.setTurnGoal(Units.radiansToRotations(new Rotation2d(xInput,
+    // yInput).getRadians()));
+    // m_subsystem.setThrottle(Math.hypot(xInput, yInput));
 
-    // north mode
-    m_subsystem.drive();
+    // m_subsystem.keepWheelsPointingNorth();
+
+    m_subsystem.drive(
+        m_input.getRightY(),
+        m_input.getRightX(),
+        m_input.getLeftX());
   }
 
   public double getSteerInput() {
