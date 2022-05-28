@@ -12,8 +12,7 @@ import frc.motorcontrol.Parallax360;
 public class Driver extends PIDSubsystem {
 
     private static final double kWheelDiameterMeters = 0.07;
-    //private static final double kV = 0.4; // turns/sec
-    private static final double kV = 0.12; // turns/sec
+    private static final double kV = 0.43; // motor output per turns/sec
     private static final int kP = 0;
     private static final double kI = 4;
     private static final double kD = 0;
@@ -79,7 +78,7 @@ public class Driver extends PIDSubsystem {
     @Override
     protected void useOutput(double output, double setpoint) {
         m_controllerOutput = output;
-        m_feedForwardOutput = kV * setpoint / kWheelDiameterMeters;
+        m_feedForwardOutput = kV * setpoint / (Math.PI * kWheelDiameterMeters);
     //    m_feedForwardOutput = 0;
         setMotorOutput(m_controllerOutput + m_feedForwardOutput);
     }
