@@ -49,8 +49,8 @@ public class Drivetrain extends SubsystemBase {
     // this just tries to keep the wheels pointing north
     public void drive() {
         Rotation2d yaw = m_gyro.get();
-//        SwerveModuleState desiredState = new SwerveModuleState(0, yaw.times(-1));
-        SwerveModuleState desiredState = new SwerveModuleState(0.01, new Rotation2d());
+        SwerveModuleState desiredState = new SwerveModuleState(0.1, yaw.times(-1));
+//        SwerveModuleState desiredState = new SwerveModuleState(0.1, new Rotation2d());
 
         m_modules[0].setDesiredState(desiredState);
         m_modules[1].setDesiredState(desiredState);

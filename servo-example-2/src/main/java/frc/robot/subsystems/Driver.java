@@ -10,10 +10,14 @@ import edu.wpi.first.wpilibj2.command.PIDSubsystem;
 import frc.motorcontrol.Parallax360;
 
 public class Driver extends PIDSubsystem {
-    private static final double kV = 0.4; // turns/sec
+
+    private static final double kWheelDiameterMeters = 0.07;
+    //private static final double kV = 0.4; // turns/sec
+    private static final double kV = 0.12; // turns/sec
     private static final int kP = 0;
-    private static final double kI = 0;
-    private static final double kD = 0.1;
+    private static final double kI = 4;
+    private static final double kD = 0;
+    private static final double kMaxVelocityTurnsPerSec = 2.1;
 
     public final Parallax360 m_motor;
     public final DutyCycleEncoder m_input;
@@ -23,10 +27,8 @@ public class Driver extends PIDSubsystem {
     private double m_currentDt; // time units = microsec
     private double m_feedForwardOutput;
     private double m_controllerOutput;
-    private double m_velocity;
-    private double m_setpointVelocity; // meters per second
+    private double m_velocityMetersPerSec;
     private double m_userInput; // [-1,1]
-    private double m_setpointPosition;
 
     public Driver(int channel) {
         super(new PIDController(kP, kI, kD), 0);
@@ -34,8 +36,9 @@ public class Driver extends PIDSubsystem {
         m_motor = new Parallax360(String.format("Drive Motor %d", channel), channel);
         m_input = new DutyCycleEncoder(channel);
         m_input.setDutyCycleRange(0.027, 0.971);
-        m_input.setDistancePerRotation(-1 * Math.PI * 0.07); // wheels are 70mm diameter
+        m_input.setDistancePerRotation(-1 * Math.PI * kWheelDiameterMeters); // wheels are 70mm diameter
         // getController().enableContinuousInput(0, 1);
+        getController().setTolerance(0.01, 0.01);
         // these gains yield dx per period, averaged over a few periods.
         double[] gains = new double[5];
         gains[0] = 0.25;
@@ -47,8 +50,7 @@ public class Driver extends PIDSubsystem {
     }
 
     /**
-     * The example swerve code wants to use this to set *speed*, but i'm using
-     * the PID here to control *position*.  TODO: make speed PID work.
+     * Setpoint in meters per second.
      */
     @Override
     public void setSetpoint(double setpoint) {
@@ -56,42 +58,41 @@ public class Driver extends PIDSubsystem {
     }
 
     /**
-     * Distance in meters.
+     * Distance in meters.  this is actually distance, odometry.
      */
     public double getDistance() {
         return m_input.getDistance();
     }
 
+    /**
+     * Motor units [-1, 1]
+     */
     public void setMotorOutput(double value) {
         m_motor.set(value);
     }
 
+    /**
+     * @param output   Output is what the controller thinks, in motor units [-1, 1]
+     * @param setpoint Setpoint is the velocity we want to end up with, meters per
+     *                 sec
+     */
     @Override
     protected void useOutput(double output, double setpoint) {
         m_controllerOutput = output;
-        m_feedForwardOutput = kV * m_setpointVelocity / (0.02 * 0.07);
+        m_feedForwardOutput = kV * setpoint / kWheelDiameterMeters;
+    //    m_feedForwardOutput = 0;
         setMotorOutput(m_controllerOutput + m_feedForwardOutput);
-        // m_motor.set(output); // positive == counterclockwise.
-        // m_motor.set(0);
-    }
-
-    @Override
-    public void periodic() {
-        m_setpointPosition = getDistance() + m_setpointVelocity;
-        setSetpoint(m_setpointPosition);
-        super.periodic();
     }
 
     /**
-     * Current position in meters
+     * Current velocity in meters per second
      */
     @Override
     protected double getMeasurement() {
-        double distance = getDistance();
         m_currentDt = m_dt.calculate(RobotController.getFPGATime());
-        m_currentDx = m_dx.calculate(distance);
-        m_velocity = 1e6 * m_currentDx / m_currentDt;
-        return distance;
+        m_currentDx = m_dx.calculate(getDistance());
+        m_velocityMetersPerSec = 1e6 * m_currentDx / m_currentDt;
+        return m_velocityMetersPerSec;
     }
 
     /**
@@ -99,41 +100,41 @@ public class Driver extends PIDSubsystem {
      */
     public void setThrottle(double input) {
         m_userInput = input;
-        // 1.7 turn/sec, 70mm, 0.02 sec
-        m_setpointVelocity = input * 1.7 * 0.07 * 0.02;
+        setSetpoint(input * kMaxVelocityTurnsPerSec * kWheelDiameterMeters);
     }
 
     @Override
     public void initSendable(SendableBuilder builder) {
         super.initSendable(builder);
-        builder.addDoubleProperty("velocity", () -> m_velocity, null);
+        builder.addDoubleProperty("velocity m per s", () -> m_velocityMetersPerSec, null);
         builder.addDoubleProperty("motor state", this::motorState, null);
-        builder.addDoubleProperty("setpoint", this::getSetpoint, null);
-        builder.addDoubleProperty("distance", this::getDistance, null);
-        builder.addDoubleProperty("position error", this::getGetPositionError, null);
-        builder.addDoubleProperty("velocity error", this::getGetVelocityError, null);
-        builder.addDoubleProperty("current dt", () -> m_currentDt, null);
-        builder.addDoubleProperty("current dx", () -> m_currentDx, null);
+        builder.addDoubleProperty("setpoint m per s", this::getSetpoint, null);
+        builder.addDoubleProperty("distance meters", this::getDistance, null);
+        builder.addDoubleProperty("accel error m per s per s", this::getGetAccelerationError, null);
+        builder.addDoubleProperty("velocity error m per s", this::getGetVelocityError, null);
+        builder.addDoubleProperty("current dt us", () -> m_currentDt, null);
+        builder.addDoubleProperty("current dx m", () -> m_currentDx, null);
         builder.addDoubleProperty("controller output", () -> m_controllerOutput, null);
         builder.addDoubleProperty("feed forward output", () -> m_feedForwardOutput, null);
         builder.addDoubleProperty("user input", () -> m_userInput, null);
-        builder.addDoubleProperty("setpoint velocity", () -> m_setpointVelocity, null);
-        builder.addDoubleProperty("setpoint position", () -> m_setpointPosition, null);
+        builder.addBooleanProperty("at setpoint", () -> getController().atSetpoint(), null);
     }
 
     // methods below are just for logging.
 
     /**
-     * meters
+     * we actually give the pid velocity so asking it for position error yields
+     * velocity error in  meters per sec
      */
-    public double getGetPositionError() {
+    public double getGetVelocityError() {
         return getController().getPositionError();
     }
 
     /**
-     * meters per sec
+     * we actually give the pid velocity so asking it for velocity error yields
+     * acceleration error in meters per sec per sec
      */
-    public double getGetVelocityError() {
+    public double getGetAccelerationError() {
         return getController().getVelocityError();
     }
 
@@ -145,11 +146,10 @@ public class Driver extends PIDSubsystem {
     }
 
     /**
-     * Setpoint in meters.
+     * Setpoint in meters per second
      */
     public double getSetpoint() {
         return getController().getSetpoint();
     }
-
 
 }
