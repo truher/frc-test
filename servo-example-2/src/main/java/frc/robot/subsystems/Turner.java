@@ -18,7 +18,7 @@ import frc.motorcontrol.Parallax360;
 /**
  * Turns the swerve module.
  * 
- * currently measures turns in NWU radians, front of the robot is zero, +/- PI.
+ * Measures turns in NWU radians, front of the robot is zero, +/- PI.
  * 
  * Note because of the gear reduction the modules need to be set up within 1/4
  * turn of correct at startup.
@@ -55,11 +55,10 @@ public class Turner extends ProfiledPIDSubsystem {
   private final double m_offsetInEncoderTurns;
 
   /**
-   * Offset is measured in sensor units, [0,1]. To adjust the module zero in the
-   * positive (anticlockwise) direction, reduce the offset.
-   * 
-   * @param channel
-   * @param offsetInEncoderTurns
+   * @param channel              for PWM motor and duty cycle encoder.
+   * @param offsetInEncoderTurns Offset is measured in sensor units, [0,1]. To
+   *                             adjust the module zero in the positive
+   *                             (anticlockwise) direction, reduce the offset.
    */
   public Turner(int channel, double offsetInEncoderTurns) {
     super(
@@ -104,19 +103,12 @@ public class Turner extends ProfiledPIDSubsystem {
     setMotorOutput(m_controllerOutput + m_feedForwardOutput);
   }
 
-  // returns [0,1], inverting absolute position
-  // also update positions etc
+  /**
+   * Measure, correct, wrap, invert, and return NWU radians.
+   */
   @Override
   public double getMeasurement() {
-    double distanceRadians = m_input.getDistance();
-    double distanceWrapped = MathUtil.angleModulus(distanceRadians);
-    // double distanceWrapped = (distanceRadians - kInitialPosition) % 1; // might
-    // be negative
-    // distanceWrapped = Math.signum(distanceWrapped) >= 0 ? distanceWrapped :
-    // distanceWrapped + 1;
-    // note inversion here
-    // double newPosition = 1 - distanceWrapped;
-    double newPosition = -1.0 * distanceWrapped;
+    double newPosition = -1.0 * MathUtil.angleModulus(m_input.getDistance());
     double newVelocity = (newPosition - m_positionRadians) / kDtSec;
     double newAcceleration = (newVelocity - m_velocityRadiansPerSec) / kDtSec;
     m_positionRadians = newPosition;
@@ -168,7 +160,6 @@ public class Turner extends ProfiledPIDSubsystem {
 
   // methods below are just for logging/dashboards
 
-  // TODO: measure the effect of 6V voltage on accel and velocity.
   public double getVoltage6V() {
     return RobotController.getVoltage6V();
   }
@@ -246,7 +237,7 @@ public class Turner extends ProfiledPIDSubsystem {
   }
 
   /**
-   * * radians
+   * Most recent sampled NWU radians.
    */
   public double getPosition() {
     return m_positionRadians;

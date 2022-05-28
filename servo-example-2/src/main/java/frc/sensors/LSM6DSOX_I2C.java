@@ -23,7 +23,7 @@ public class LSM6DSOX_I2C implements Sendable {
     // for now i only care about yaw
     private static final byte LSM6DSOX_OUTZ_L_G = (byte) 0x26;
 
-    // A quick look at bias; TODO: take another look.
+    // This is based on quick look at bias, could be better.
     private static final int kRawOffset = -50;
 
     /**
