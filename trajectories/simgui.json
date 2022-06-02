@@ -1,0 +1,21 @@
+{
+  "NTProvider": {
+    "types": {
+      "/FMSInfo": "FMSInfo",
+      "/LiveWindow/Ungrouped/DifferentialDrive[1]": "DifferentialDrive",
+      "/SmartDashboard/Field": "Field2d"
+    },
+    "windows": {
+      "/SmartDashboard/Field": {
+        "traj": {
+          "arrowSize": 5,
+          "arrowWeight": 1.0,
+          "style": "Track"
+        },
+        "window": {
+          "visible": true
+        }
+      }
+    }
+  }
+}
