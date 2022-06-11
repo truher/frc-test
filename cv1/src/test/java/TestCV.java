@@ -370,7 +370,7 @@ public class TestCV {
     /**
      * this tries to do the same as above but with actual image warping.
      */
-    @Test
+    // @Test
     public void testPoseFromImage() {
 
         // these numbers are big because if they're 1 then the warped image is all
@@ -527,5 +527,183 @@ public class TestCV {
         System.out.println(inv.dump());
 
     }
+
+    /**
+     * Start with world coordinates, generate images, then generate poses.
+     * seems like it works within ~4 in world units
+     */
+    @Test
+    public void testPoseFromImageFromWorldCoords() {
+        // camera is at 2,0,-4, pointing 45 degrees to the left (which means negative
+        // rotation)
+        Mat worldRVec = Mat.zeros(3, 1, CvType.CV_64F);
+        worldRVec.put(0, 0, 0.0, -0.785398, 0.0);
+        System.out.println("worldRVec");
+        System.out.println(worldRVec.dump());
+        Mat worldTVec = Mat.zeros(3, 1, CvType.CV_64F);
+        worldTVec.put(0, 0, 20.0, 0.0, -40.0);
+        System.out.println("worldTVec");
+        System.out.println(worldTVec.dump());
+
+        // derive camera transformations
+        Mat worldRMat = new Mat();
+        Calib3d.Rodrigues(worldRVec, worldRMat);
+
+        // camera rotation is positive i.e. clockwise in these coords
+        Mat camRVec = new Mat();
+        Calib3d.Rodrigues(worldRMat.t(), camRVec);
+        System.out.println("camRVec");
+        System.out.println(camRVec.dump());
+
+        Mat camTVec = new Mat();
+        Core.gemm(worldRMat.t(), worldTVec, -1.0, new Mat(), 0.0, camTVec);
+        System.out.println("camTVec");
+        System.out.println(camTVec.dump());
+
+        // now do the same thing as above
+        MatOfPoint3f objectPts3f = new MatOfPoint3f(
+                new Point3(-10, -10, 0.0),
+                new Point3(-10, 10, 0.0),
+                new Point3(10, 10, 0.0),
+                new Point3(10, -10, 0.0));
+
+        Mat kMat = Mat.zeros(3, 3, CvType.CV_64F);
+        kMat.put(0, 0,
+                400.0, 0.0, 256.0,
+                0.0, 400.0, 256.0,
+                0.0, 0.0, 1.0);
+
+        MatOfDouble dMat = new MatOfDouble(Mat.zeros(4, 1, CvType.CV_64F));
+        MatOfPoint2f imagePts2f = new MatOfPoint2f();
+        Calib3d.projectPoints(objectPts3f, camRVec, camTVec, kMat, dMat, imagePts2f);
+
+        // now find the warp transform from the pairs
+        // i don't think getPerspectiveTransform understands negative numbers.
+        MatOfPoint2f object2d = new MatOfPoint2f(
+                new Point(0, 0),
+                new Point(0, 20),
+                new Point(20, 20),
+                new Point(20, 0));
+
+        Mat transformMat = Imgproc.getPerspectiveTransform(object2d, imagePts2f);
+        // make an actual image of the target
+        Size dsize = new Size(512, 512);
+        Mat visionTarget = Mat.zeros(dsize, CvType.CV_8U);
+        Imgproc.rectangle(visionTarget,
+                new Point(0, 0),
+                new Point(20, 20),
+                new Scalar(255, 255, 255),
+                Imgproc.FILLED);
+
+        Mat cameraView = Mat.zeros(dsize, CvType.CV_8U);
+        Imgproc.warpPerspective(visionTarget, cameraView, transformMat, dsize);
+        Imgcodecs.imwrite("C:\\Users\\joelt\\Desktop\\foo7.jpg", cameraView);
+
+        // now find the vertices in the image
+        List<MatOfPoint> contours = new ArrayList<>();
+        Mat hierarchy = new Mat();
+        Imgproc.findContours(cameraView,
+                contours,
+                hierarchy,
+                Imgproc.RETR_LIST,
+                Imgproc.CHAIN_APPROX_SIMPLE);
+        // there's just one contour
+        assertEquals(1, contours.size());
+
+        Imgproc.drawContours(cameraView, contours, 0, new Scalar(255, 0, 0));
+        Imgcodecs.imwrite("C:\\Users\\joelt\\Desktop\\foo7.jpg", cameraView);
+
+        MatOfPoint2f curve = new MatOfPoint2f(contours.get(0).toArray());
+        MatOfPoint2f approxCurve = new MatOfPoint2f();
+        Imgproc.approxPolyDP(curve, approxCurve, 3, true);
+        // contour is pretty close.
+        System.out.println("approx curve");
+        System.out.println(approxCurve.dump());
+        // there are four points
+        assertEquals(4, approxCurve.toList().size());
+
+        // these points are not necessarily the same order as the object points.
+        // how to associate the correct object point with the contour point?
+        // start upper left, counterclockwise. since the rotation axis is actually
+        // always Y, and the camera is always in front of the target, the left
+        // point is always actualy on the left, or most negative, side, and the
+        // upper one is above the lower one. isn't there some more clever
+        // way to make use of these constraints? oh actually the rotation axis
+        // is not always Y since the camera may be inclined.
+
+        MatOfInt hull = new MatOfInt();
+        // clockwise for convexhull is actually counterclockwise due to reversed axes
+        // so this is the order
+        Imgproc.convexHull(new MatOfPoint(approxCurve.toArray()), hull, true);
+        System.out.println("hull");
+        System.out.println(hull.dump());
+        // need to find the first element (index)
+        // upper left has min(x+y)
+        Point upperLeftPoint = new Point(Double.MAX_VALUE, Double.MAX_VALUE);
+        int idx = 0;
+        List<Point> approxCurveList = approxCurve.toList();
+        for (int i = 0; i < approxCurveList.size(); ++i) {
+            Point p = approxCurveList.get(i);
+            if (p.x + p.y < upperLeftPoint.x + upperLeftPoint.y) {
+                upperLeftPoint = p;
+                idx = i;
+            }
+        }
+        System.out.println("idx");
+        System.out.println(idx);
+
+        // put the idx'th element at zero
+        Collections.rotate(approxCurveList, -idx);
+
+        // ... aaand what's our position?
+        Mat newRVec = new Mat(); // rVec.clone();
+        Mat newTVec = new Mat(); // tVec.clone();
+        MatOfPoint2f imagePoints = new MatOfPoint2f(approxCurveList.toArray(new Point[0]));
+        System.out.println("imagePoints");
+        System.out.println(imagePoints.dump());
+
+        Calib3d.solvePnPRansac(objectPts3f, imagePoints, kMat, dMat,
+                newRVec, newTVec, false,
+                Calib3d.SOLVEPNP_SQPNP);
+        // rotation is totally wrong, mostly pointing in z, just about pi/2.
+        // maybe x and y are switched somehow.
+        System.out.println("original rvec");
+        System.out.println(camRVec.dump());
+        System.out.println("new rvec");
+        System.out.println(newRVec.dump());
+        // translation is pretty good
+        System.out.println("original tvec");
+        System.out.println(camTVec.dump());
+        System.out.println("new tvec");
+        System.out.println(newTVec.dump());
+
+        Mat rotM = new Mat();
+        Calib3d.Rodrigues(newRVec, rotM);
+
+        // camera rotation is just the reverse i.e. 1 radian the other way
+        Mat camRot = new Mat();
+        Calib3d.Rodrigues(rotM.t(), camRot);
+        System.out.println("actual camera rotation in world coords");
+        System.out.println(worldRVec.dump());
+        System.out.println("camera rotation in world coords");
+        System.out.println(camRot.dump());
+
+        // camera origin is at roughly (6.5, 2, -8)
+        Mat inv = new Mat();
+        Core.gemm(rotM.t(), newTVec, -1.0, new Mat(), 0.0, inv);
+        System.out.println("actual camera position in world coords");
+        System.out.println(worldTVec.dump());
+        System.out.println("camera position in world coords");
+        System.out.println(inv.dump());
+
+        double norm = Core.norm(worldTVec, inv);
+        System.out.println("translation norm");
+        System.out.println(norm);
+
+        norm = Core.norm(worldRVec, camRot);
+        System.out.println("rotation norm");
+        System.out.println(norm);
+    }
+
 
 }
