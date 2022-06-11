@@ -14,6 +14,7 @@ import org.opencv.core.MatOfPoint;
 import org.opencv.core.MatOfPoint2f;
 import org.opencv.core.MatOfPoint3f;
 import org.opencv.core.Point3;
+import org.opencv.core.Rect;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 import org.opencv.core.CvType;
@@ -532,14 +533,15 @@ public class TestCV {
      * Start with world coordinates, generate images, then generate poses.
      * seems like it works within ~4 in world units
      */
-    @Test
+    // @Test
     public void testPoseFromImageFromWorldCoords() {
         // camera is at 2,0,-4, pointing 45 degrees to the left (which means negative
         // rotation)
         Mat worldRVec = Mat.zeros(3, 1, CvType.CV_64F);
-        worldRVec.put(0, 0, 0.0, -0.785398, 0.0);
+        // worldRVec.put(0, 0, 0.0, -0.785398, 0.0);
         System.out.println("worldRVec");
         System.out.println(worldRVec.dump());
+
         Mat worldTVec = Mat.zeros(3, 1, CvType.CV_64F);
         worldTVec.put(0, 0, 20.0, 0.0, -40.0);
         System.out.println("worldTVec");
@@ -576,6 +578,10 @@ public class TestCV {
         MatOfDouble dMat = new MatOfDouble(Mat.zeros(4, 1, CvType.CV_64F));
         MatOfPoint2f imagePts2f = new MatOfPoint2f();
         Calib3d.projectPoints(objectPts3f, camRVec, camTVec, kMat, dMat, imagePts2f);
+
+        // maybe clipping
+        System.out.println("imagePts2f");
+        System.out.println(imagePts2f.dump());
 
         // now find the warp transform from the pairs
         // i don't think getPerspectiveTransform understands negative numbers.
@@ -705,5 +711,170 @@ public class TestCV {
         System.out.println(norm);
     }
 
+    /**
+     * synthesize an image of a vision target using the supplied location and
+     * camera.
+     */
+    public Mat makeImage(double dx, Mat kMat, MatOfDouble dMat, MatOfPoint2f object2d, MatOfPoint3f objectPts3f) {
+        // for now, no rotation
+        Mat worldRVec = Mat.zeros(3, 1, CvType.CV_64F);
+        // worldRVec.put(0, 0, 0.0, 0.0, 0.0);
+        Mat worldTVec = Mat.zeros(3, 1, CvType.CV_64F);
+        worldTVec.put(0, 0, dx, 0.0, -40.0);
+
+        Mat worldRMat = new Mat();
+        Calib3d.Rodrigues(worldRVec, worldRMat);
+
+        Mat camRVec = new Mat();
+        Calib3d.Rodrigues(worldRMat.t(), camRVec);
+
+        Mat camTVec = new Mat();
+        Core.gemm(worldRMat.t(), worldTVec, -1.0, new Mat(), 0.0, camTVec);
+
+        MatOfPoint2f imagePts2f = new MatOfPoint2f();
+        Calib3d.projectPoints(objectPts3f, camRVec, camTVec, kMat, dMat, imagePts2f);
+
+        //System.out.println("imagePts2f");
+        //System.out.println(imagePts2f.dump());
+
+        // if clipping, this isn't going to work, so bail
+        // actually it also doesn't work if the area is too close to the edge
+        Rect r = new Rect(10, 10, 490, 490);
+        for (Point p : imagePts2f.toList()) {
+            if (!r.contains(p)) {
+                // System.out.println("skipping");
+                return null;
+            }
+        }
+
+        Mat transformMat = Imgproc.getPerspectiveTransform(object2d, imagePts2f);
+
+        Size dsize = new Size(512, 512);
+        Mat visionTarget = Mat.zeros(dsize, CvType.CV_8U);
+        Imgproc.rectangle(visionTarget,
+                new Point(0, 0),
+                new Point(20, 20),
+                new Scalar(255, 255, 255),
+                Imgproc.FILLED);
+
+        Mat cameraView = Mat.zeros(dsize, CvType.CV_8U);
+        Imgproc.warpPerspective(visionTarget, cameraView, transformMat, dsize);
+        Imgcodecs.imwrite("C:\\Users\\joelt\\Desktop\\foo7.jpg", cameraView);
+        return cameraView;
+    }
+
+    /**
+     * find the target corners, in the correct order, in the supplied image.
+     */
+    public MatOfPoint2f getImagePoints(Mat rawCameraView) {
+
+        // first "binarize" to remove blur
+        Mat cameraView = new Mat();
+        Imgproc.threshold(rawCameraView, cameraView, 250, 255, Imgproc.THRESH_BINARY);
+
+        List<MatOfPoint> contours = new ArrayList<>();
+        Mat hierarchy = new Mat();
+        Imgproc.findContours(cameraView,
+                contours,
+                hierarchy,
+                Imgproc.RETR_LIST,
+                Imgproc.CHAIN_APPROX_SIMPLE);
+
+        assertEquals(1, contours.size());
+
+        Mat contourView2 = Mat.zeros(cameraView.size(), CvType.CV_8U);
+        Imgproc.drawContours(contourView2, contours, 0, new Scalar(255, 0, 0));
+        Imgcodecs.imwrite("C:\\Users\\joelt\\Desktop\\contours.jpg", contourView2);
+
+        MatOfPoint2f curve = new MatOfPoint2f(contours.get(0).toArray());
+        MatOfPoint2f approxCurve = new MatOfPoint2f();
+        Imgproc.approxPolyDP(curve, approxCurve, 5, true);
+        MatOfPoint points = new MatOfPoint(approxCurve.toArray());
+        //System.out.println("points");
+        //System.out.println(points.dump());
+
+        Mat contourView = Mat.zeros(cameraView.size(), CvType.CV_8U);
+        Imgproc.drawContours(contourView, List.of(points), 0, new Scalar(255, 0, 0));
+        Imgcodecs.imwrite("C:\\Users\\joelt\\Desktop\\poly.jpg", contourView);
+
+        assertEquals(4, approxCurve.toList().size());
+
+        MatOfInt hull = new MatOfInt();
+
+        Imgproc.convexHull(points, hull, true);
+
+        Point upperLeftPoint = new Point(Double.MAX_VALUE, Double.MAX_VALUE);
+        int idx = 0;
+        List<Point> approxCurveList = approxCurve.toList();
+        for (int i = 0; i < approxCurveList.size(); ++i) {
+            Point p = approxCurveList.get(i);
+            if (p.x + p.y < upperLeftPoint.x + upperLeftPoint.y) {
+                upperLeftPoint = p;
+                idx = i;
+            }
+        }
+
+        Collections.rotate(approxCurveList, -idx);
+
+        MatOfPoint2f imagePoints = new MatOfPoint2f(approxCurveList.toArray(new Point[0]));
+        return imagePoints;
+    }
+
+    /**
+     * same as above but do it many times
+     */
+    @Test
+    public void testStrafing() {
+
+        Mat kMat = Mat.zeros(3, 3, CvType.CV_64F);
+        kMat.put(0, 0,
+                400.0, 0.0, 256.0,
+                0.0, 400.0, 256.0,
+                0.0, 0.0, 1.0);
+
+        MatOfDouble dMat = new MatOfDouble(Mat.zeros(4, 1, CvType.CV_64F));
+
+        MatOfPoint2f object2d = new MatOfPoint2f(
+                new Point(0, 0),
+                new Point(0, 20),
+                new Point(20, 20),
+                new Point(20, 0));
+
+        MatOfPoint3f objectPts3f = new MatOfPoint3f(
+                new Point3(-10, -10, 0.0),
+                new Point3(-10, 10, 0.0),
+                new Point3(10, 10, 0.0),
+                new Point3(10, -10, 0.0));
+
+        System.out.printf("%s, %s\n", "actual", "predicted");
+
+        for (double dx = -20; dx < 20; dx += 1) {
+
+            Mat cameraView = makeImage(dx, kMat, dMat, object2d, objectPts3f);
+            if (cameraView == null)
+                continue;
+
+            MatOfPoint2f imagePoints = getImagePoints(cameraView);
+
+            Mat newRVec = new Mat();
+            Mat newTVec = new Mat();
+            Calib3d.solvePnPRansac(objectPts3f, imagePoints, kMat, dMat,
+                    newRVec, newTVec, false,
+                    Calib3d.SOLVEPNP_SQPNP);
+
+            Mat rotM = new Mat();
+            Calib3d.Rodrigues(newRVec, rotM);
+
+            Mat camRot = new Mat();
+            Calib3d.Rodrigues(rotM.t(), camRot);
+
+            Mat inv = new Mat();
+            Core.gemm(rotM.t(), newTVec, -1.0, new Mat(), 0.0, inv);
+
+            System.out.printf("%f, %f\n", dx, inv.get(0, 0)[0]);
+
+        }
+
+    }
 
 }
