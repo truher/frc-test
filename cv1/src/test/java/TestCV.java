@@ -715,12 +715,19 @@ public class TestCV {
      * synthesize an image of a vision target using the supplied location and
      * camera.
      */
-    public Mat makeImage(double dx, Mat kMat, MatOfDouble dMat, MatOfPoint2f object2d, MatOfPoint3f objectPts3f) {
+    public Mat makeImage(double dx, double dy, double dz, Mat kMat, MatOfDouble dMat,
+            MatOfPoint2f object2d, MatOfPoint3f objectPts3f) {
         // for now, no rotation
+        // TODO: upward tilt
         Mat worldRVec = Mat.zeros(3, 1, CvType.CV_64F);
         // worldRVec.put(0, 0, 0.0, 0.0, 0.0);
+        // System.out.println("actual rotation");
+        // System.out.println(worldRVec.dump());
+
         Mat worldTVec = Mat.zeros(3, 1, CvType.CV_64F);
-        worldTVec.put(0, 0, dx, 0.0, -40.0);
+        worldTVec.put(0, 0, dx, dy, dz);
+        // System.out.println("actual translation");
+        // System.out.println(worldTVec.dump());
 
         Mat worldRMat = new Mat();
         Calib3d.Rodrigues(worldRVec, worldRMat);
@@ -734,8 +741,8 @@ public class TestCV {
         MatOfPoint2f imagePts2f = new MatOfPoint2f();
         Calib3d.projectPoints(objectPts3f, camRVec, camTVec, kMat, dMat, imagePts2f);
 
-        //System.out.println("imagePts2f");
-        //System.out.println(imagePts2f.dump());
+        // System.out.println("imagePts2f");
+        // System.out.println(imagePts2f.dump());
 
         // if clipping, this isn't going to work, so bail
         // actually it also doesn't work if the area is too close to the edge
@@ -752,8 +759,8 @@ public class TestCV {
         Size dsize = new Size(512, 512);
         Mat visionTarget = Mat.zeros(dsize, CvType.CV_8U);
         Imgproc.rectangle(visionTarget,
-                new Point(0, 0),
-                new Point(20, 20),
+                object2d.toArray()[0], // TODO: find the corners new Point(0, 0),
+                object2d.toArray()[2], // new Point(20, 20),
                 new Scalar(255, 255, 255),
                 Imgproc.FILLED);
 
@@ -790,8 +797,8 @@ public class TestCV {
         MatOfPoint2f approxCurve = new MatOfPoint2f();
         Imgproc.approxPolyDP(curve, approxCurve, 5, true);
         MatOfPoint points = new MatOfPoint(approxCurve.toArray());
-        //System.out.println("points");
-        //System.out.println(points.dump());
+        // System.out.println("points");
+        // System.out.println(points.dump());
 
         Mat contourView = Mat.zeros(cameraView.size(), CvType.CV_8U);
         Imgproc.drawContours(contourView, List.of(points), 0, new Scalar(255, 0, 0));
@@ -820,6 +827,24 @@ public class TestCV {
         return imagePoints;
     }
 
+    public void extractPose(double dx, double dy, double dz, Mat newRVec, Mat newTVec) {
+        Mat rotM = new Mat();
+        Calib3d.Rodrigues(newRVec, rotM);
+
+        Mat camRot = new Mat();
+        Calib3d.Rodrigues(rotM.t(), camRot);
+        // System.out.println("camera rotation");
+        // System.out.println(camRot.dump());
+
+        Mat inv = new Mat();
+        Core.gemm(rotM.t(), newTVec, -1.0, new Mat(), 0.0, inv);
+        // System.out.println("camera translation");
+        // System.out.println(inv.dump());
+
+        System.out.printf("%f, %f, %f, %f, %f, %f\n", dx, dy, dz,
+                inv.get(0, 0)[0], inv.get(1, 0)[0], inv.get(2, 0)[0]);
+    }
+
     /**
      * same as above but do it many times
      */
@@ -828,53 +853,43 @@ public class TestCV {
 
         Mat kMat = Mat.zeros(3, 3, CvType.CV_64F);
         kMat.put(0, 0,
-                400.0, 0.0, 256.0,
-                0.0, 400.0, 256.0,
+                300.0, 0.0, 256.0,
+                0.0, 300.0, 256.0,
                 0.0, 0.0, 1.0);
 
+        // TODO: measure distortion in a real camera
+        // until then, just add some
         MatOfDouble dMat = new MatOfDouble(Mat.zeros(4, 1, CvType.CV_64F));
+        // this confuses pnpransac, use normal pnp instead
+        // TODO: add more kinds of distortion
+        dMat.put(0, 0, -0.5, 0.0, 0.0, 0.0);
 
         MatOfPoint2f object2d = new MatOfPoint2f(
                 new Point(0, 0),
-                new Point(0, 20),
-                new Point(20, 20),
-                new Point(20, 0));
+                new Point(0, 10),
+                new Point(30, 10),
+                new Point(30, 0));
 
         MatOfPoint3f objectPts3f = new MatOfPoint3f(
-                new Point3(-10, -10, 0.0),
-                new Point3(-10, 10, 0.0),
-                new Point3(10, 10, 0.0),
-                new Point3(10, -10, 0.0));
+                new Point3(-15, -5, 0.0),
+                new Point3(-15, 5, 0.0),
+                new Point3(15, 5, 0.0),
+                new Point3(15, -5, 0.0));
 
-        System.out.printf("%s, %s\n", "actual", "predicted");
+        System.out.println("dx, dy, dz, pdx, pdy, pdz");
 
-        for (double dx = -20; dx < 20; dx += 1) {
-
-            Mat cameraView = makeImage(dx, kMat, dMat, object2d, objectPts3f);
-            if (cameraView == null)
-                continue;
-
-            MatOfPoint2f imagePoints = getImagePoints(cameraView);
-
-            Mat newRVec = new Mat();
-            Mat newTVec = new Mat();
-            Calib3d.solvePnPRansac(objectPts3f, imagePoints, kMat, dMat,
-                    newRVec, newTVec, false,
-                    Calib3d.SOLVEPNP_SQPNP);
-
-            Mat rotM = new Mat();
-            Calib3d.Rodrigues(newRVec, rotM);
-
-            Mat camRot = new Mat();
-            Calib3d.Rodrigues(rotM.t(), camRot);
-
-            Mat inv = new Mat();
-            Core.gemm(rotM.t(), newTVec, -1.0, new Mat(), 0.0, inv);
-
-            System.out.printf("%f, %f\n", dx, inv.get(0, 0)[0]);
-
+        final double dy = 0.0;
+        for (double dz = -70; dz < -30; dz += 2) {
+            for (double dx = -20; dx < 21; dx += 2) {
+                Mat cameraView = makeImage(dx, dy, dz, kMat, dMat, object2d, objectPts3f);
+                if (cameraView == null)
+                    continue;
+                MatOfPoint2f imagePoints = getImagePoints(cameraView);
+                Mat newRVec = new Mat();
+                Mat newTVec = new Mat();
+                Calib3d.solvePnP(objectPts3f, imagePoints, kMat, dMat, newRVec, newTVec);
+                extractPose(dx, dy, dz, newRVec, newTVec);
+            }
         }
-
     }
-
 }
