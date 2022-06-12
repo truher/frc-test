@@ -719,21 +719,35 @@ public class TestCV {
             MatOfPoint2f object2d, MatOfPoint3f objectPts3f) {
         // for now, no rotation
         // TODO: upward tilt
-        Mat worldRVec = Mat.zeros(3, 1, CvType.CV_64F);
-        // worldRVec.put(0, 0, 0.0, 0.0, 0.0);
-        // System.out.println("actual rotation");
-        // System.out.println(worldRVec.dump());
+        // want to specify *camera* rotation here, and derive the world rotation etc
+        // from it.
+        Mat camRVec = Mat.zeros(3, 1, CvType.CV_64F);
+        camRVec.put(0, 0, -0.25, 0.0, 0.0); // rotate the camera up means rotate the world down
+        // camRVec.put(0, 0, 0.0, 0.0, 0.0);
+        Mat camRMat = new Mat();
+        Calib3d.Rodrigues(camRVec, camRMat);
+        Mat worldRMat = camRMat.t();
+        Mat worldRVec = new Mat();
+        Calib3d.Rodrigues(worldRMat, worldRVec);
+        System.out.println("world rotation");
+        System.out.println(worldRVec.dump());
+
+        // this is the old one
+        // Mat worldRVec = Mat.zeros(3, 1, CvType.CV_64F);
+        //// worldRVec.put(0, 0, 0.0, 0.0, 0.0);
+        //// System.out.println("actual rotation");
+        //// System.out.println(worldRVec.dump());//
+
+        // Mat worldRMat = new Mat();
+        // Calib3d.Rodrigues(worldRVec, worldRMat);///
+        //
+        // Mat camRVec = new Mat();
+        // Calib3d.Rodrigues(worldRMat.t(), camRVec);
 
         Mat worldTVec = Mat.zeros(3, 1, CvType.CV_64F);
         worldTVec.put(0, 0, dx, dy, dz);
         // System.out.println("actual translation");
         // System.out.println(worldTVec.dump());
-
-        Mat worldRMat = new Mat();
-        Calib3d.Rodrigues(worldRVec, worldRMat);
-
-        Mat camRVec = new Mat();
-        Calib3d.Rodrigues(worldRMat.t(), camRVec);
 
         Mat camTVec = new Mat();
         Core.gemm(worldRMat.t(), worldTVec, -1.0, new Mat(), 0.0, camTVec);
@@ -862,7 +876,8 @@ public class TestCV {
         MatOfDouble dMat = new MatOfDouble(Mat.zeros(4, 1, CvType.CV_64F));
         // this confuses pnpransac, use normal pnp instead
         // TODO: add more kinds of distortion
-        dMat.put(0, 0, -0.5, 0.0, 0.0, 0.0);
+        dMat.put(0, 0, -0.05, 0.0, 0.0, 0.0);
+        // dMat.put(0, 0, 0.0, 0.0, 0.0, 0.0);
 
         MatOfPoint2f object2d = new MatOfPoint2f(
                 new Point(0, 0),
@@ -878,8 +893,8 @@ public class TestCV {
 
         System.out.println("dx, dy, dz, pdx, pdy, pdz");
 
-        final double dy = 0.0;
-        for (double dz = -70; dz < -30; dz += 2) {
+        final double dy = 20.0; // camera is below (+y) relative to the target
+        for (double dz = -80; dz < -75; dz += 2) {
             for (double dx = -20; dx < 21; dx += 2) {
                 Mat cameraView = makeImage(dx, dy, dz, kMat, dMat, object2d, objectPts3f);
                 if (cameraView == null)
