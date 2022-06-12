@@ -714,8 +714,12 @@ public class TestCV {
     /**
      * synthesize an image of a vision target using the supplied location and
      * camera.
+     * 
+     * @param object2d    corners of the target for rendering: TODO remove this
+     * @param objectPts3f the target in world coords
      */
-    public Mat makeImage(double dx, double dy, double dz, Mat kMat, MatOfDouble dMat,
+    public Mat makeImage(double dx, double dy, double dz,
+            Mat kMat, MatOfDouble dMat,
             MatOfPoint2f object2d, MatOfPoint3f objectPts3f) {
         // for now, no rotation
         // TODO: upward tilt
@@ -729,8 +733,8 @@ public class TestCV {
         Mat worldRMat = camRMat.t();
         Mat worldRVec = new Mat();
         Calib3d.Rodrigues(worldRMat, worldRVec);
-        System.out.println("world rotation");
-        System.out.println(worldRVec.dump());
+        // System.out.println("world rotation");
+        // System.out.println(worldRVec.dump());
 
         // this is the old one
         // Mat worldRVec = Mat.zeros(3, 1, CvType.CV_64F);
@@ -768,15 +772,18 @@ public class TestCV {
             }
         }
 
+        // instead of object2d, find a way to project objectPts3f into a plane.
+
         Mat transformMat = Imgproc.getPerspectiveTransform(object2d, imagePts2f);
 
         Size dsize = new Size(512, 512);
         Mat visionTarget = Mat.zeros(dsize, CvType.CV_8U);
-        Imgproc.rectangle(visionTarget,
-                object2d.toArray()[0], // TODO: find the corners new Point(0, 0),
-                object2d.toArray()[2], // new Point(20, 20),
-                new Scalar(255, 255, 255),
-                Imgproc.FILLED);
+        Imgproc.fillConvexPoly(visionTarget, new MatOfPoint(object2d.toArray()), new Scalar(255, 255, 255));
+        // Imgproc.rectangle(visionTarget,
+        // object2d.toArray()[0], // TODO: find the corners new Point(0, 0),
+        // object2d.toArray()[2], // new Point(20, 20),
+        // new Scalar(255, 255, 255),
+        // Imgproc.FILLED);
 
         Mat cameraView = Mat.zeros(dsize, CvType.CV_8U);
         Imgproc.warpPerspective(visionTarget, cameraView, transformMat, dsize);
@@ -862,7 +869,7 @@ public class TestCV {
     /**
      * same as above but do it many times
      */
-    @Test
+    // @Test
     public void testStrafing() {
 
         Mat kMat = Mat.zeros(3, 3, CvType.CV_64F);
@@ -894,8 +901,8 @@ public class TestCV {
         System.out.println("dx, dy, dz, pdx, pdy, pdz");
 
         final double dy = 20.0; // camera is below (+y) relative to the target
-        for (double dz = -80; dz < -75; dz += 2) {
-            for (double dx = -20; dx < 21; dx += 2) {
+        for (double dz = -80; dz < -20; dz += 2) {
+            for (double dx = -20; dx < 21; dx += 5) {
                 Mat cameraView = makeImage(dx, dy, dz, kMat, dMat, object2d, objectPts3f);
                 if (cameraView == null)
                     continue;
@@ -906,5 +913,60 @@ public class TestCV {
                 extractPose(dx, dy, dz, newRVec, newTVec);
             }
         }
+    }
+
+    /**
+     * find a way to synthesize the target and also figure out units
+     */
+    @Test
+    public void testProjection() {
+        // MatOfPoint2f object2d = new MatOfPoint2f(
+        // new Point(0, 0),
+        // new Point(0, 10),
+        // new Point(30, 10),
+        // new Point(30, 0));
+
+        // the actual target geometry in world coordintes: the target
+        // is centered at the origin, and measures 0.1m high by 0.4m wide.
+        double targetWidthMeters = 0.4;
+        double targetHeightMeters = 0.1;
+        MatOfPoint3f objectPts3f = new MatOfPoint3f(
+                new Point3(-targetWidthMeters / 2, -targetHeightMeters / 2, 0.0),
+                new Point3(-targetWidthMeters / 2, targetHeightMeters / 2, 0.0),
+                new Point3(targetWidthMeters / 2, targetHeightMeters / 2, 0.0),
+                new Point3(targetWidthMeters / 2, -targetHeightMeters / 2, 0.0));
+
+        // from calib3d.html, camera points (u,v) are derived, e.g.:
+        // u = fx * Xc/Zc + cx
+        // so camera coords are still in the same *units* as
+        // world coords, just a different pose.
+
+        Size dsize = new Size(512, 512);
+        // camera matrix is in pixels
+        Mat kMat = Mat.zeros(3, 3, CvType.CV_64F);
+        kMat.put(0, 0,
+                512.0, 0.0, dsize.width / 2,
+                0.0, 512.0, dsize.height / 2,
+                0.0, 0.0, 1.0);
+        // no distortion
+        MatOfDouble dMat = new MatOfDouble(Mat.zeros(4, 1, CvType.CV_64F));
+
+        // the R and t transform world points to camera points
+        Mat camRVec = Mat.zeros(3, 1, CvType.CV_64F); // no rotation
+        Mat camTVec = Mat.zeros(3, 1, CvType.CV_64F);
+        camTVec.put(0, 0, 0, 0, targetWidthMeters);
+        // same distance as width, which means that the Xc/Zc ratio is 1
+        // so the projection should be the same width as the focal length
+
+        MatOfPoint2f imagePts2f = new MatOfPoint2f();
+        Calib3d.projectPoints(objectPts3f, camRVec, camTVec, kMat, dMat, imagePts2f);
+        System.out.println(imagePts2f.dump());
+
+        Mat visionTarget = Mat.zeros(dsize, CvType.CV_8U);
+        Scalar color = new Scalar(255, 255, 255);
+        MatOfPoint points = new MatOfPoint(imagePts2f.toArray());
+        Imgproc.fillConvexPoly(visionTarget, points, color);
+
+        Imgcodecs.imwrite("C:\\Users\\joelt\\Desktop\\projection.jpg", visionTarget);
     }
 }
