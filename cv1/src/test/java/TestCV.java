@@ -1,11 +1,17 @@
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+
+import vision.VisionUtil;
+
 import org.junit.Test;
 import org.opencv.calib3d.Calib3d;
 import org.opencv.core.Core;
-import org.opencv.core.Scalar;
-import org.opencv.core.Point;
+import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfByte;
 import org.opencv.core.MatOfDouble;
@@ -13,17 +19,13 @@ import org.opencv.core.MatOfInt;
 import org.opencv.core.MatOfPoint;
 import org.opencv.core.MatOfPoint2f;
 import org.opencv.core.MatOfPoint3f;
+import org.opencv.core.Point;
 import org.opencv.core.Point3;
 import org.opencv.core.Rect;
+import org.opencv.core.Scalar;
+import org.opencv.core.Size;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
-import org.opencv.core.CvType;
-import org.opencv.core.Size;
-
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.ArrayList;
 
 public class TestCV {
     public static final double DELTA = 0.00001;
@@ -32,19 +34,72 @@ public class TestCV {
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
     }
 
-    // @Test
-    public void testToy() {
-        assertTrue(true);
+    @Test
+    public void testCombiningRotations() {
+        Mat pan = Mat.zeros(3, 1, CvType.CV_64F);
+        pan.put(0, 0, 0.0, -0.5, 0.0); // pan to right, world to left, so negative
+        Mat tilt = Mat.zeros(3, 1, CvType.CV_64F);
+        tilt.put(0, 0, -0.5, 0.0, 0.0); // tilt up, world down, so negative
+        // System.out.println("pan vector");
+        // System.out.println(pan.dump());
+        // System.out.println("tilt vector");
+        // System.out.println(tilt.dump());
+        // pan first to keep horizon horizontal
+        Mat productV = VisionUtil.combineRotations(pan, tilt);
+        // System.out.println("product vector");
+        // System.out.println(productV.dump());
+        assertEquals(-0.48945, productV.get(0, 0)[0], DELTA);
+        assertEquals(-0.48945, productV.get(1, 0)[0], DELTA);
+        assertEquals(0.12498, productV.get(2, 0)[0], DELTA);
     }
 
+    @Test
+    public void testRotm2euler() {
+        Mat pan = Mat.zeros(3, 1, CvType.CV_64F);
+        pan.put(0, 0, 0.0, -0.7854, 0.0); // pan 45deg to right, world to left, so
+        // negative
+        Mat tilt = Mat.zeros(3, 1, CvType.CV_64F);
+        tilt.put(0, 0, -0.7854, 0.0, 0.0); // tilt 45deg up, world down, so negative
+        // System.out.println("pan vector");
+        // System.out.println(pan.dump());
+        // System.out.println("tilt vector");
+        // System.out.println(tilt.dump());
+        // pan first to keep horizon horizontal
+        Mat productV = VisionUtil.combineRotations(pan, tilt);
+        Mat productM = new Mat();
+        Calib3d.Rodrigues(productV, productM);
+
+        Mat r = productM.t();
+
+        // System.out.println("result");
+        // System.out.println(r.dump());
+
+        Mat euler = VisionUtil.rotm2euler(r);
+
+        // System.out.println("euler radians");
+        // System.out.println(euler.dump());
+
+        assertEquals(0.7854, euler.get(0, 0)[0], DELTA); // upward tilt
+        assertEquals(0.7854, euler.get(1, 0)[0], DELTA); // rightward pan
+        assertEquals(0, euler.get(2, 0)[0], DELTA); // no rotation around the camera axis
+    }
+
+    /**
+     * figure out how to read a file.
+     */
     // @Test
     public void testFile() throws Exception {
+
         String foo = new String(getClass().getClassLoader().getResourceAsStream("readme.md").readAllBytes());
         assertEquals("hello", foo);
     }
 
+    /**
+     * figure out how to read an image file and find contours in it
+     */
     // @Test
     public void testImage() throws Exception {
+
         // (100,100), (200,200)
         // (300,300), (400,400)
         byte[] imgbytes = getClass().getClassLoader().getResourceAsStream("two_squares.png").readAllBytes();
@@ -715,6 +770,9 @@ public class TestCV {
     /**
      * synthesize an image of a vision target using the supplied location and
      * camera.
+     * using a known target geometry, generate an image of the target viewed
+     * from the specified location, which is the position of the camera in the
+     * world, and the rotations are rotations *of the camera*.
      * 
      * @param xPos                 camera location in world coords
      * @param yPos                 camera location in world coords
@@ -733,32 +791,27 @@ public class TestCV {
             MatOfDouble dMat,
             MatOfPoint3f targetGeometryMeters,
             Size dsize) {
-
-        MatOfPoint2f targetImageGeometry = makeTargetImageGeometryPixels(targetGeometryMeters, 1000);
-
-        // camera up means world down, so negative
-        // camera right means world left, so negative
-        Mat camRV = panTilt(-pan, -tilt);
-
-        Mat camRMat = new Mat();
-        Calib3d.Rodrigues(camRV, camRMat);
-
-        Mat worldRMat = camRMat.t();
-        Mat worldRVec = new Mat();
-        Calib3d.Rodrigues(worldRMat, worldRVec);
-
         Mat worldTVec = Mat.zeros(3, 1, CvType.CV_64F);
         worldTVec.put(0, 0, xPos, yPos, zPos);
+        MatOfPoint2f targetImageGeometry = VisionUtil.makeTargetImageGeometryPixels(targetGeometryMeters, 1000);
 
-        Mat camTVec = new Mat();
-        Core.gemm(worldRMat.t(), worldTVec, -1.0, new Mat(), 0.0, camTVec);
+        // make an image corresponding to the pixel geometry, for warping
+        Mat visionTarget = new Mat(VisionUtil.boundingBox(targetImageGeometry), CvType.CV_8U,
+                new Scalar(255, 255, 255));
+        Imgcodecs.imwrite("C:\\Users\\joelt\\Desktop\\projection.jpg", visionTarget);
+
+        // camera up/right means world down/left, so both negative
+        Mat camRV = VisionUtil.panTilt(-pan, -tilt);
+
+        Mat camTVec = VisionUtil.world2Cam(camRV, worldTVec);
 
         MatOfPoint2f skewedImagePts2f = new MatOfPoint2f();
         Calib3d.projectPoints(targetGeometryMeters, camRV, camTVec, kMat, dMat, skewedImagePts2f);
 
         // if clipping, this isn't going to work, so bail
         // actually it also doesn't work if the area is too close to the edge
-        Rect r = new Rect(10, 10, 490, 490);
+        final int border = 10;
+        Rect r = new Rect(border, border, (int) (dsize.width - border), (int) (dsize.height - border));
         for (Point p : skewedImagePts2f.toList()) {
             if (!r.contains(p)) {
                 return null;
@@ -767,10 +820,6 @@ public class TestCV {
 
         Mat transformMat = Imgproc.getPerspectiveTransform(targetImageGeometry, skewedImagePts2f);
 
-        // make an image corresponding to the pixel geometry, for warping
-        Mat visionTarget = new Mat(boundingBox(targetImageGeometry), CvType.CV_8U, new Scalar(255, 255, 255));
-        Imgcodecs.imwrite("C:\\Users\\joelt\\Desktop\\projection.jpg", visionTarget);
-
         Mat cameraView = Mat.zeros(dsize, CvType.CV_8U);
         Imgproc.warpPerspective(visionTarget, cameraView, transformMat, dsize);
         Imgcodecs.imwrite("C:\\Users\\joelt\\Desktop\\foo7.jpg", cameraView);
@@ -778,125 +827,19 @@ public class TestCV {
     }
 
     /**
-     * using a known target geometry, generate an image of the target viewed
-     * from the specified location.
-     */
-    public Mat makeSkewedTargetImage(
-            double xPos,
-            double yPos,
-            double zPos,
-            double tilt,
-            double pan,
-            Mat kMat,
-            MatOfDouble dMat,
-            MatOfPoint3f targetGeometryMeters,
-            Size dsize) {
-
-        MatOfPoint2f targetImageGeometry = makeTargetImageGeometryPixels(targetGeometryMeters, 1000);
-        System.out.println("target image geometry");
-        System.out.println(targetImageGeometry.dump());
-
-        // make an image corresponding to the pixel geometry, for warping
-        Mat visionTarget = new Mat(boundingBox(targetImageGeometry), CvType.CV_8U, new Scalar(255, 255, 255));
-        Imgcodecs.imwrite("C:\\Users\\joelt\\Desktop\\projection.jpg", visionTarget);
-
-        Mat camRVec = Mat.zeros(3, 1, CvType.CV_64F);
-        camRVec.put(0, 0, 0.0, -pan, 0.0);
-
-        Mat camTVec = Mat.zeros(3, 1, CvType.CV_64F);
-        camTVec.put(0, 0, xPos, yPos, zPos);
-
-        MatOfPoint2f skewedImagePts2f = new MatOfPoint2f();
-        // same object, different camera position
-        Calib3d.projectPoints(targetGeometryMeters, camRVec, camTVec, kMat, dMat, skewedImagePts2f);
-        // transform between the two projections
-        Mat transformMat = Imgproc.getPerspectiveTransform(targetImageGeometry, skewedImagePts2f);
-        // apply the transform to the flat image
-        Mat cameraView = Mat.zeros(dsize, CvType.CV_8U);
-        Imgproc.warpPerspective(visionTarget, cameraView, transformMat, dsize);
-        return cameraView;
-    }
-
-    /**
-     * find the target corners, in the correct order, in the supplied image.
-     */
-    public MatOfPoint2f getImagePoints(Mat rawCameraView) {
-
-        // first "binarize" to remove blur
-        Mat cameraView = new Mat();
-        Imgproc.threshold(rawCameraView, cameraView, 250, 255, Imgproc.THRESH_BINARY);
-
-        List<MatOfPoint> contours = new ArrayList<>();
-        Mat hierarchy = new Mat();
-        Imgproc.findContours(cameraView,
-                contours,
-                hierarchy,
-                Imgproc.RETR_LIST,
-                Imgproc.CHAIN_APPROX_SIMPLE);
-
-        assertEquals(1, contours.size());
-
-        Mat contourView2 = Mat.zeros(cameraView.size(), CvType.CV_8U);
-        Imgproc.drawContours(contourView2, contours, 0, new Scalar(255, 0, 0));
-        Imgcodecs.imwrite("C:\\Users\\joelt\\Desktop\\contours.jpg", contourView2);
-
-        MatOfPoint2f curve = new MatOfPoint2f(contours.get(0).toArray());
-        MatOfPoint2f approxCurve = new MatOfPoint2f();
-        Imgproc.approxPolyDP(curve, approxCurve, 5, true);
-        MatOfPoint points = new MatOfPoint(approxCurve.toArray());
-        // System.out.println("points");
-        // System.out.println(points.dump());
-
-        Mat contourView = Mat.zeros(cameraView.size(), CvType.CV_8U);
-        Imgproc.drawContours(contourView, List.of(points), 0, new Scalar(255, 0, 0));
-        Imgcodecs.imwrite("C:\\Users\\joelt\\Desktop\\poly.jpg", contourView);
-
-        assertEquals(4, approxCurve.toList().size());
-
-        MatOfInt hull = new MatOfInt();
-
-        Imgproc.convexHull(points, hull, true);
-
-        Point upperLeftPoint = new Point(Double.MAX_VALUE, Double.MAX_VALUE);
-        int idx = 0;
-        List<Point> approxCurveList = approxCurve.toList();
-        for (int i = 0; i < approxCurveList.size(); ++i) {
-            Point p = approxCurveList.get(i);
-            if (p.x + p.y < upperLeftPoint.x + upperLeftPoint.y) {
-                upperLeftPoint = p;
-                idx = i;
-            }
-        }
-
-        Collections.rotate(approxCurveList, -idx);
-
-        MatOfPoint2f imagePoints = new MatOfPoint2f(approxCurveList.toArray(new Point[0]));
-        return imagePoints;
-    }
-
-    private Mat makeKMat(double f, Size dsize) {
-        Mat kMat = Mat.zeros(3, 3, CvType.CV_64F);
-        kMat.put(0, 0,
-                f, 0.0, dsize.width / 2,
-                0.0, f, dsize.height / 2,
-                0.0, 0.0, 1.0);
-        return kMat;
-    }
-
-    /**
      * same as above but do it many times
      */
-    // @Test
+    @Test
     public void testStrafing() {
         Size dsize = new Size(960, 540);
-        Mat kMat = makeKMat(512.0, dsize);
+        Mat kMat = VisionUtil.makeIntrinsicMatrix(512.0, dsize);
 
         // TODO: measure distortion in a real camera
         // Note: distortion confuses pnpransac, use normal pnp instead
         MatOfDouble dMat = new MatOfDouble(Mat.zeros(4, 1, CvType.CV_64F));
         dMat.put(0, 0, -0.05, 0.0, 0.0, 0.0); // a bit of barrel
         // target is 0.4m wide, 0.1m high .
-        MatOfPoint3f targetGeometryMeters = makeTargetGeometry3f(0.4, 0.1);
+        MatOfPoint3f targetGeometryMeters = VisionUtil.makeTargetGeometry3f(0.4, 0.1);
 
         System.out.println("dx, dy, dz, pdx, pdy, pdz");
 
@@ -909,20 +852,24 @@ public class TestCV {
                         targetGeometryMeters, dsize);
                 if (cameraView == null)
                     continue;
-                MatOfPoint2f imagePoints = getImagePoints(cameraView);
-                Mat newRVec = new Mat();
-                Mat newTVec = new Mat();
+                MatOfPoint2f imagePoints = VisionUtil.getImagePoints(cameraView);
+                if (imagePoints == null)
+                    continue;
+                Mat newCamRVec = new Mat();
+                Mat newCamTVec = new Mat();
                 Calib3d.solvePnP(targetGeometryMeters, imagePoints,
-                        kMat, dMat, newRVec, newTVec);
+                        kMat, dMat, newCamRVec, newCamTVec);
 
-                Mat rotM = new Mat();
-                Calib3d.Rodrigues(newRVec, rotM);
+                Mat newCamRMat = new Mat();
+                Calib3d.Rodrigues(newCamRVec, newCamRMat);
+                Mat newWorldRMat = newCamRMat.t();
+                // TODO: check that this is the right transform
                 Mat camRot = new Mat();
-                Calib3d.Rodrigues(rotM.t(), camRot);
-                Mat inv = new Mat();
-                Core.gemm(rotM.t(), newTVec, -1.0, new Mat(), 0.0, inv);
+                Calib3d.Rodrigues(newWorldRMat, camRot);
+                Mat newWorldTVec = new Mat();
+                Core.gemm(newWorldRMat, newCamTVec, -1.0, new Mat(), 0.0, newWorldTVec);
                 System.out.printf("%f, %f, %f, %f, %f, %f\n", dx, dy, dz,
-                        inv.get(0, 0)[0], inv.get(1, 0)[0], inv.get(2, 0)[0]);
+                        newWorldTVec.get(0, 0)[0], newWorldTVec.get(1, 0)[0], newWorldTVec.get(2, 0)[0]);
             }
         }
     }
@@ -930,159 +877,27 @@ public class TestCV {
     /**
      * find a way to synthesize the target and also figure out units
      */
-    // @Test
+    @Test
     public void testProjection() {
         Size dsize = new Size(960, 540); // 1/4 of 1080, just to i can see it more easily
-        Mat kMat = makeKMat(512.0, dsize);
+        Mat kMat = VisionUtil.makeIntrinsicMatrix(512.0, dsize);
         MatOfDouble dMat = new MatOfDouble(Mat.zeros(4, 1, CvType.CV_64F));
+
         // target is 0.4m wide, 0.1m high .
-        MatOfPoint3f targetGeometryMeters = makeTargetGeometry3f(0.4, 0.1);
+        MatOfPoint3f targetGeometryMeters = VisionUtil.makeTargetGeometry3f(0.4, 0.1);
         System.out.println("target geometry");
         System.out.println(targetGeometryMeters.dump());
 
-        double xPos = 0.1;
-        double yPos = -0.2;
-        double zPos = 0.8;
-        double tilt = 0.0;
+        // in meters
+        double xPos = -0.2;
+        double yPos = 0.4;
+        double zPos = -0.8;
+        // in radians
+        double tilt = 0.2;
         double pan = 0.2;
 
-        Mat cameraView = makeSkewedTargetImage(xPos, yPos, zPos, tilt, pan, kMat, dMat, targetGeometryMeters, dsize);
+        Mat cameraView = makeImage(xPos, yPos, zPos, tilt, pan, kMat, dMat, targetGeometryMeters, dsize);
         Imgcodecs.imwrite("C:\\Users\\joelt\\Desktop\\skewed.jpg", cameraView);
-
     }
 
-    public MatOfPoint2f slice(MatOfPoint3f geometry) {
-        List<Point> pointList = new ArrayList<Point>();
-        for (Point3 p : geometry.toList()) {
-            pointList.add(new Point(p.x, p.y));
-        }
-        return new MatOfPoint2f(pointList.toArray(new Point[0]));
-    }
-
-    public Size boundingBox(MatOfPoint2f geometry) {
-        double minX = Collections.min(geometry.toList(), Comparator.comparingDouble((s) -> s.x)).x;
-        double minY = Collections.min(geometry.toList(), Comparator.comparingDouble((s) -> s.y)).y;
-        double maxX = Collections.max(geometry.toList(), Comparator.comparingDouble((s) -> s.x)).x;
-        double maxY = Collections.max(geometry.toList(), Comparator.comparingDouble((s) -> s.y)).y;
-        return new Size(maxX - minX, maxY - minY);
-    }
-
-    /**
-     * Transform the world-coordinates 3d-but-planar target into pixels at the
-     * specified scale.
-     */
-    public MatOfPoint2f makeTargetImageGeometryPixels(MatOfPoint3f targetGeometryMeters,
-            double scalePixelsPerMeter) {
-        MatOfPoint2f slice = slice(targetGeometryMeters);
-        double minX = Collections.min(slice.toList(), Comparator.comparingDouble((s) -> s.x)).x;
-        double minY = Collections.min(slice.toList(), Comparator.comparingDouble((s) -> s.y)).y;
-        List<Point> pointList = new ArrayList<Point>();
-        for (Point3 p : targetGeometryMeters.toList()) {
-            pointList.add(new Point((p.x - minX) * scalePixelsPerMeter,
-                    (p.y - minY) * scalePixelsPerMeter));
-        }
-        return new MatOfPoint2f(pointList.toArray(new Point[0]));
-    }
-
-    /**
-     * the actual target geometry in world coordintes: the target
-     * is centered at the origin.
-     */
-    public MatOfPoint3f makeTargetGeometry3f(double targetWidthMeters, double targetHeightMeters) {
-        return new MatOfPoint3f(
-                new Point3(-targetWidthMeters / 2, -targetHeightMeters / 2, 0.0),
-                new Point3(-targetWidthMeters / 2, targetHeightMeters / 2, 0.0),
-                new Point3(targetWidthMeters / 2, targetHeightMeters / 2, 0.0),
-                new Point3(targetWidthMeters / 2, -targetHeightMeters / 2, 0.0));
-    }
-
-    /**
-     * first pan (about y) and then tilt (about x), return resulting rotation vector
-     */
-    public Mat panTilt(double pan, double tilt) {
-        Mat panV = Mat.zeros(3, 1, CvType.CV_64F);
-        panV.put(0, 0, 0.0, pan, 0.0);
-        Mat tiltV = Mat.zeros(3, 1, CvType.CV_64F);
-        tiltV.put(0, 0, 0.0, tilt, 0.0);
-        return combineRotations(panV, tiltV);
-    }
-
-    /**
-     * apply the first rotation and then the second, return resulting rotation
-     * vector
-     */
-    public Mat combineRotations(Mat first, Mat second) {
-        Mat firstM = new Mat();
-        Calib3d.Rodrigues(first, firstM);
-        Mat secondM = new Mat();
-        Calib3d.Rodrigues(second, secondM);
-        // "first" means on the right side since the resulting matrix appears on the
-        // left in actual computation (i think?)
-        Mat productM = new Mat();
-        Core.gemm(secondM, firstM, 1.0, new Mat(), 0.0, productM);
-        Mat productV = new Mat();
-        Calib3d.Rodrigues(productM, productV);
-        return productV;
-    }
-
-    // @Test
-    public void testCombiningRotations() {
-        Mat pan = Mat.zeros(3, 1, CvType.CV_64F);
-        pan.put(0, 0, 0.0, -0.5, 0.0); // pan to right, world to left, so negative
-        Mat tilt = Mat.zeros(3, 1, CvType.CV_64F);
-        tilt.put(0, 0, -0.5, 0.0, 0.0); // tilt up, world down, so negative
-        System.out.println("pan vector");
-        System.out.println(pan.dump());
-        System.out.println("tilt vector");
-        System.out.println(tilt.dump());
-        // pan first to keep horizon horizontal
-        Mat productV = combineRotations(pan, tilt);
-        System.out.println("product vector");
-        System.out.println(productV.dump());
-    }
-
-    public Mat rotm2euler(Mat r) {
-        double sy = Math.sqrt(r.get(0, 0)[0] * r.get(0, 0)[0] + r.get(1, 0)[0] * r.get(1, 0)[0]);
-        double x, y, z;
-        if (sy > 1e-6) { // singular
-            x = Math.atan2(r.get(2, 1)[0], r.get(2, 2)[0]);
-            y = Math.atan2(-r.get(2, 0)[0], sy);
-            z = Math.atan2(r.get(1, 0)[0], r.get(0, 0)[0]);
-        } else {
-            x = Math.atan2(-r.get(1, 2)[0], r.get(1, 1)[0]);
-            y = Math.atan2(-r.get(2, 0)[0], sy);
-            z = 0;
-        }
-        Mat euler = Mat.zeros(3, 1, CvType.CV_64F);
-        euler.put(0, 0, x, y, z);
-        return euler;
-    }
-
-    @Test
-    public void testEuler() {
-        Mat pan = Mat.zeros(3, 1, CvType.CV_64F);
-        pan.put(0, 0, 0.0, -0.7854, 0.0); // pan 45deg to right, world to left, so
-        // negative
-        Mat tilt = Mat.zeros(3, 1, CvType.CV_64F);
-        tilt.put(0, 0, -0.7854, 0.0, 0.0); // tilt 45deg up, world down, so negative
-        System.out.println("pan vector");
-        System.out.println(pan.dump());
-        System.out.println("tilt vector");
-        System.out.println(tilt.dump());
-        // pan first to keep horizon horizontal
-        Mat productV = combineRotations(pan, tilt);
-        Mat productM = new Mat();
-        Calib3d.Rodrigues(productV, productM);
-
-        Mat r = productM.t();
-
-        System.out.println("result");
-        System.out.println(r.dump());
-
-        Mat euler = rotm2euler(r);
-
-        System.out.println("euler radians");
-        System.out.println(euler.dump());
-
-    }
 }
