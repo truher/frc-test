@@ -851,10 +851,41 @@ public class TestCV {
                 inv.get(0, 0)[0], inv.get(1, 0)[0], inv.get(2, 0)[0]);
     }
 
+    public Mat combineRotations(Mat first, Mat second) {
+        Mat firstM = new Mat();
+        Calib3d.Rodrigues(first, firstM);
+        Mat secondM = new Mat();
+        Calib3d.Rodrigues(second, secondM);
+        // "first" means on
+        // the right side since the resulting matrix appears on the left
+        // in actual computation (i think?)
+        Mat productM = new Mat();
+        Core.gemm(secondM, firstM, 1.0, new Mat(), 0.0, productM);
+        Mat product = new Mat();
+        Calib3d.Rodrigues(productM, product);
+        return product;
+    }
+
+    @Test
+    public void testCombiningRotations() {
+        Mat pan = Mat.zeros(3, 1, CvType.CV_64F);
+        pan.put(0, 0, 0.0, -0.5, 0.0); // pan to right, world to left, so negative
+        Mat tilt = Mat.zeros(3, 1, CvType.CV_64F);
+        tilt.put(0, 0, -0.5, 0.0, 0.0); // tilt up, world down, so negative
+        System.out.println("pan vector");
+        System.out.println(pan.dump());
+        System.out.println("tilt vector");
+        System.out.println(tilt.dump());
+        // pan first to keep horizon horizontal
+        Mat product = combineRotations(pan, tilt);
+        System.out.println("product vector");
+        System.out.println(product.dump());
+    }
+
     /**
      * same as above but do it many times
      */
-    @Test
+    // @Test
     public void testStrafing() {
 
         Mat kMat = Mat.zeros(3, 3, CvType.CV_64F);
@@ -877,11 +908,7 @@ public class TestCV {
                 new Point(30, 10),
                 new Point(30, 0));
 
-        MatOfPoint3f objectPts3f = new MatOfPoint3f(
-                new Point3(-15, -5, 0.0),
-                new Point3(-15, 5, 0.0),
-                new Point3(15, 5, 0.0),
-                new Point3(15, -5, 0.0));
+        MatOfPoint3f targetGeometryShouldBeMeters = makeTargetGeometry3f(30, 10);
 
         System.out.println("dx, dy, dz, pdx, pdy, pdz");
 
@@ -889,13 +916,15 @@ public class TestCV {
         final double tilt = 0.25; // camera tilts up 0.25 radians == about 15 degrees
         for (double dz = -80; dz < -20; dz += 2) {
             for (double dx = -20; dx < 21; dx += 5) {
-                Mat cameraView = makeImage(dx, dy, dz, tilt, kMat, dMat, object2d, objectPts3f);
+                Mat cameraView = makeImage(dx, dy, dz, tilt, kMat, dMat, object2d,
+                        targetGeometryShouldBeMeters);
                 if (cameraView == null)
                     continue;
                 MatOfPoint2f imagePoints = getImagePoints(cameraView);
                 Mat newRVec = new Mat();
                 Mat newTVec = new Mat();
-                Calib3d.solvePnP(objectPts3f, imagePoints, kMat, dMat, newRVec, newTVec);
+                Calib3d.solvePnP(targetGeometryShouldBeMeters, imagePoints,
+                        kMat, dMat, newRVec, newTVec);
                 extractPose(dx, dy, dz, newRVec, newTVec);
             }
         }
@@ -972,20 +1001,25 @@ public class TestCV {
     }
 
     /**
-     * find a way to synthesize the target and also figure out units
+     * the actual target geometry in world coordintes: the target
+     * is centered at the origin.
      */
-    // @Test
-    public void testProjection() {
-        // the actual target geometry in world coordintes: the target
-        // is centered at the origin, and measures 0.1m high by 0.4m wide.
-        final double targetWidthMeters = 0.4;
-        final double targetHeightMeters = 0.1;
-        MatOfPoint3f targetGeometryMeters = new MatOfPoint3f(
+    public MatOfPoint3f makeTargetGeometry3f(double targetWidthMeters, double targetHeightMeters) {
+
+        return new MatOfPoint3f(
                 new Point3(-targetWidthMeters / 2, -targetHeightMeters / 2, 0.0),
                 new Point3(-targetWidthMeters / 2, targetHeightMeters / 2, 0.0),
                 new Point3(targetWidthMeters / 2, targetHeightMeters / 2, 0.0),
                 new Point3(targetWidthMeters / 2, -targetHeightMeters / 2, 0.0));
+    }
 
+    /**
+     * find a way to synthesize the target and also figure out units
+     */
+    // @Test
+    public void testProjection() {
+        // target is 0.4m wide, 0.1m high .
+        MatOfPoint3f targetGeometryMeters = makeTargetGeometry3f(0.4, 0.1);
         System.out.println("target geometry");
         System.out.println(targetGeometryMeters.dump());
 
