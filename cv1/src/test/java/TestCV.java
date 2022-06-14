@@ -768,65 +768,6 @@ public class TestCV {
     }
 
     /**
-     * synthesize an image of a vision target using the supplied location and
-     * camera.
-     * using a known target geometry, generate an image of the target viewed
-     * from the specified location, which is the position of the camera in the
-     * world, and the rotations are rotations *of the camera*.
-     * 
-     * @param xPos                 camera location in world coords
-     * @param yPos                 camera location in world coords
-     * @param zPos                 camera location in world coords
-     * @param tilt                 camera upwards tilt (around x axis)
-     * @param pan                  camera rightwards pan (around y axis)
-     * @param targetGeometryMeters target geometry in world coords
-     */
-    public Mat makeImage(
-            double xPos,
-            double yPos,
-            double zPos,
-            double tilt,
-            double pan,
-            Mat kMat,
-            MatOfDouble dMat,
-            MatOfPoint3f targetGeometryMeters,
-            Size dsize) {
-        Mat worldTVec = Mat.zeros(3, 1, CvType.CV_64F);
-        worldTVec.put(0, 0, xPos, yPos, zPos);
-        MatOfPoint2f targetImageGeometry = VisionUtil.makeTargetImageGeometryPixels(targetGeometryMeters, 1000);
-
-        // make an image corresponding to the pixel geometry, for warping
-        Mat visionTarget = new Mat(VisionUtil.boundingBox(targetImageGeometry), CvType.CV_8U,
-                new Scalar(255, 255, 255));
-        Imgcodecs.imwrite("C:\\Users\\joelt\\Desktop\\projection.jpg", visionTarget);
-
-        // camera up/right means world down/left, so both negative
-        Mat camRV = VisionUtil.panTilt(-pan, -tilt);
-
-        Mat camTVec = VisionUtil.world2Cam(camRV, worldTVec);
-
-        MatOfPoint2f skewedImagePts2f = new MatOfPoint2f();
-        Calib3d.projectPoints(targetGeometryMeters, camRV, camTVec, kMat, dMat, skewedImagePts2f);
-
-        // if clipping, this isn't going to work, so bail
-        // actually it also doesn't work if the area is too close to the edge
-        final int border = 10;
-        Rect r = new Rect(border, border, (int) (dsize.width - border), (int) (dsize.height - border));
-        for (Point p : skewedImagePts2f.toList()) {
-            if (!r.contains(p)) {
-                return null;
-            }
-        }
-
-        Mat transformMat = Imgproc.getPerspectiveTransform(targetImageGeometry, skewedImagePts2f);
-
-        Mat cameraView = Mat.zeros(dsize, CvType.CV_8U);
-        Imgproc.warpPerspective(visionTarget, cameraView, transformMat, dsize);
-        Imgcodecs.imwrite("C:\\Users\\joelt\\Desktop\\foo7.jpg", cameraView);
-        return cameraView;
-    }
-
-    /**
      * same as above but do it many times
      */
     @Test
@@ -846,9 +787,9 @@ public class TestCV {
         final double dy = -0.2; // camera is below (+y) relative to the target
         final double tilt = 0.25; // camera tilts up 0.25 radians == about 15 degrees
         final double pan = 0.0; // for now, straight ahead
-        for (double dz = -2; dz < -1; dz += 0.1) {
-            for (double dx = -1; dx < 1; dx += 0.1) {
-                Mat cameraView = makeImage(dx, dy, dz, tilt, pan, kMat, dMat,
+        for (double dz = -5; dz <= -0.5; dz += 0.5) { // meters
+            for (double dx = -2; dx <= 2; dx += 0.5) { // meters
+                Mat cameraView = VisionUtil.makeImage(dx, dy, dz, tilt, pan, kMat, dMat,
                         targetGeometryMeters, dsize);
                 if (cameraView == null)
                     continue;
@@ -863,9 +804,6 @@ public class TestCV {
                 Mat newCamRMat = new Mat();
                 Calib3d.Rodrigues(newCamRVec, newCamRMat);
                 Mat newWorldRMat = newCamRMat.t();
-                // TODO: check that this is the right transform
-                Mat camRot = new Mat();
-                Calib3d.Rodrigues(newWorldRMat, camRot);
                 Mat newWorldTVec = new Mat();
                 Core.gemm(newWorldRMat, newCamTVec, -1.0, new Mat(), 0.0, newWorldTVec);
                 System.out.printf("%f, %f, %f, %f, %f, %f\n", dx, dy, dz,
@@ -896,7 +834,7 @@ public class TestCV {
         double tilt = 0.2;
         double pan = 0.2;
 
-        Mat cameraView = makeImage(xPos, yPos, zPos, tilt, pan, kMat, dMat, targetGeometryMeters, dsize);
+        Mat cameraView = VisionUtil.makeImage(xPos, yPos, zPos, tilt, pan, kMat, dMat, targetGeometryMeters, dsize);
         Imgcodecs.imwrite("C:\\Users\\joelt\\Desktop\\skewed.jpg", cameraView);
     }
 

@@ -9,12 +9,14 @@ import org.opencv.calib3d.Calib3d;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
+import org.opencv.core.MatOfDouble;
 import org.opencv.core.MatOfInt;
 import org.opencv.core.MatOfPoint;
 import org.opencv.core.MatOfPoint2f;
 import org.opencv.core.MatOfPoint3f;
 import org.opencv.core.Point;
 import org.opencv.core.Point3;
+import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
 import org.opencv.core.Size;
 import org.opencv.imgcodecs.Imgcodecs;
@@ -257,6 +259,65 @@ public abstract class VisionUtil {
         Mat camTVec = new Mat();
         Core.gemm(worldRMat.t(), worldTVec, -1.0, new Mat(), 0.0, camTVec);
         return camTVec;
+    }
+
+    /**
+     * synthesize an image of a vision target using the supplied location and
+     * camera.
+     * using a known target geometry, generate an image of the target viewed
+     * from the specified location, which is the position of the camera in the
+     * world, and the rotations are rotations *of the camera*.
+     * 
+     * @param xPos                 camera location in world coords
+     * @param yPos                 camera location in world coords
+     * @param zPos                 camera location in world coords
+     * @param tilt                 camera upwards tilt (around x axis)
+     * @param pan                  camera rightwards pan (around y axis)
+     * @param targetGeometryMeters target geometry in world coords
+     */
+    public static Mat makeImage(
+            double xPos,
+            double yPos,
+            double zPos,
+            double tilt,
+            double pan,
+            Mat kMat,
+            MatOfDouble dMat,
+            MatOfPoint3f targetGeometryMeters,
+            Size dsize) {
+        Mat worldTVec = Mat.zeros(3, 1, CvType.CV_64F);
+        worldTVec.put(0, 0, xPos, yPos, zPos);
+        MatOfPoint2f targetImageGeometry = VisionUtil.makeTargetImageGeometryPixels(targetGeometryMeters, 1000);
+
+        // make an image corresponding to the pixel geometry, for warping
+        Mat visionTarget = new Mat(VisionUtil.boundingBox(targetImageGeometry), CvType.CV_8U,
+                new Scalar(255, 255, 255));
+        Imgcodecs.imwrite("C:\\Users\\joelt\\Desktop\\projection.jpg", visionTarget);
+
+        // camera up/right means world down/left, so both negative
+        Mat camRV = VisionUtil.panTilt(-pan, -tilt);
+
+        Mat camTVec = VisionUtil.world2Cam(camRV, worldTVec);
+
+        MatOfPoint2f skewedImagePts2f = new MatOfPoint2f();
+        Calib3d.projectPoints(targetGeometryMeters, camRV, camTVec, kMat, dMat, skewedImagePts2f);
+
+        // if clipping, this isn't going to work, so bail
+        // actually it also doesn't work if the area is too close to the edge
+        final int border = 10;
+        Rect r = new Rect(border, border, (int) (dsize.width - border), (int) (dsize.height - border));
+        for (Point p : skewedImagePts2f.toList()) {
+            if (!r.contains(p)) {
+                return null;
+            }
+        }
+
+        Mat transformMat = Imgproc.getPerspectiveTransform(targetImageGeometry, skewedImagePts2f);
+
+        Mat cameraView = Mat.zeros(dsize, CvType.CV_8U);
+        Imgproc.warpPerspective(visionTarget, cameraView, transformMat, dsize);
+        Imgcodecs.imwrite("C:\\Users\\joelt\\Desktop\\foo7.jpg", cameraView);
+        return cameraView;
     }
 
 }
