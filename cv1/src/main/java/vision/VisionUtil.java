@@ -183,9 +183,11 @@ public abstract class VisionUtil {
         Mat cameraView = new Mat();
         Imgproc.threshold(rawCameraView, cameraView, 250, 255, Imgproc.THRESH_BINARY);
 
+        Mat singleChannelCameraView = new Mat();
+        Imgproc.cvtColor(cameraView, singleChannelCameraView, Imgproc.COLOR_BGR2GRAY);
         List<MatOfPoint> contours = new ArrayList<>();
         Mat hierarchy = new Mat();
-        Imgproc.findContours(cameraView,
+        Imgproc.findContours(singleChannelCameraView,
                 contours,
                 hierarchy,
                 Imgproc.RETR_LIST,
@@ -195,11 +197,11 @@ public abstract class VisionUtil {
             return null;
 
         // TODO: remove this
-        {
-            Mat contourView2 = Mat.zeros(cameraView.size(), CvType.CV_8U);
-            Imgproc.drawContours(contourView2, contours, 0, new Scalar(255, 0, 0));
-            Imgcodecs.imwrite("C:\\Users\\joelt\\Desktop\\contours.jpg", contourView2);
-        }
+        // {
+        // Mat contourView2 = Mat.zeros(cameraView.size(), CvType.CV_8U);
+        // Imgproc.drawContours(contourView2, contours, 0, new Scalar(255, 0, 0));
+        // Imgcodecs.imwrite("C:\\Users\\joelt\\Desktop\\contours.jpg", contourView2);
+        // }
 
         MatOfPoint2f curve = new MatOfPoint2f(contours.get(0).toArray());
         MatOfPoint2f approxCurve = new MatOfPoint2f();
@@ -209,11 +211,11 @@ public abstract class VisionUtil {
         // System.out.println(points.dump());
 
         // TODO: remove this
-        {
-            Mat contourView = Mat.zeros(cameraView.size(), CvType.CV_8U);
-            Imgproc.drawContours(contourView, List.of(points), 0, new Scalar(255, 0, 0));
-            Imgcodecs.imwrite("C:\\Users\\joelt\\Desktop\\poly.jpg", contourView);
-        }
+        // {
+        // Mat contourView = Mat.zeros(cameraView.size(), CvType.CV_8U);
+        // Imgproc.drawContours(contourView, List.of(points), 0, new Scalar(255, 0, 0));
+        // Imgcodecs.imwrite("C:\\Users\\joelt\\Desktop\\poly.jpg", contourView);
+        // }
 
         if (approxCurve.toList().size() != 4)
             return null;
@@ -290,9 +292,9 @@ public abstract class VisionUtil {
         MatOfPoint2f targetImageGeometry = VisionUtil.makeTargetImageGeometryPixels(targetGeometryMeters, 1000);
 
         // make an image corresponding to the pixel geometry, for warping
-        Mat visionTarget = new Mat(VisionUtil.boundingBox(targetImageGeometry), CvType.CV_8U,
+        Mat visionTarget = new Mat(VisionUtil.boundingBox(targetImageGeometry), CvType.CV_8UC3,
                 new Scalar(255, 255, 255));
-        Imgcodecs.imwrite("C:\\Users\\joelt\\Desktop\\projection.jpg", visionTarget);
+        // Imgcodecs.imwrite("C:\\Users\\joelt\\Desktop\\projection.jpg", visionTarget);
 
         // camera up/right means world down/left, so both negative
         Mat camRV = VisionUtil.panTilt(-pan, -tilt);
@@ -314,9 +316,10 @@ public abstract class VisionUtil {
 
         Mat transformMat = Imgproc.getPerspectiveTransform(targetImageGeometry, skewedImagePts2f);
 
-        Mat cameraView = Mat.zeros(dsize, CvType.CV_8U);
+        Mat cameraView = Mat.zeros(dsize, CvType.CV_8UC3);
+      
         Imgproc.warpPerspective(visionTarget, cameraView, transformMat, dsize);
-        Imgcodecs.imwrite("C:\\Users\\joelt\\Desktop\\foo7.jpg", cameraView);
+
         return cameraView;
     }
 
