@@ -812,12 +812,15 @@ public class TestCV {
                     // System.out.println("no camera view");
                     continue;
                 }
+                Imgcodecs.imwrite(String.format("C:\\Users\\joelt\\Desktop\\pics\\target-%d-distorted.png", idx),
+                cameraView);
 
                 //
                 // manually undistort the camera view.
                 Mat undistortedCameraView = new Mat();
                 Calib3d.undistort(cameraView, undistortedCameraView, kMat, dMat);
-
+                Imgcodecs.imwrite(String.format("C:\\Users\\joelt\\Desktop\\pics\\target-%d-undistorted.png", idx),
+                undistortedCameraView);
                 //
                 // try removing the camera tilt and using the camera y to make fake points.
 
@@ -908,14 +911,27 @@ public class TestCV {
                 // in the untilted view.
 
                 List<Point3> point3List = new ArrayList<Point3>(targetGeometryMeters.toList());
-                // mirror the top edge at the horizon
+                List<Point> pointList = new ArrayList<Point>(imagePoints.toList());
+
                 Point upperLeft = imagePoints.toList().get(0);
+                Point lowerLeft = imagePoints.toList().get(1);
                 Point lowerRight = imagePoints.toList().get(2);
                 Point upperRight = imagePoints.toList().get(3);
+                // make the rectangle just a projection of the top edge.
                 Rect imageRect = new Rect(upperLeft, new Size(upperRight.x - upperLeft.x, lowerRight.y - upperRight.y));
                 // this isn't exactly in the same place as the top edge
                 // Rect imageRect = Imgproc.boundingRect(imagePoints);
-                List<Point> pointList = new ArrayList<Point>(imagePoints.toList());
+
+                //
+                // mirror the whole thing below the horizon. note the ordering
+                point3List.add(new Point3(-width / 2, height / 2 + 2 * dy, 0.0));
+                point3List.add(new Point3(-width / 2, -height / 2 + 2 * dy, 0.0));
+                point3List.add(new Point3(width / 2, -height / 2 + 2 * dy, 0.0));
+                point3List.add(new Point3(width / 2, height / 2 + 2 * dy, 0.0));
+                pointList.add(new Point(upperLeft.x, tallSize.height - upperLeft.y));
+                pointList.add(new Point(lowerLeft.x, tallSize.height - lowerLeft.y));
+                pointList.add(new Point(lowerRight.x, tallSize.height - lowerRight.y));
+                pointList.add(new Point(upperRight.x, tallSize.height - upperRight.y));
 
                 //
                 //
