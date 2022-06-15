@@ -788,8 +788,14 @@ public class TestCV {
         // dMat.put(0, 0, 0.159, -0.0661, -0.00570, 0.0117, -0.503);
         // try a less agro version of that
         MatOfDouble dMat = new MatOfDouble(Mat.zeros(5, 1, CvType.CV_64F));
-        dMat.put(0, 0, 0.0159, -0.00661, -0.000570, 0.00117, -0.0503);
-
+        //
+        //
+        // // is distortion broken?
+        //
+        // dMat.put(0, 0, 0.0159, -0.00661, -0.000570, 0.00117, -0.0503);
+        //
+        //
+        //
         // target is 0.4m wide, 0.1m high .
         double height = 0.1;
         double width = 0.4;
@@ -813,14 +819,14 @@ public class TestCV {
                     continue;
                 }
                 Imgcodecs.imwrite(String.format("C:\\Users\\joelt\\Desktop\\pics\\target-%d-distorted.png", idx),
-                cameraView);
+                        cameraView);
 
                 //
                 // manually undistort the camera view.
                 Mat undistortedCameraView = new Mat();
                 Calib3d.undistort(cameraView, undistortedCameraView, kMat, dMat);
                 Imgcodecs.imwrite(String.format("C:\\Users\\joelt\\Desktop\\pics\\target-%d-undistorted.png", idx),
-                undistortedCameraView);
+                        undistortedCameraView);
                 //
                 // try removing the camera tilt and using the camera y to make fake points.
 
