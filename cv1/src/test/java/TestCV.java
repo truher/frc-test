@@ -775,7 +775,7 @@ public class TestCV {
     @Test
     public void testStrafing() {
         Size dsize = new Size(1920, 1080);
-        double f = 768.0;
+        double f = 600.0;
         Mat kMat = VisionUtil.makeIntrinsicMatrix(f, dsize);
 
         // TODO: measure distortion in a real camera
@@ -790,9 +790,9 @@ public class TestCV {
         MatOfDouble dMat = new MatOfDouble(Mat.zeros(5, 1, CvType.CV_64F));
         //
         //
-        // // is distortion broken?
+        // // is distortion broken?  
         //
-        // dMat.put(0, 0, 0.0159, -0.00661, -0.000570, 0.00117, -0.0503);
+        dMat.put(0, 0, -0.1, 0, 0, 0, 0);
         //
         //
         //
@@ -808,8 +808,12 @@ public class TestCV {
         int idx = 0;
         System.out.println("idx, dx, dy, dz, pan, tilt, screw, pdx, pdy, pdz, ppan, ptilt, pscrew");
         // FRC field is 8x16m, let's try for half-length and full-width i.e. 8x8
-        for (double dz = -8; dz <= -1; dz += 1.0) { // meters, start far, move closer
-            for (double dx = -4; dx <= 4; dx += 1.0) { // meters, start to the left, move right
+        for (double dz = -10; dz <= -1; dz += 1.0) { // meters, start far, move closer
+            for (double dx = -5; dx <= 5; dx += 1.0) { // meters, start left, move right
+
+                // for (double dz = -1; dz <= -1; dz += 1.0) {
+                // for (double dx = 1; dx <= 1; dx += 1.0) {
+                // right
                 idx += 1;
                 // System.out.println(idx);
                 Mat cameraView = VisionUtil.makeImage(dx, dy, dz, tilt, pan, kMat, dMat,
@@ -827,6 +831,16 @@ public class TestCV {
                 Calib3d.undistort(cameraView, undistortedCameraView, kMat, dMat);
                 Imgcodecs.imwrite(String.format("C:\\Users\\joelt\\Desktop\\pics\\target-%d-undistorted.png", idx),
                         undistortedCameraView);
+
+                //
+                //
+                //
+                // just look at distortion for now
+                // if (dx > 0)
+                // continue;
+                //
+                //
+                //
                 //
                 // try removing the camera tilt and using the camera y to make fake points.
 

@@ -324,9 +324,11 @@ public abstract class VisionUtil {
             MatOfDouble dMat,
             MatOfPoint3f targetGeometryMeters,
             Size dsize) {
+        // System.out.println(targetGeometryMeters.dump());
         Mat worldTVec = Mat.zeros(3, 1, CvType.CV_64F);
         worldTVec.put(0, 0, xPos, yPos, zPos);
         MatOfPoint2f targetImageGeometry = VisionUtil.makeTargetImageGeometryPixels(targetGeometryMeters, 1000);
+        // System.out.println(targetImageGeometry.dump());
 
         // make an image corresponding to the pixel geometry, for warping
         Mat visionTarget = new Mat(VisionUtil.boundingBox(targetImageGeometry), CvType.CV_8UC3,
@@ -337,9 +339,25 @@ public abstract class VisionUtil {
         Mat camRV = VisionUtil.panTilt(-pan, -tilt);
 
         Mat camTVec = VisionUtil.world2Cam(camRV, worldTVec);
+        // System.out.println(dMat.dump());
 
         MatOfPoint2f skewedImagePts2f = new MatOfPoint2f();
         Calib3d.projectPoints(targetGeometryMeters, camRV, camTVec, kMat, dMat, skewedImagePts2f);
+
+        // System.out.println(skewedImagePts2f.dump());
+        // MatOfPoint2f undistortedPts = new MatOfPoint2f();
+        // Calib3d.projectPoints(targetGeometryMeters, camRV, camTVec, kMat, new
+        // MatOfDouble(), undistortedPts);
+        // System.out.println("undistorted?");
+        // System.out.println(undistortedPts.dump());
+
+        // MatOfPoint2f maybeGood = new MatOfPoint2f();
+        // System.out.println(kMat.dump());
+        // Calib3d.undistortPoints(skewedImagePts2f, maybeGood, kMat, dMat, new Mat(),
+        // kMat);
+        // System.out.println("maybe good");
+        // System.out.println(maybeGood.dump());
+        // System.out.println(kMat.dump());
 
         // if clipping, this isn't going to work, so bail
         // actually it also doesn't work if the area is too close to the edge
