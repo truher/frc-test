@@ -24,6 +24,7 @@ import org.opencv.core.Point3;
 import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
 import org.opencv.core.Size;
+import org.opencv.core.TermCriteria;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 
@@ -855,21 +856,36 @@ public class TestCV {
                 // 0.0, 1.0, dy,
                 // 0.0, 0.0, 1.0);
                 // Core.gemm(translation, result, 1.0, new Mat(), 0.0, result);
-                Core.gemm(kMat, result, 1.0, new Mat(), 0.0, result);
+
+                // make a tall camera
+                //
+                Size tallSize = new Size(1920, 2160); // TODO: not quite this tall?
+                Mat tallKMat = VisionUtil.makeIntrinsicMatrix(f, tallSize);
+                //
+                //
+
+                // Core.gemm(kMat, result, 1.0, new Mat(), 0.0, result);
+                Core.gemm(tallKMat, result, 1.0, new Mat(), 0.0, result);
                 // System.out.println(result.dump());
-                Mat untiltedCameraView = Mat.zeros(dsize, CvType.CV_8UC3);
 
-                Imgproc.warpPerspective(undistortedCameraView, untiltedCameraView, result, dsize);
+                // Mat untiltedCameraView = Mat.zeros(dsize, CvType.CV_8UC3);
+                Mat untiltedCameraView = Mat.zeros(tallSize, CvType.CV_8UC3);
 
-                Imgcodecs.imwrite(String.format("C:\\Users\\joelt\\Desktop\\pics\\bar%d.png", idx),
+                // Imgproc.warpPerspective(undistortedCameraView, untiltedCameraView, result,
+                // dsize);
+                Imgproc.warpPerspective(undistortedCameraView, untiltedCameraView, result, tallSize);
+
+                Imgcodecs.imwrite(String.format("C:\\Users\\joelt\\Desktop\\pics\\target-%d-raw.png", idx),
                         untiltedCameraView);
 
-                MatOfPoint2f imagePoints = VisionUtil.getImagePoints(untiltedCameraView);
+                MatOfPoint2f imagePoints = VisionUtil.getImagePoints(idx, untiltedCameraView);
                 if (imagePoints == null) {
                     // System.out.println("no image points");
                     continue;
                 }
-                
+
+                // System.out.println(imagePoints.dump());
+
                 //
                 // // try homography.
                 // // ok the homography approach isn't any better
@@ -889,21 +905,81 @@ public class TestCV {
 
                 // targetGeometryMeters is four points
                 // add two more below, at the y of the camera, which is the horizon
-                // in the detilted view.
+                // in the untilted view.
 
                 List<Point3> point3List = new ArrayList<Point3>(targetGeometryMeters.toList());
+                // mirror the top edge at the horizon
+                Point upperLeft = imagePoints.toList().get(0);
+                Point lowerRight = imagePoints.toList().get(2);
+                Point upperRight = imagePoints.toList().get(3);
+                Rect imageRect = new Rect(upperLeft, new Size(upperRight.x - upperLeft.x, lowerRight.y - upperRight.y));
+                // this isn't exactly in the same place as the top edge
+                // Rect imageRect = Imgproc.boundingRect(imagePoints);
+                List<Point> pointList = new ArrayList<Point>(imagePoints.toList());
+
+                //
+                //
+                if (imageRect.x - imageRect.width > 0) {
+                    // wider == better yaw signal
+                    point3List.add(new Point3(-3 * width / 2, dy, 0.0));
+                    pointList.add(new Point(imageRect.x - imageRect.width, tallSize.height / 2));
+                }
+                if (imageRect.x - 2 * imageRect.width > 0) {
+                    // wider == better yaw signal
+                    point3List.add(new Point3(-5 * width / 2, dy, 0.0));
+                    pointList.add(new Point(imageRect.x - 2 * imageRect.width, tallSize.height / 2));
+                }
+
+                // also extend the upper.
+                // points are upper-left first and then clockwise
+                // so...
+
+                double upperLeftX = upperLeft.x;
+                double upperLeftY = upperLeft.y;
+
+                double upperRightX = upperRight.x;
+                double upperRightY = upperRight.y;
+                double xDel = upperRightX - upperLeftX;
+                double yDel = upperRightY - upperLeftY;
+                if (upperLeftX - xDel > 0 && upperLeftY - yDel > 0) {
+                    point3List.add(new Point3(-3 * width / 2, -height / 2, 0.0));
+                    pointList.add(new Point(upperLeftX - xDel, upperLeftY - yDel));
+                }
+                if (upperRightX + xDel < tallSize.width && upperRightY + yDel < tallSize.height) {
+                    point3List.add(new Point3(3 * width / 2, -height / 2, 0.0));
+                    pointList.add(new Point(upperRightX + xDel, upperRightY + yDel));
+                }
+                if (upperLeftX - 2 * xDel > 0 && upperLeftY - 2 * yDel > 0) {
+                    point3List.add(new Point3(-5 * width / 2, -height / 2, 0.0));
+                    pointList.add(new Point(upperLeftX - 2 * xDel, upperLeftY - 2 * yDel));
+                }
+                if (upperRightX + 2 * xDel < tallSize.width && upperRightY + 2 * yDel < tallSize.height) {
+                    point3List.add(new Point3(5 * width / 2, -height / 2, 0.0));
+                    pointList.add(new Point(upperRightX + 2 * xDel, upperRightY + 2 * yDel));
+                }
+
+                // these are guaranteed to be in frame
                 point3List.add(new Point3(-width / 2, dy, 0.0));
+                pointList.add(new Point(imageRect.x, tallSize.height / 2));
                 point3List.add(new Point3(width / 2, dy, 0.0));
-                point3List.add(new Point3(0, dy, 0.0)); // point behind exerts y leverage
+                pointList.add(new Point(imageRect.br().x, tallSize.height / 2));
+
+                if (imageRect.br().x + imageRect.width < tallSize.width) {
+                    // wider == better yaw signal
+                    point3List.add(new Point3(3 * width / 2, dy, 0.0));
+                    pointList.add(new Point(imageRect.br().x + imageRect.width, tallSize.height / 2));
+                }
+                if (imageRect.br().x + 2 * imageRect.width < tallSize.width) {
+                    // wider == better yaw signal
+                    point3List.add(new Point3(5 * width / 2, dy, 0.0));
+                    pointList.add(new Point(imageRect.br().x + 2 * imageRect.width, tallSize.height / 2));
+                }
+                // more points at the horizon make pnp pay more attention to it
+                point3List.add(new Point3(0, dy, 0.0));
+                pointList.add(new Point(imageRect.x + imageRect.width / 2, tallSize.height / 2));
 
                 MatOfPoint3f expandedTargetGeometryMeters = new MatOfPoint3f(point3List.toArray(new Point3[0]));
                 // System.out.println(expandedTargetGeometryMeters.dump());
-
-                Rect imageRect = Imgproc.boundingRect(imagePoints);
-                List<Point> pointList = new ArrayList<Point>(imagePoints.toList());
-                pointList.add(new Point(imageRect.x, dsize.height / 2));
-                pointList.add(new Point(imageRect.br().x, dsize.height / 2));
-                pointList.add(new Point(imageRect.x + imageRect.width / 2, dsize.height / 2));
                 MatOfPoint2f expandedImagePoints = new MatOfPoint2f(pointList.toArray(new Point[0]));
 
                 // System.out.println(expandedImagePoints.dump());
@@ -913,10 +989,23 @@ public class TestCV {
                 //
                 Mat newCamRVec = new Mat();
                 Mat newCamTVec = new Mat();
-                // Calib3d.solvePnP(targetGeometryMeters, imagePoints, kMat, dMat,
-                // Calib3d.solvePnP(targetGeometryMeters, imagePoints, kMat, new MatOfDouble(),
-                Calib3d.solvePnP(expandedTargetGeometryMeters, expandedImagePoints, kMat,
-                        new MatOfDouble(), newCamRVec, newCamTVec, false, Calib3d.SOLVEPNP_ITERATIVE);
+
+                Calib3d.solvePnP(expandedTargetGeometryMeters, expandedImagePoints, tallKMat,
+                        new MatOfDouble(), newCamRVec, newCamTVec, false,
+                        Calib3d.SOLVEPNP_ITERATIVE);
+                // large reprojection error == there are no outliers
+                // Calib3d.solvePnPRansac(expandedTargetGeometryMeters, expandedImagePoints,
+                // tallKMat,
+                // new MatOfDouble(), newCamRVec, newCamTVec, false, 2000, 100);
+
+                // Calib3d.solvePnPRefineLM(expandedTargetGeometryMeters, expandedImagePoints,
+                // tallKMat, new MatOfDouble(),
+                // newCamRVec, newCamTVec, new TermCriteria(TermCriteria.EPS, 10000, 0.001));
+                // Calib3d.solvePnPRefineVVS(expandedTargetGeometryMeters, expandedImagePoints,
+                // tallKMat,
+                // new MatOfDouble(), newCamRVec, newCamTVec, new TermCriteria(TermCriteria.EPS,
+                // 1000, 0.001),
+                // 1);
 
                 //
                 // draw the target points on the camera view to see where we think they are
@@ -924,15 +1013,23 @@ public class TestCV {
 
                 MatOfPoint2f skewedImagePts2f = new MatOfPoint2f();
                 Calib3d.projectPoints(expandedTargetGeometryMeters, newCamRVec,
-                        // newCamTVec, kMat, dMat, skewedImagePts2f);
-                        newCamTVec, kMat, new MatOfDouble(), skewedImagePts2f);
+                        newCamTVec, tallKMat, new MatOfDouble(), skewedImagePts2f);
 
+                // points projected from pnp
                 for (Point pt : skewedImagePts2f.toList()) {
                     Imgproc.circle(untiltedCameraView,
                             new Point(pt.x, pt.y),
-                            3,
+                            2,
                             new Scalar(0, 0, 255),
                             Imgproc.FILLED);
+                }
+                // points found in the image
+                for (Point pt : expandedImagePoints.toList()) {
+                    Imgproc.circle(untiltedCameraView,
+                            new Point(pt.x, pt.y),
+                            6,
+                            new Scalar(0, 255, 0),
+                            1);
                 }
 
                 // report on the predictions
@@ -957,7 +1054,7 @@ public class TestCV {
                 // continue;
                 // this is a bad case, so store it
 
-                Imgcodecs.imwrite(String.format("C:\\Users\\joelt\\Desktop\\pics\\foo%d.png", idx),
+                Imgcodecs.imwrite(String.format("C:\\Users\\joelt\\Desktop\\pics\\target-%d-annotated.png", idx),
                         untiltedCameraView);
                 System.out.printf("%d, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f\n",
                         idx, dx, dy, dz, pan, tilt, 0.0, pdx, pdy, pdz, ppan, ptilt, pscrew);

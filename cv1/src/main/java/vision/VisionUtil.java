@@ -174,17 +174,22 @@ public abstract class VisionUtil {
      * 
      * TODO: denoising etc
      * 
+     * @param picIdx        for debugging
      * @param rawCameraView unprocessed image
      * @return 2d geometry of the corners, in the image
      */
-    public static MatOfPoint2f getImagePoints(Mat rawCameraView) {
+    public static MatOfPoint2f getImagePoints(int picIdx, Mat rawCameraView) {
 
         // first "binarize" to remove blur
         Mat cameraView = new Mat();
         Imgproc.threshold(rawCameraView, cameraView, 250, 255, Imgproc.THRESH_BINARY);
+        Imgcodecs.imwrite(String.format("C:\\Users\\joelt\\Desktop\\pics\\target-%d-thresholded.png", picIdx),
+                cameraView);
 
         Mat singleChannelCameraView = new Mat();
         Imgproc.cvtColor(cameraView, singleChannelCameraView, Imgproc.COLOR_BGR2GRAY);
+        Imgcodecs.imwrite(String.format("C:\\Users\\joelt\\Desktop\\pics\\target-%d-bw.png", picIdx),
+                singleChannelCameraView);
 
         /*
          * Mat edges = new Mat();
@@ -209,32 +214,35 @@ public abstract class VisionUtil {
         }
 
         // TODO: remove this
-        // {
-        // Mat contourView2 = Mat.zeros(cameraView.size(), CvType.CV_8U);
-        // Imgproc.drawContours(contourView2, contours, 0, new Scalar(255, 0, 0));
-        // Imgcodecs.imwrite("C:\\Users\\joelt\\Desktop\\contours.jpg",
-        // contourView2);
-        // }
+        {
+            Mat contourView2 = Mat.zeros(cameraView.size(), CvType.CV_8U);
+            Imgproc.drawContours(contourView2, contours, 0, new Scalar(255, 0, 0));
+            Imgcodecs.imwrite(String.format("C:\\Users\\joelt\\Desktop\\pics\\target-%d-contours.png", picIdx),
+                    contourView2);
+        }
 
         MatOfPoint2f curve = new MatOfPoint2f(contours.get(0).toArray());
         MatOfPoint2f approxCurve = new MatOfPoint2f();
-        double epsilon = 0.05 * Imgproc.arcLength(curve, true);
+        double epsilon = 0.04 * Imgproc.arcLength(curve, true);
         Imgproc.approxPolyDP(curve, approxCurve, epsilon, true);
         MatOfPoint points = new MatOfPoint(approxCurve.toArray());
         // System.out.println("points");
         // System.out.println(points.dump());
 
         // TODO: remove this
-        // {
-        // Mat contourView = Mat.zeros(cameraView.size(), CvType.CV_8U);
-        // Imgproc.drawContours(contourView, List.of(points), 0, new Scalar(255, 0,
-        // 0));
-        // Imgcodecs.imwrite("C:\\Users\\joelt\\Desktop\\poly.jpg", contourView);
-        // }
+        {
+            Mat contourView = Mat.zeros(cameraView.size(), CvType.CV_8U);
+            Imgproc.drawContours(contourView, List.of(points), 0, new Scalar(255, 0, 0));
+            Imgcodecs.imwrite(String.format("C:\\Users\\joelt\\Desktop\\pics\\target-%d-poly.png", picIdx),
+                    contourView);
+        }
         // System.out.println("approxcurve");
         // System.out.println(approxCurve.dump());
-        if (approxCurve.toList().size() != 4) {
+        if (approxCurve.toList().size() != 4)
 
+        {
+            // System.out.println("wrong size");
+            // System.out.println(approxCurve.dump());
             return null;
         }
 
@@ -256,6 +264,17 @@ public abstract class VisionUtil {
         Collections.rotate(approxCurveList, -idx);
 
         MatOfPoint2f imagePoints = new MatOfPoint2f(approxCurveList.toArray(new Point[0]));
+
+        Mat pointView = rawCameraView.clone();
+        for (Point pt : imagePoints.toList()) {
+            Imgproc.circle(pointView,
+                    new Point(pt.x, pt.y),
+                    3,
+                    new Scalar(0, 255, 0),
+                    Imgproc.FILLED);
+        }
+        Imgcodecs.imwrite(String.format("C:\\Users\\joelt\\Desktop\\pics\\target-%d-points.png", picIdx),
+                pointView);
         return imagePoints;
     }
 
