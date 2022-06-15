@@ -773,8 +773,9 @@ public class TestCV {
      */
     @Test
     public void testStrafing() {
-        Size dsize = new Size(960, 540);
-        Mat kMat = VisionUtil.makeIntrinsicMatrix(512.0, dsize);
+        Size dsize = new Size(1920, 1080);
+        double f = 768.0;
+        Mat kMat = VisionUtil.makeIntrinsicMatrix(f, dsize);
 
         // TODO: measure distortion in a real camera
         // Note: distortion confuses pnpransac, use normal pnp instead
@@ -789,7 +790,9 @@ public class TestCV {
         dMat.put(0, 0, 0.0159, -0.00661, -0.000570, 0.00117, -0.0503);
 
         // target is 0.4m wide, 0.1m high .
-        MatOfPoint3f targetGeometryMeters = VisionUtil.makeTargetGeometry3f(0.4, 0.1);
+        double height = 0.1;
+        double width = 0.4;
+        MatOfPoint3f targetGeometryMeters = VisionUtil.makeTargetGeometry3f(width, height);
 
         final double maxAbsErr = 0.5;
         final double dy = 1.0; // say the camera is 1m below (+y) relative to the target
@@ -801,10 +804,13 @@ public class TestCV {
         for (double dz = -8; dz <= -1; dz += 1.0) { // meters, start far, move closer
             for (double dx = -4; dx <= 4; dx += 1.0) { // meters, start to the left, move right
                 idx += 1;
+                // System.out.println(idx);
                 Mat cameraView = VisionUtil.makeImage(dx, dy, dz, tilt, pan, kMat, dMat,
                         targetGeometryMeters, dsize);
-                if (cameraView == null)
+                if (cameraView == null) {
+                    // System.out.println("no camera view");
                     continue;
+                }
 
                 //
                 // manually undistort the camera view.
@@ -814,23 +820,23 @@ public class TestCV {
                 //
                 // try removing the camera tilt and using the camera y to make fake points.
 
-                Mat homogeneousKMat = Mat.zeros(3, 4, CvType.CV_64F);
-                homogeneousKMat.put(0, 0,
-                        512.0, 0.0, dsize.width / 2,
-                        0.0, 512.0, dsize.height / 2, 0,
-                        0.0, 0.0, 1.0, 0.0);
-                Mat homogenousInvKMat = Mat.zeros(4, 3, CvType.CV_64F);
-                homogenousInvKMat.put(0, 0,
-                        1.0 / 512.0, 0.0, -dsize.width / (2 * 512.0),
-                        0.0, 1.0 / 512.0, -dsize.height / (2 * 512.0),
-                        0.0, 0.0, 0.0,
-                        0.0, 0.0, 1.0);
-                Mat homogeneousUntilt = Mat.zeros(4, 4, CvType.CV_64F);
-                homogeneousUntilt.put(0, 0,
-                        1.0, 0.0, 0.0, 0.0,
-                        0.0, Math.cos(-tilt), -Math.sin(-tilt), 0.0,
-                        0.0, Math.sin(-tilt), Math.cos(-tilt), 0.0,
-                        0.0, 0.0, 0.0, 1.0);
+                // Mat homogeneousKMat = Mat.zeros(3, 4, CvType.CV_64F);
+                // homogeneousKMat.put(0, 0,
+                // 512.0, 0.0, dsize.width / 2,
+                // 0.0, 512.0, dsize.height / 2, 0,
+                // 0.0, 0.0, 1.0, 0.0);
+                // Mat homogenousInvKMat = Mat.zeros(4, 3, CvType.CV_64F);
+                // homogenousInvKMat.put(0, 0,
+                // 1.0 / 512.0, 0.0, -dsize.width / (2 * 512.0),
+                // 0.0, 1.0 / 512.0, -dsize.height / (2 * 512.0),
+                // 0.0, 0.0, 0.0,
+                // 0.0, 0.0, 1.0);
+                // Mat homogeneousUntilt = Mat.zeros(4, 4, CvType.CV_64F);
+                // homogeneousUntilt.put(0, 0,
+                // 1.0, 0.0, 0.0, 0.0,
+                // 0.0, Math.cos(-tilt), -Math.sin(-tilt), 0.0,
+                // 0.0, Math.sin(-tilt), Math.cos(-tilt), 0.0,
+                // 0.0, 0.0, 0.0, 1.0);
 
                 Mat invKMat = kMat.inv();
                 Mat unTiltV = Mat.zeros(3, 1, CvType.CV_64F);
@@ -859,13 +865,18 @@ public class TestCV {
                         untiltedCameraView);
 
                 MatOfPoint2f imagePoints = VisionUtil.getImagePoints(untiltedCameraView);
-                if (imagePoints == null)
+                if (imagePoints == null) {
+                    // System.out.println("no image points");
                     continue;
-                MatOfPoint2f targetImageGeometry = VisionUtil.makeTargetImageGeometryPixels(targetGeometryMeters, 1000);
-
+                }
+                
+                //
                 // // try homography.
                 // // ok the homography approach isn't any better
                 // // there's still no way to constrain it
+                // MatOfPoint2f targetImageGeometry =
+                // VisionUtil.makeTargetImageGeometryPixels(targetGeometryMeters, 1000);
+
                 // Mat H = Calib3d.findHomography(targetImageGeometry, imagePoints);
                 // System.out.println(H.dump());
                 // List<Mat> rotations = new ArrayList<Mat>();
@@ -876,25 +887,50 @@ public class TestCV {
                 // System.out.println(m.dump());
                 // }
 
+                // targetGeometryMeters is four points
+                // add two more below, at the y of the camera, which is the horizon
+                // in the detilted view.
+
+                List<Point3> point3List = new ArrayList<Point3>(targetGeometryMeters.toList());
+                point3List.add(new Point3(-width / 2, dy, 0.0));
+                point3List.add(new Point3(width / 2, dy, 0.0));
+                point3List.add(new Point3(0, dy, 0.0)); // point behind exerts y leverage
+
+                MatOfPoint3f expandedTargetGeometryMeters = new MatOfPoint3f(point3List.toArray(new Point3[0]));
+                // System.out.println(expandedTargetGeometryMeters.dump());
+
+                Rect imageRect = Imgproc.boundingRect(imagePoints);
+                List<Point> pointList = new ArrayList<Point>(imagePoints.toList());
+                pointList.add(new Point(imageRect.x, dsize.height / 2));
+                pointList.add(new Point(imageRect.br().x, dsize.height / 2));
+                pointList.add(new Point(imageRect.x + imageRect.width / 2, dsize.height / 2));
+                MatOfPoint2f expandedImagePoints = new MatOfPoint2f(pointList.toArray(new Point[0]));
+
+                // System.out.println(expandedImagePoints.dump());
                 //
-                // find the pose using solvepnp
+                // find the pose using solvepnp. this sucks because the target is small relative
+                // to the distances.
+                //
                 Mat newCamRVec = new Mat();
                 Mat newCamTVec = new Mat();
                 // Calib3d.solvePnP(targetGeometryMeters, imagePoints, kMat, dMat,
-                Calib3d.solvePnP(targetGeometryMeters, imagePoints, kMat, new MatOfDouble(),
-                        newCamRVec, newCamTVec, false, Calib3d.SOLVEPNP_SQPNP);
+                // Calib3d.solvePnP(targetGeometryMeters, imagePoints, kMat, new MatOfDouble(),
+                Calib3d.solvePnP(expandedTargetGeometryMeters, expandedImagePoints, kMat,
+                        new MatOfDouble(), newCamRVec, newCamTVec, false, Calib3d.SOLVEPNP_ITERATIVE);
 
+                //
                 // draw the target points on the camera view to see where we think they are
+                //
 
                 MatOfPoint2f skewedImagePts2f = new MatOfPoint2f();
-                Calib3d.projectPoints(targetGeometryMeters, newCamRVec,
+                Calib3d.projectPoints(expandedTargetGeometryMeters, newCamRVec,
                         // newCamTVec, kMat, dMat, skewedImagePts2f);
                         newCamTVec, kMat, new MatOfDouble(), skewedImagePts2f);
 
                 for (Point pt : skewedImagePts2f.toList()) {
                     Imgproc.circle(untiltedCameraView,
                             new Point(pt.x, pt.y),
-                            2,
+                            3,
                             new Scalar(0, 0, 255),
                             Imgproc.FILLED);
                 }
@@ -922,7 +958,7 @@ public class TestCV {
                 // this is a bad case, so store it
 
                 Imgcodecs.imwrite(String.format("C:\\Users\\joelt\\Desktop\\pics\\foo%d.png", idx),
-                        undistortedCameraView);
+                        untiltedCameraView);
                 System.out.printf("%d, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f, %f\n",
                         idx, dx, dy, dz, pan, tilt, 0.0, pdx, pdy, pdz, ppan, ptilt, pscrew);
             }

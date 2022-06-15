@@ -185,27 +185,41 @@ public abstract class VisionUtil {
 
         Mat singleChannelCameraView = new Mat();
         Imgproc.cvtColor(cameraView, singleChannelCameraView, Imgproc.COLOR_BGR2GRAY);
+
+        /*
+         * Mat edges = new Mat();
+         * Imgproc.Canny(singleChannelCameraView, edges, 250, 255);
+         * MatOfPoint approxCurve = new MatOfPoint();
+         * Imgproc.goodFeaturesToTrack(edges, approxCurve, 4, 0.5, 2);
+         * System.out.println("approxcurve");
+         * System.out.println(approxCurve.dump());
+         */
+
         List<MatOfPoint> contours = new ArrayList<>();
         Mat hierarchy = new Mat();
         Imgproc.findContours(singleChannelCameraView,
                 contours,
                 hierarchy,
                 Imgproc.RETR_LIST,
-                Imgproc.CHAIN_APPROX_SIMPLE);
+                Imgproc.CHAIN_APPROX_NONE);
 
-        if (contours.size() != 1)
+        if (contours.size() != 1) {
+            // System.out.println("no contours!");
             return null;
+        }
 
         // TODO: remove this
         // {
         // Mat contourView2 = Mat.zeros(cameraView.size(), CvType.CV_8U);
         // Imgproc.drawContours(contourView2, contours, 0, new Scalar(255, 0, 0));
-        // Imgcodecs.imwrite("C:\\Users\\joelt\\Desktop\\contours.jpg", contourView2);
+        // Imgcodecs.imwrite("C:\\Users\\joelt\\Desktop\\contours.jpg",
+        // contourView2);
         // }
 
         MatOfPoint2f curve = new MatOfPoint2f(contours.get(0).toArray());
         MatOfPoint2f approxCurve = new MatOfPoint2f();
-        Imgproc.approxPolyDP(curve, approxCurve, 5, true);
+        double epsilon = 0.05 * Imgproc.arcLength(curve, true);
+        Imgproc.approxPolyDP(curve, approxCurve, epsilon, true);
         MatOfPoint points = new MatOfPoint(approxCurve.toArray());
         // System.out.println("points");
         // System.out.println(points.dump());
@@ -213,12 +227,16 @@ public abstract class VisionUtil {
         // TODO: remove this
         // {
         // Mat contourView = Mat.zeros(cameraView.size(), CvType.CV_8U);
-        // Imgproc.drawContours(contourView, List.of(points), 0, new Scalar(255, 0, 0));
+        // Imgproc.drawContours(contourView, List.of(points), 0, new Scalar(255, 0,
+        // 0));
         // Imgcodecs.imwrite("C:\\Users\\joelt\\Desktop\\poly.jpg", contourView);
         // }
+        // System.out.println("approxcurve");
+        // System.out.println(approxCurve.dump());
+        if (approxCurve.toList().size() != 4) {
 
-        if (approxCurve.toList().size() != 4)
             return null;
+        }
 
         MatOfInt hull = new MatOfInt();
 
@@ -306,10 +324,11 @@ public abstract class VisionUtil {
 
         // if clipping, this isn't going to work, so bail
         // actually it also doesn't work if the area is too close to the edge
-        final int border = 10;
+        final int border = 5;
         Rect r = new Rect(border, border, (int) (dsize.width - border), (int) (dsize.height - border));
         for (Point p : skewedImagePts2f.toList()) {
             if (!r.contains(p)) {
+                // System.out.println("out of frame");
                 return null;
             }
         }
@@ -317,7 +336,7 @@ public abstract class VisionUtil {
         Mat transformMat = Imgproc.getPerspectiveTransform(targetImageGeometry, skewedImagePts2f);
 
         Mat cameraView = Mat.zeros(dsize, CvType.CV_8UC3);
-      
+
         Imgproc.warpPerspective(visionTarget, cameraView, transformMat, dsize);
 
         return cameraView;
