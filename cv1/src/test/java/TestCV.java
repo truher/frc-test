@@ -35,7 +35,7 @@ public class TestCV {
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
     }
 
-    @Test
+    // @Test
     public void testCombiningRotations() {
         Mat pan = Mat.zeros(3, 1, CvType.CV_64F);
         pan.put(0, 0, 0.0, -0.5, 0.0); // pan to right, world to left, so negative
@@ -54,7 +54,7 @@ public class TestCV {
         assertEquals(0.12498, productV.get(2, 0)[0], DELTA);
     }
 
-    @Test
+    // @Test
     public void testRotm2euler() {
         Mat pan = Mat.zeros(3, 1, CvType.CV_64F);
         pan.put(0, 0, 0.0, -0.7854, 0.0); // pan 45deg to right, world to left, so
@@ -772,7 +772,7 @@ public class TestCV {
     /**
      * same as above but do it many times
      */
-    @Test
+    // @Test
     public void testStrafing() {
         Size dsize = new Size(1920, 1080);
         double f = 600.0;
@@ -790,7 +790,7 @@ public class TestCV {
         MatOfDouble dMat = new MatOfDouble(Mat.zeros(5, 1, CvType.CV_64F));
         //
         //
-        // // is distortion broken?  
+        // // is distortion broken?
         //
         dMat.put(0, 0, -0.1, 0, 0, 0, 0);
         //
