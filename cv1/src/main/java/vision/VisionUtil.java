@@ -172,7 +172,6 @@ public abstract class VisionUtil {
      * find the target corners, in the supplied image, upper-left first, then
      * clockwise.
      * 
-     * TODO: denoising etc
      * 
      * @param picIdx        for debugging
      * @param rawCameraView unprocessed image
@@ -213,7 +212,7 @@ public abstract class VisionUtil {
             return null;
         }
 
-        // TODO: remove this
+
         {
             Mat contourView2 = Mat.zeros(cameraView.size(), CvType.CV_8U);
             Imgproc.drawContours(contourView2, contours, 0, new Scalar(255, 0, 0));
@@ -229,7 +228,7 @@ public abstract class VisionUtil {
         // System.out.println("points");
         // System.out.println(points.dump());
 
-        // TODO: remove this
+
         {
             Mat contourView = Mat.zeros(cameraView.size(), CvType.CV_8U);
             Imgproc.drawContours(contourView, List.of(points), 0, new Scalar(255, 0, 0));
@@ -342,8 +341,10 @@ public abstract class VisionUtil {
         // System.out.println(dMat.dump());
 
         MatOfPoint2f skewedImagePts2f = new MatOfPoint2f();
-        Calib3d.projectPoints(targetGeometryMeters, camRV, camTVec, kMat, dMat, skewedImagePts2f);
-
+        Mat jacobian = new Mat();
+        Calib3d.projectPoints(targetGeometryMeters, camRV, camTVec, kMat, dMat, skewedImagePts2f, jacobian);
+        // System.out.println("jacobian");
+        // System.out.println(jacobian.dump());
         // System.out.println(skewedImagePts2f.dump());
         // MatOfPoint2f undistortedPts = new MatOfPoint2f();
         // Calib3d.projectPoints(targetGeometryMeters, camRV, camTVec, kMat, new
