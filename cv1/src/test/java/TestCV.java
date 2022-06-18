@@ -1243,7 +1243,7 @@ public class TestCV {
         Size dsize = new Size(960, 540);
 
         // f=512 camera matrix
-        Mat kMat = VisionUtil.makeIntrinsicMatrix(512.0, dsize);
+        Mat kMat = VisionUtil.makeIntrinsicMatrix(256.0, dsize);
 
         // no distortion for now
         MatOfDouble dMat = new MatOfDouble(Mat.zeros(4, 1, CvType.CV_64F));
@@ -1251,7 +1251,7 @@ public class TestCV {
 
         // just one target point for now
         // keep it away from the origin to prevent singularity
-        MatOfPoint3f targetGeometryMeters = new MatOfPoint3f(new Point3(1.0, 1.0, 0.0));
+        MatOfPoint3f targetGeometryMeters = new MatOfPoint3f(new Point3(2.0, 2.0, 0.0));
         MatOfPoint2f targetImageGeometry = VisionUtil.makeTargetImageGeometryPixels(targetGeometryMeters, 1000);
         System.out.println(targetImageGeometry.dump());
 
@@ -1391,10 +1391,10 @@ public class TestCV {
         double yPos = 0.0;
         // double zPos = -10.0;
         double tilt = 0.0;
-        double pan = 0.0;
+        double pan = -0.1;
 
-        for (double zPos = -10; zPos <= -1; zPos += 1) {
-            for (double xPos = -4; xPos <= 4; xPos += 1) {
+        for (double zPos = -10; zPos <= -1; zPos += 0.5) {
+            for (double xPos = -4; xPos <= 4; xPos += 0.5) {
 
                 Mat actualWorldTV = Mat.zeros(3, 1, CvType.CV_64F);
                 actualWorldTV.put(0, 0, xPos, yPos, zPos);
