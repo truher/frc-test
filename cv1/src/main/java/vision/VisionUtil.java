@@ -212,7 +212,6 @@ public abstract class VisionUtil {
             return null;
         }
 
-
         {
             Mat contourView2 = Mat.zeros(cameraView.size(), CvType.CV_8U);
             Imgproc.drawContours(contourView2, contours, 0, new Scalar(255, 0, 0));
@@ -227,7 +226,6 @@ public abstract class VisionUtil {
         MatOfPoint points = new MatOfPoint(approxCurve.toArray());
         // System.out.println("points");
         // System.out.println(points.dump());
-
 
         {
             Mat contourView = Mat.zeros(cameraView.size(), CvType.CV_8U);
@@ -299,6 +297,32 @@ public abstract class VisionUtil {
         return camTVec;
     }
 
+    public static MatOfPoint2f getImagePoints(
+            double xPos,
+            double yPos,
+            double zPos,
+            double tilt,
+            double pan,
+            Mat kMat,
+            MatOfDouble dMat,
+            MatOfPoint3f targetGeometryMeters) {
+        // System.out.println(targetGeometryMeters.dump());
+        Mat worldTVec = Mat.zeros(3, 1, CvType.CV_64F);
+        worldTVec.put(0, 0, xPos, yPos, zPos);
+
+        // camera up/right means world down/left, so both negative
+        Mat camRV = VisionUtil.panTilt(-pan, -tilt);
+
+        Mat camTVec = VisionUtil.world2Cam(camRV, worldTVec);
+        // System.out.println(dMat.dump());
+
+        MatOfPoint2f skewedImagePts2f = new MatOfPoint2f();
+        Mat jacobian = new Mat();
+        Calib3d.projectPoints(targetGeometryMeters, camRV, camTVec, kMat, dMat, skewedImagePts2f, jacobian);
+
+        return skewedImagePts2f;
+    }
+
     /**
      * synthesize an image of a vision target using the supplied location and
      * camera.
@@ -323,9 +347,32 @@ public abstract class VisionUtil {
             MatOfDouble dMat,
             MatOfPoint3f targetGeometryMeters,
             Size dsize) {
-        // System.out.println(targetGeometryMeters.dump());
-        Mat worldTVec = Mat.zeros(3, 1, CvType.CV_64F);
-        worldTVec.put(0, 0, xPos, yPos, zPos);
+
+        // // System.out.println(targetGeometryMeters.dump());
+        // Mat worldTVec = Mat.zeros(3, 1, CvType.CV_64F);
+        // worldTVec.put(0, 0, xPos, yPos, zPos);
+        // MatOfPoint2f targetImageGeometry =
+        // VisionUtil.makeTargetImageGeometryPixels(targetGeometryMeters, 1000);
+        // // System.out.println(targetImageGeometry.dump());
+
+        // // make an image corresponding to the pixel geometry, for warping
+        // Mat visionTarget = new Mat(VisionUtil.boundingBox(targetImageGeometry),
+        // CvType.CV_8UC3,
+        // new Scalar(255, 255, 255));
+        // // Imgcodecs.imwrite("C:\\Users\\joelt\\Desktop\\projection.jpg",
+        // visionTarget);
+
+        // // camera up/right means world down/left, so both negative
+        // Mat camRV = VisionUtil.panTilt(-pan, -tilt);
+
+        // Mat camTVec = VisionUtil.world2Cam(camRV, worldTVec);
+        // // System.out.println(dMat.dump());
+
+        // MatOfPoint2f skewedImagePts2f = new MatOfPoint2f();
+        // Mat jacobian = new Mat();
+        // Calib3d.projectPoints(targetGeometryMeters, camRV, camTVec, kMat, dMat,
+        // skewedImagePts2f, jacobian);
+
         MatOfPoint2f targetImageGeometry = VisionUtil.makeTargetImageGeometryPixels(targetGeometryMeters, 1000);
         // System.out.println(targetImageGeometry.dump());
 
@@ -334,15 +381,15 @@ public abstract class VisionUtil {
                 new Scalar(255, 255, 255));
         // Imgcodecs.imwrite("C:\\Users\\joelt\\Desktop\\projection.jpg", visionTarget);
 
-        // camera up/right means world down/left, so both negative
-        Mat camRV = VisionUtil.panTilt(-pan, -tilt);
+        MatOfPoint2f skewedImagePts2f = getImagePoints(xPos,
+                yPos,
+                zPos,
+                tilt,
+                pan,
+                kMat,
+                dMat,
+                targetGeometryMeters);
 
-        Mat camTVec = VisionUtil.world2Cam(camRV, worldTVec);
-        // System.out.println(dMat.dump());
-
-        MatOfPoint2f skewedImagePts2f = new MatOfPoint2f();
-        Mat jacobian = new Mat();
-        Calib3d.projectPoints(targetGeometryMeters, camRV, camTVec, kMat, dMat, skewedImagePts2f, jacobian);
         // System.out.println("jacobian");
         // System.out.println(jacobian.dump());
         // System.out.println(skewedImagePts2f.dump());

@@ -1,4 +1,5 @@
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -30,6 +31,11 @@ public class TestCV {
 
     public TestCV() {
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
+    }
+
+    @Test
+    public void testNothing() {
+        assertTrue(true);
     }
 
     // @Test
@@ -1378,7 +1384,7 @@ public class TestCV {
     /**
      * try one projection with all the jacobians hooked up.
      */
-    @Test
+    //@Test
     public void testJacobian() {
 
         double scale = 90; // pixels per meter in the xy projection
