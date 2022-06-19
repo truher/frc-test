@@ -1,4 +1,4 @@
-import java.util.List;
+//import java.util.List;
 
 import org.junit.Test;
 import org.opencv.calib3d.Calib3d;
@@ -9,7 +9,6 @@ import org.opencv.core.MatOfDouble;
 import org.opencv.core.MatOfPoint2f;
 import org.opencv.core.MatOfPoint3f;
 import org.opencv.core.Size;
-import org.opencv.imgcodecs.Imgcodecs;
 
 import vision.VisionUtil;
 
@@ -23,93 +22,90 @@ public class TestBinocular {
 
     @Test
     public void testSimple() {
-        Size dsize = new Size(960, 540); // 1/4 of 1080, just to i can see it more easily
-        Mat kMat = VisionUtil.makeIntrinsicMatrix(512.0, dsize);
+        int height = 540;
+        int width = 960;
+        Size dsize = new Size(width, height);
+        double f = 512.0;
+        Mat kMat = VisionUtil.makeIntrinsicMatrix(f, dsize);
         MatOfDouble dMat = new MatOfDouble(Mat.zeros(4, 1, CvType.CV_64F));
 
-        // target is 0.4m wide, 0.1m high .
-        double width = 0.4;
-        double height = 0.1;
-        MatOfPoint3f targetGeometryMeters = VisionUtil.makeTargetGeometry3f(width, height);
-        System.out.println("target geometry");
-        System.out.println(targetGeometryMeters.dump());
-        List<Mat> objectPoints = List.of(targetGeometryMeters);
+        // target is 0.4m wide, 0.1m high
+        double targetWidth = 0.4;
+        double targetHeight = 0.1;
+        MatOfPoint3f targetGeometryMeters = VisionUtil.makeTargetGeometry3f2(targetWidth,
+                targetHeight);
 
-        // in meters, world coords
-        double xPos = 0.0;
-        double yPos = 0.0;
-        double zPos = -4.0;
+        // camera base at 0,0,-4, straight ahead, in meters, world coords
+        // double xPos = 0.0;
+        double yPos = 1.0;
+        // double zPos = -4.0;
         // in radians
         double tilt = 0.0;
-        double pan = 0.1;
+        double pan = 0.0;
 
         double base = 0.4; // 40cm camera separation (wide!)
 
-        MatOfPoint2f leftPts = VisionUtil.getImagePoints(xPos - base / 2, yPos, zPos, tilt, pan, kMat, dMat,
-                targetGeometryMeters);
-        MatOfPoint2f rightPts = VisionUtil.getImagePoints(xPos + base / 2, yPos, zPos, tilt, pan, kMat, dMat,
-                targetGeometryMeters);
-        List<Mat> leftPointList = List.of(leftPts);
-        List<Mat> rightPointList = List.of(rightPts);
+        System.out.println("xPos, yPos, zPos, px, py, pz");
+        for (double zPos = -10; zPos <= -1; zPos += 1.0) {
+            for (double xPos = -4; xPos <= 4; xPos += 1.0) {
 
-        Mat leftView = VisionUtil.makeImage(xPos - base / 2, yPos, zPos, tilt, pan, kMat, dMat, targetGeometryMeters,
-                dsize);
-        Mat rightView = VisionUtil.makeImage(xPos + base / 2, yPos, zPos, tilt, pan, kMat, dMat, targetGeometryMeters,
-                dsize);
-        Imgcodecs.imwrite("C:\\Users\\joelt\\Desktop\\pics\\leftView.jpg", leftView);
-        Imgcodecs.imwrite("C:\\Users\\joelt\\Desktop\\pics\\rightView.jpg", rightView);
-        Mat R = new Mat();
-        Mat T = new Mat();
-        Mat E = new Mat();
-        Mat F = new Mat();
-        double reprojectionError = Calib3d.stereoCalibrate(objectPoints,
-                leftPointList, rightPointList, kMat, dMat, kMat, dMat, dsize, R, T, E, F);
-        System.out.println("reprojectionError");
-        System.out.println(reprojectionError);
-        System.out.println("R");
-        System.out.println(R.dump());
-        System.out.println("T");
-        System.out.println(T.dump());
-        System.out.println("E");
-        System.out.println(E.dump());
-        System.out.println("F");
-        System.out.println(F.dump());
+                MatOfPoint2f leftPts = VisionUtil.getImagePoints(xPos - base / 2, yPos, zPos, tilt, pan, kMat, dMat,
+                        targetGeometryMeters);
+                MatOfPoint2f rightPts = VisionUtil.getImagePoints(xPos + base / 2, yPos, zPos, tilt, pan, kMat, dMat,
+                        targetGeometryMeters);
 
-        Mat Rleft = new Mat(); // rectification (rotation) for left cam
-        Mat Rright = new Mat();
-        Mat Pleft = new Mat(); // projection (3d->2d)
-        Mat Pright = new Mat();
-        Mat Q = new Mat(); // disparity-to-depth
-        Calib3d.stereoRectify(kMat, dMat, kMat, dMat, dsize, R, T, Rleft, Rright, Pleft, Pright, Q);
-        System.out.println("R1");
-        System.out.println(Rleft.dump());
-        System.out.println("R2");
-        System.out.println(Rright.dump());
-        System.out.println("P1");
-        System.out.println(Pleft.dump());
-        System.out.println("P2");
-        System.out.println(Pright.dump());
-        System.out.println("Q");
-        System.out.println(Q.dump());
+                // Camera projection matrices are offset but not rotated
+                Mat Pleft = Mat.zeros(3, 4, CvType.CV_32F);
+                Pleft.put(0, 0,
+                        f, 0, width / 2, 0,
+                        0, f, height / 2, 0,
+                        0, 0, 1, 0);
 
-        Mat points4D = new Mat(); // points in the left camera's rectified coords
-        Calib3d.triangulatePoints(Pleft, Pright, leftPts, rightPts, points4D);
-        System.out.println("points4D");
-        System.out.println(points4D.dump());
+                Mat Pright = Mat.zeros(3, 4, CvType.CV_32F);
+                Pright.put(0, 0,
+                        f, 0, width / 2, base * f,
+                        0, f, height / 2, 0,
+                        0, 0, 1, 0);
 
-        // hm this seems wrong
-        Mat points3D = new Mat();
-        Calib3d.convertPointsFromHomogeneous(points4D, points3D);
-        System.out.println("points3D");
-        System.out.println(points3D.dump());
+                Mat predictedHomogeneous = new Mat(); // points in the left camera's rectified coords, one channel
+                Calib3d.triangulatePoints(Pleft, Pright, leftPts, rightPts, predictedHomogeneous);
 
-        Mat rotM = new Mat(); // estimated rotation matrix
-        Mat tV = new Mat(); // estimated translation vector
-        Calib3d.recoverPose(E, leftPts, rightPts, kMat, rotM, tV);
-        System.out.println("rotM");
-        System.out.println(rotM.dump());
-        System.out.println("tV");
-        System.out.println(tV.dump());
+                Mat fixBase = Mat.zeros(4, 4, CvType.CV_32F);
+                fixBase.put(0, 0,
+                        1, 0, 0, base / 2,
+                        0, 1, 0, 0,
+                        0, 0, 1, 0,
+                        0, 0, 0, -1);
+                Mat fixed = new Mat(); // translated to base center, homogeneous
+                Core.gemm(fixBase, predictedHomogeneous, 1.0, new Mat(), 0.0, fixed);
+                Mat fixedT = fixed.t();
+
+                Mat homogeneousTarget = new Mat();
+                Calib3d.convertPointsToHomogeneous(targetGeometryMeters, homogeneousTarget);
+
+                Mat A = new Mat();
+                Core.solve(homogeneousTarget.reshape(1), fixedT, A, Core.DECOMP_SVD);
+                Mat Atp = A.t(); // why transpose? because it seems to produce the right answer? yuck.
+
+                double scale = Atp.get(3, 3)[0];
+                Mat tvec = Mat.zeros(3, 1, CvType.CV_32F);
+                tvec.put(0, 0,
+                        Atp.get(0, 3)[0] / scale, Atp.get(1, 3)[0] / scale, Atp.get(2, 3)[0] / scale);
+
+                Mat rmat = Mat.zeros(3, 3, CvType.CV_32F);
+                rmat.put(0, 0,
+                        Atp.get(0, 0)[0] / scale, Atp.get(0, 1)[0] / scale, Atp.get(0, 2)[0] / scale,
+                        Atp.get(1, 0)[0] / scale, Atp.get(1, 1)[0] / scale, Atp.get(1, 2)[0] / scale,
+                        Atp.get(2, 0)[0] / scale, Atp.get(2, 1)[0] / scale, Atp.get(2, 2)[0] / scale);
+                Mat rvec = new Mat();
+                Mat jacobian = new Mat();
+                Calib3d.Rodrigues(rmat, rvec, jacobian);
+
+                System.out.printf("%5.3f, %5.3f, %5.3f, %5.3f, %5.3f, %5.3f\n", xPos, yPos, zPos,
+                        -tvec.get(0, 0)[0], -tvec.get(1, 0)[0], -tvec.get(2, 0)[0]);
+            }
+        }
+
     }
 
 }

@@ -147,6 +147,22 @@ public abstract class VisionUtil {
     }
 
     /**
+     * more points
+     */
+    public static MatOfPoint3f makeTargetGeometry3f2(double width, double height) {
+        return new MatOfPoint3f(
+                new Point3(0.0, 0.0, 0.0),
+                new Point3(-width / 2, -height / 2, 0.0),
+                new Point3(-width / 2, height / 2, 0.0),
+                new Point3(width / 2, height / 2, 0.0),
+                new Point3(width / 2, -height / 2, 0.0),
+                new Point3(-width / 4, -height / 4, 0.0),
+                new Point3(-width / 4, height / 4, 0.0),
+                new Point3(width / 4, height / 4, 0.0),
+                new Point3(width / 4, -height / 4, 0.0));
+    }
+
+    /**
      * Transform the world-coordinates 3d-but-planar target into pixels at the
      * specified scale.
      * 
