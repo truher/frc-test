@@ -84,14 +84,16 @@ public class TestBinocular {
 
                 // Camera projection matrices are offset but not rotated
                 Mat Pleft = Mat.zeros(3, 4, CvType.CV_32F);
+
                 Pleft.put(0, 0,
-                        f, 0, width / 2, 0,
+                        f, 0, width / 2, -base * f / 2,
                         0, f, height / 2, 0,
                         0, 0, 1, 0);
 
                 Mat Pright = Mat.zeros(3, 4, CvType.CV_32F);
+
                 Pright.put(0, 0,
-                        f, 0, width / 2, base * f,
+                        f, 0, width / 2, base * f / 2,
                         0, f, height / 2, 0,
                         0, 0, 1, 0);
 
@@ -100,8 +102,9 @@ public class TestBinocular {
                 Calib3d.triangulatePoints(Pleft, Pright, leftPts, rightPts, predictedHomogeneous);
 
                 Mat fixBase = Mat.zeros(4, 4, CvType.CV_32F);
+
                 fixBase.put(0, 0,
-                        1, 0, 0, base / 2,
+                        1, 0, 0, 0,
                         0, 1, 0, 0,
                         0, 0, 1, 0,
                         0, 0, 0, -1);
