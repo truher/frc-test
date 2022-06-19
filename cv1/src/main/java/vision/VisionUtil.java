@@ -151,7 +151,7 @@ public abstract class VisionUtil {
      */
     public static MatOfPoint3f makeTargetGeometry3f2(double width, double height) {
         return new MatOfPoint3f(
-                new Point3(0.0, 0.0, 0.0),
+                new Point3(0.0, 0.0, 0.01),
                 new Point3(-width / 2, -height / 2, 0.0),
                 new Point3(-width / 2, height / 2, 0.0),
                 new Point3(width / 2, height / 2, 0.0),
