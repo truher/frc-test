@@ -12,6 +12,7 @@ import org.opencv.core.MatOfPoint2f;
 import org.opencv.core.MatOfPoint3f;
 import org.opencv.core.Point;
 import org.opencv.core.Point3;
+import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
 import org.opencv.core.Size;
 import org.opencv.imgcodecs.Imgcodecs;
@@ -854,7 +855,7 @@ public class TestBinocular {
     /**
      * now using the eye points, triangulate
      */
-    @Test
+    // @Test
     public void testEyeTriangulate() {
         final int height = 540; // c=270
         final int width = 960; // c=480
@@ -1103,6 +1104,296 @@ public class TestBinocular {
         Mat predictedTV = A.t().colRange(3, 4).rowRange(0, 3);
         System.out.println("predictedTV");
         System.out.println(predictedTV.dump());
+
+    }
+
+    /**
+     * ok now the grid works for all three dimensions (x, z, theta).
+     */
+    @Test
+    public void testStereoGrid() {
+
+        // global invariants
+
+        final int height = 540; // c=270
+        final int width = 960; // c=480
+        final Size dsize = new Size(width, height);
+        Rect viewport = new Rect(10, 10, width - 20, height - 20);
+        final double f = 256.0;
+        final Mat kMat = VisionUtil.makeIntrinsicMatrix(f, dsize);
+        System.out.println("kMat");
+        System.out.println(kMat.dump());
+        final MatOfDouble dMat = new MatOfDouble(Mat.zeros(4, 1, CvType.CV_64F));
+        System.out.println("dMat");
+        System.out.println(dMat.dump());
+
+        final double base = 0.4;
+
+        final MatOfPoint3f targetGeometryMeters = new MatOfPoint3f(
+                new Point3(0.0, 0.0, 0.01), // solver needs this little bit of non-planarity
+                new Point3(1.0, 0.0, 0.0),
+                new Point3(-1.0, 0.0, 0.0),
+                new Point3(2.0, 2.0, 0.0),
+                new Point3(-2.0, 2.0, 0.0),
+                new Point3(2.0, -2.0, 0.0),
+                new Point3(-2.0, -2.0, 0.0));
+
+        // i really don't know what the "P" matrices should be; the triangulatePoints
+        // thing says they should transform *world* frame into camera frames but
+        // nobody does that; instead they use triangulatepoints to find points in the
+        // *camera* frame, since the whole point is that you don't know where the camera
+        // is.
+        Mat Pleft = Mat.zeros(3, 4, CvType.CV_32F);
+        Pleft.put(0, 0,
+                f, 0, width / 2, base * f / 2,
+                0, f, height / 2, 0,
+                0, 0, 1, 0);
+
+        System.out.println("Pleft");
+        System.out.println(Pleft.dump());
+
+        Mat Pright = Mat.zeros(3, 4, CvType.CV_32F);
+        Pright.put(0, 0,
+                f, 0, width / 2, -base * f / 2,
+                0, f, height / 2, 0,
+                0, 0, 1, 0);
+
+        System.out.println("Pright");
+        System.out.println(Pright.dump());
+
+        // fixed coordinates
+
+        final double yPos = 0;
+
+        // grid
+
+        int idx = 0;
+        System.out.println("idx, pan, xpos, zpos, ppan, pxpos, pzpos");
+        for (double pan = -Math.PI / 2; pan <= Math.PI / 2; pan += Math.PI / 8) {
+            for (double zPos = -8.0; zPos <= -2.0; zPos += 2.0) {
+                point: for (double xPos = -2.0; xPos <= 2.0; xPos += 2.0) {
+                    idx += 1;
+
+                    // camera-to-world transforms
+
+                    Mat worldTVec = Mat.zeros(3, 1, CvType.CV_32F);
+                    worldTVec.put(0, 0, xPos, yPos, zPos);
+                    // System.out.println("worldTVec");
+                    // System.out.println(worldTVec.dump());
+
+                    Mat worldRV = Mat.zeros(3, 1, CvType.CV_32F);
+                    worldRV.put(0, 0, 0.0, pan, 0.0);
+                    // System.out.println("worldRV");
+                    // System.out.println(worldRV.dump());
+
+                    Mat worldRMat = new Mat();
+                    Calib3d.Rodrigues(worldRV, worldRMat);
+
+                    Mat camRMat = worldRMat.t();
+                    Mat camRV = new Mat();
+                    Calib3d.Rodrigues(camRMat, camRV);
+                    // System.out.println("camRV");
+                    // System.out.println(camRV.dump());
+
+                    // now the whole camera->world
+                    Mat cameraToWorld = Mat.zeros(4, 4, CvType.CV_32F);
+                    cameraToWorld.put(0, 0,
+                            worldRMat.get(0, 0)[0], worldRMat.get(0, 1)[0], worldRMat.get(0, 2)[0],
+                            worldTVec.get(0, 0)[0],
+                            worldRMat.get(1, 0)[0], worldRMat.get(1, 1)[0], worldRMat.get(1, 2)[0],
+                            worldTVec.get(1, 0)[0],
+                            worldRMat.get(2, 0)[0], worldRMat.get(2, 1)[0], worldRMat.get(2, 2)[0],
+                            worldTVec.get(2, 0)[0],
+                            0, 0, 0, 1);
+
+                    // System.out.println("cameraToWorld");
+                    // System.out.println(cameraToWorld.dump());
+
+                    // this is inverse(worldT*worldR)
+                    // inverse of multiplication is order-reversed multipication of inverses, so
+                    // which is worldR.t * -worldT or camR*-worldT
+                    Mat camTVec = new Mat();
+                    Core.gemm(camRMat, worldTVec, -1.0, new Mat(), 0, camTVec);
+                    // System.out.println("camTVec");
+                    // System.out.println(camTVec.dump());
+
+                    // so the final (homogeneous) transform from world to camera
+                    Mat worldToCamera = Mat.zeros(4, 4, CvType.CV_32F);
+                    worldToCamera.put(0, 0,
+                            camRMat.get(0, 0)[0], camRMat.get(0, 1)[0], camRMat.get(0, 2)[0], camTVec.get(0, 0)[0],
+                            camRMat.get(1, 0)[0], camRMat.get(1, 1)[0], camRMat.get(1, 2)[0], camTVec.get(1, 0)[0],
+                            camRMat.get(2, 0)[0], camRMat.get(2, 1)[0], camRMat.get(2, 2)[0], camTVec.get(2, 0)[0],
+                            0, 0, 0, 1);
+                    // System.out.println("worldToCamera");
+                    // System.out.println(worldToCamera.dump());
+
+                    // transform from camera center to left eye
+                    Mat baseToLeftEye = Mat.zeros(4, 4, CvType.CV_32F);
+                    baseToLeftEye.put(0, 0,
+                            1, 0, 0, base / 2,
+                            0, 1, 0, 0,
+                            0, 0, 1, 0,
+                            0, 0, 0, 1);
+                    // System.out.println("baseToLeftEye");
+                    // System.out.println(baseToLeftEye.dump());
+
+                    Mat worldToLeftEye = new Mat();
+                    Core.gemm(baseToLeftEye, worldToCamera, 1.0, new Mat(), 0.0, worldToLeftEye);
+                    // System.out.println("worldToLeftEye");
+                    // System.out.println(worldToLeftEye.dump());
+
+                    Mat baseToRightEye = Mat.zeros(4, 4, CvType.CV_32F);
+                    baseToRightEye.put(0, 0,
+                            1, 0, 0, -base / 2,
+                            0, 1, 0, 0,
+                            0, 0, 1, 0,
+                            0, 0, 0, 1);
+                    // System.out.println("baseToRightEye");
+                    // System.out.println(baseToRightEye.dump());
+
+                    Mat worldToRightEye = new Mat();
+                    Core.gemm(baseToRightEye, worldToCamera, 1.0, new Mat(), 0.0, worldToRightEye);
+                    // System.out.println("worldToRightEye");
+                    // System.out.println(worldToRightEye.dump());
+
+                    // make images
+
+                    Mat homogeneousTarget = new Mat();
+                    Calib3d.convertPointsToHomogeneous(targetGeometryMeters, homogeneousTarget);
+                    homogeneousTarget = homogeneousTarget.reshape(1);
+                    // System.out.println("homogeneousTarget");
+                    // System.out.println(homogeneousTarget.dump());
+
+                    Mat leftCamRV = Mat.zeros(3, 1, CvType.CV_32F);
+                    Calib3d.Rodrigues(worldToLeftEye.rowRange(0, 3).colRange(0, 3), leftCamRV);
+                    // System.out.println("leftCamRV");
+                    // System.out.println(leftCamRV.dump());
+                    Mat leftCamTVec = worldToLeftEye.colRange(3, 4).rowRange(0, 3);
+                    // System.out.println("leftCamTVec");
+                    // System.out.println(leftCamTVec.dump());
+
+                    MatOfPoint2f leftPts = new MatOfPoint2f();
+                    Mat jacobian = new Mat();
+                    // this wants world->camera transformation
+                    Calib3d.projectPoints(targetGeometryMeters, leftCamRV, leftCamTVec, kMat, dMat,
+                            leftPts, jacobian);
+                    // System.out.println("leftPts");
+                    // System.out.println(leftPts.dump());
+
+                    Scalar green = new Scalar(0, 255, 0);
+                    Mat imgLeft = Mat.zeros(height, width, CvType.CV_32FC3);
+                    for (Point pt : leftPts.toList()) {
+                        if (!viewport.contains(pt))
+                            continue point;
+                        Imgproc.circle(imgLeft, pt, 6, green, 1);
+                    }
+                    Imgcodecs.imwrite(String.format("C:\\Users\\joelt\\Desktop\\pics\\projection-%d-left.png",
+                            idx), imgLeft);
+
+                    Mat rightCamRV = Mat.zeros(3, 1, CvType.CV_32F);
+                    Calib3d.Rodrigues(worldToRightEye.rowRange(0, 3).colRange(0, 3), rightCamRV);
+                    // System.out.println("rightCamRV");
+                    // System.out.println(rightCamRV.dump());
+                    Mat rightCamTVec = worldToRightEye.colRange(3, 4).rowRange(0, 3);
+                    // System.out.println("rightCamTVec");
+                    // System.out.println(rightCamTVec.dump());
+
+                    MatOfPoint2f rightPts = new MatOfPoint2f();
+
+                    // this wants world->camera transformation
+                    Calib3d.projectPoints(targetGeometryMeters, rightCamRV, rightCamTVec, kMat, dMat,
+                            rightPts, jacobian);
+                    // System.out.println("rightPts");
+                    // System.out.println(rightPts.dump());
+
+                    Mat imgRight = Mat.zeros(height, width, CvType.CV_32FC3);
+                    for (Point pt : rightPts.toList()) {
+                        if (!viewport.contains(pt))
+                            continue point;
+                        Imgproc.circle(imgRight, pt, 6, green, 1);
+                    }
+                    Imgcodecs.imwrite(String.format("C:\\Users\\joelt\\Desktop\\pics\\projection-%d-right.png",
+                            idx), imgRight);
+
+                    // triangulate
+
+                    Mat predictedHomogeneous = new Mat();
+                    Calib3d.triangulatePoints(Pleft, Pright, leftPts, rightPts, predictedHomogeneous);
+                    // System.out.println("predictedHomogeneous");
+                    // System.out.println(predictedHomogeneous.t().dump());
+
+                    Mat predictedNormal = new Mat();
+                    Calib3d.convertPointsFromHomogeneous(predictedHomogeneous.t(), predictedNormal);
+                    // System.out.println("predictedNormal");
+                    // System.out.println(predictedNormal.channels());
+                    // System.out.println(predictedNormal.dump());
+
+                    Mat predictedHomogeneousNormalized = new Mat();
+                    Calib3d.convertPointsToHomogeneous(predictedNormal, predictedHomogeneousNormalized);
+                    // System.out.println("predictedHomogeneousNormalized");
+                    predictedHomogeneousNormalized = predictedHomogeneousNormalized.reshape(1);
+                    // System.out.println(predictedHomogeneousNormalized.channels());
+                    // System.out.println(predictedHomogeneousNormalized.dump());
+
+                    // these are in camera frame
+                    // now transform back into world
+                    // predictedWorld is exactly the target geometry, and predictedhomogeneous
+                    // is exactly the triangulation, so cameraToWorld is what we want to solve for.
+                    Mat predictedWorld = new Mat();
+                    Core.gemm(cameraToWorld, predictedHomogeneous, 1.0, new Mat(), 0.0, predictedWorld);
+                    // System.out.println("predictedWorld");
+                    // System.out.println(predictedWorld.t().dump());
+
+                    Mat predictedWorldNormal = new Mat();
+                    Calib3d.convertPointsFromHomogeneous(predictedWorld.t(), predictedWorldNormal);
+                    // System.out.println("predictedWorldNormal");
+                    // System.out.println(predictedWorldNormal.dump());
+
+                    // System.out.println("targetGeometryMeters for comparison");
+                    // System.out.println(targetGeometryMeters.dump());
+
+                    // error is tiny, -1e6
+                    Mat triangulationError = new Mat();
+                    Core.subtract(targetGeometryMeters, predictedWorldNormal, triangulationError);
+                    // System.out.println("triangulationError");
+                    // System.out.println(triangulationError.dump());
+
+                    // so what we want is to derive cameratoworld, so solve for it.
+
+                    // System.out.println("this is x");
+                    // System.out.println("predictedHomogeneousNormalized");
+                    // System.out.println(predictedHomogeneousNormalized.t().dump());
+                    // System.out.println("this is b");
+                    // System.out.println("homogeneousTarget");
+                    // System.out.println(homogeneousTarget.t().dump());
+
+                    // solves Ax=b. A * camera triangulation = world coords.
+                    // System.out.println("solve Ax=b");
+                    Mat A = new Mat();
+                    Core.solve(predictedHomogeneousNormalized, homogeneousTarget, A, Core.DECOMP_SVD);
+
+                    // System.out.println("AT");
+                    // System.out.println(A.t().dump());
+
+                    Mat predictedRV = Mat.zeros(3, 1, CvType.CV_32F);
+                    Calib3d.Rodrigues(A.t().rowRange(0, 3).colRange(0, 3), predictedRV);
+                    // System.out.println("predictedRV");
+                    // System.out.println(predictedRV.dump());
+
+                    Mat predictedTV = A.t().colRange(3, 4).rowRange(0, 3);
+                    // System.out.println("predictedTV");
+                    // System.out.println(predictedTV.dump());
+
+                    double pxPos = predictedTV.get(0, 0)[0];
+                    double pzPos = predictedTV.get(2, 0)[0];
+                    double ppan = predictedRV.get(1, 0)[0];
+
+                    System.out.printf("%d, %5.2f, %5.2f, %5.2f, %5.2f, %5.2f, %5.2f\n",
+                            idx, pan, xPos, zPos, ppan, pxPos, pzPos);
+
+                }
+            }
+        }
 
     }
 
