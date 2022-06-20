@@ -157,7 +157,7 @@ public abstract class VisionUtil {
         // precisely planar target makes the solver freak out.
         // i added a tiny bit of z to "fix" it
         return new MatOfPoint3f(
-                new Point3(0.0, 0.0, 0.1),
+                new Point3(0.0, 0.0, 0.001),
                 new Point3(-width / 2, -height / 2, 0.0),
                 new Point3(-width / 2, height / 2, 0.0),
                 new Point3(width / 2, height / 2, 0.0),
@@ -334,12 +334,20 @@ public abstract class VisionUtil {
 
         // camera up/right means world down/left, so both negative
         Mat camRV = VisionUtil.panTilt(-pan, -tilt);
+        Mat camRMat = new Mat();
+        Calib3d.Rodrigues(camRV, camRMat);
+
+        Mat worldRMat = camRMat.t();
+        Mat worldRV = new Mat();
+        Calib3d.Rodrigues(worldRMat, worldRV);
 
         Mat camTVec = VisionUtil.world2Cam(camRV, worldTVec);
         // System.out.println(dMat.dump());
 
         MatOfPoint2f skewedImagePts2f = new MatOfPoint2f();
         Mat jacobian = new Mat();
+        // Calib3d.projectPoints(targetGeometryMeters, camRV, camTVec, kMat, dMat,
+        // skewedImagePts2f, jacobian);
         Calib3d.projectPoints(targetGeometryMeters, camRV, camTVec, kMat, dMat, skewedImagePts2f, jacobian);
 
         return skewedImagePts2f;
