@@ -46,6 +46,10 @@ public abstract class VisionUtil {
         return euler;
     }
 
+    public static double rotm2euler2d(Mat r) {
+        return Math.atan2(r.get(1, 0)[0], r.get(0, 0)[0]);
+    }
+
     /**
      * apply the first Rodrigues rotation vector and then the second, return
      * resulting rotation vector
@@ -76,9 +80,9 @@ public abstract class VisionUtil {
      * @return Rodrigues rotation vector
      */
     public static Mat panTilt(double pan, double tilt) {
-        Mat panV = Mat.zeros(3, 1, CvType.CV_64F);
+        Mat panV = Mat.zeros(3, 1, CvType.CV_32F);
         panV.put(0, 0, 0.0, pan, 0.0);
-        Mat tiltV = Mat.zeros(3, 1, CvType.CV_64F);
+        Mat tiltV = Mat.zeros(3, 1, CvType.CV_32F);
         tiltV.put(0, 0, tilt, 0.0, 0.0);
         return combineRotations(panV, tiltV);
     }
@@ -92,7 +96,7 @@ public abstract class VisionUtil {
      * @return camera intrinsic matrix
      */
     public static Mat makeIntrinsicMatrix(double f, Size dsize) {
-        Mat kMat = Mat.zeros(3, 3, CvType.CV_64F);
+        Mat kMat = Mat.zeros(3, 3, CvType.CV_32F);
         kMat.put(0, 0,
                 f, 0.0, dsize.width / 2,
                 0.0, f, dsize.height / 2,
@@ -150,8 +154,10 @@ public abstract class VisionUtil {
      * more points
      */
     public static MatOfPoint3f makeTargetGeometry3f2(double width, double height) {
+        // precisely planar target makes the solver freak out.
+        // i added a tiny bit of z to "fix" it
         return new MatOfPoint3f(
-                new Point3(0.0, 0.0, 0.01),
+                new Point3(0.0, 0.0, 0.1),
                 new Point3(-width / 2, -height / 2, 0.0),
                 new Point3(-width / 2, height / 2, 0.0),
                 new Point3(width / 2, height / 2, 0.0),
@@ -323,7 +329,7 @@ public abstract class VisionUtil {
             MatOfDouble dMat,
             MatOfPoint3f targetGeometryMeters) {
         // System.out.println(targetGeometryMeters.dump());
-        Mat worldTVec = Mat.zeros(3, 1, CvType.CV_64F);
+        Mat worldTVec = Mat.zeros(3, 1, CvType.CV_32F);
         worldTVec.put(0, 0, xPos, yPos, zPos);
 
         // camera up/right means world down/left, so both negative
