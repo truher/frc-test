@@ -1170,8 +1170,8 @@ public class TestBinocular {
         int idx = 0;
         System.out.println("idx, pan, xpos, zpos, ppan, pxpos, pzpos");
         for (double pan = -Math.PI / 2; pan <= Math.PI / 2; pan += Math.PI / 8) {
-            for (double zPos = -8.0; zPos <= -2.0; zPos += 2.0) {
-                point: for (double xPos = -2.0; xPos <= 2.0; xPos += 2.0) {
+            for (double zPos = -10.0; zPos <= -1.0; zPos += 1.0) {
+                point: for (double xPos = -4.0; xPos <= 4.0; xPos += 1.0) {
                     idx += 1;
 
                     // camera-to-world transforms
