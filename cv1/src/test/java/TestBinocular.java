@@ -2,7 +2,12 @@
 
 import static org.junit.Assert.assertEquals;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+
 import org.junit.Test;
+//import org.junit.Test;
 import org.opencv.calib3d.Calib3d;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
@@ -18,6 +23,7 @@ import org.opencv.core.Size;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 
+import vision.MyCalib3d;
 import vision.VisionUtil;
 
 /**
@@ -52,7 +58,7 @@ public class TestBinocular {
         // camera base at 0,0,-4, straight ahead, in meters, world coords
         // double xPos = 0.0;
         // double yPos = 1.0; // camera is below the target
-        double yPos = 0.0;
+        double yPos = 0.5;
         // double zPos = -0.02;
         // in radians, camera coords, positive = right
         double tilt = 0.0;
@@ -1121,22 +1127,29 @@ public class TestBinocular {
         Rect viewport = new Rect(10, 10, width - 20, height - 20);
         final double f = 256.0;
         final Mat kMat = VisionUtil.makeIntrinsicMatrix(f, dsize);
-        System.out.println("kMat");
-        System.out.println(kMat.dump());
+        // System.out.println("kMat");
+        // System.out.println(kMat.dump());
         final MatOfDouble dMat = new MatOfDouble(Mat.zeros(4, 1, CvType.CV_64F));
-        System.out.println("dMat");
-        System.out.println(dMat.dump());
+        // System.out.println("dMat");
+        // System.out.println(dMat.dump());
 
         final double base = 0.4;
 
         final MatOfPoint3f targetGeometryMeters = new MatOfPoint3f(
-                new Point3(0.0, 0.0, 0.01), // solver needs this little bit of non-planarity
-                new Point3(1.0, 0.0, 0.0),
-                new Point3(-1.0, 0.0, 0.0),
-                new Point3(2.0, 2.0, 0.0),
-                new Point3(-2.0, 2.0, 0.0),
-                new Point3(2.0, -2.0, 0.0),
-                new Point3(-2.0, -2.0, 0.0));
+                new Point3(0.0, 0.0, 0.0),
+                new Point3(1.0, 1.0, 0.0),
+                new Point3(1.0, -1.0, 0.0),
+                new Point3(-1.0, -1.0, 0.0),
+                new Point3(-1.0, 1.0, 0.0));
+
+        // final MatOfPoint3f targetGeometryMeters = new MatOfPoint3f(
+        // new Point3(0.0, 0.0, 0.01), // solver needs this little bit of non-planarity
+        // new Point3(1.0, 0.0, 0.0),
+        // new Point3(-1.0, 0.0, 0.0),
+        // new Point3(2.0, 2.0, 0.0),
+        // new Point3(-2.0, 2.0, 0.0),
+        // new Point3(2.0, -2.0, 0.0),
+        // new Point3(-2.0, -2.0, 0.0));
 
         // i really don't know what the "P" matrices should be; the triangulatePoints
         // thing says they should transform *world* frame into camera frames but
@@ -1149,8 +1162,8 @@ public class TestBinocular {
                 0, f, height / 2, 0,
                 0, 0, 1, 0);
 
-        System.out.println("Pleft");
-        System.out.println(Pleft.dump());
+        // System.out.println("Pleft");
+        // System.out.println(Pleft.dump());
 
         Mat Pright = Mat.zeros(3, 4, CvType.CV_32F);
         Pright.put(0, 0,
@@ -1158,8 +1171,26 @@ public class TestBinocular {
                 0, f, height / 2, 0,
                 0, 0, 1, 0);
 
-        System.out.println("Pright");
-        System.out.println(Pright.dump());
+        // System.out.println("Pright");
+        // System.out.println(Pright.dump());
+
+        //
+        //
+        //
+        Random rand = new Random(42);
+        double noisePixels = 2;
+        int pointMultiplier = 3;
+        MatOfPoint3f targetPointsMultiplied = new MatOfPoint3f();
+        List<Point3> targetpointlist = new ArrayList<Point3>();
+        for (int reps = 0; reps < pointMultiplier; reps++) {
+            for (Point3 p : targetGeometryMeters.toList()) {
+                targetpointlist.add(p);
+            }
+        }
+        targetPointsMultiplied = new MatOfPoint3f(targetpointlist.toArray(new Point3[0]));
+        //
+        //
+        //
 
         // fixed coordinates
 
@@ -1168,10 +1199,13 @@ public class TestBinocular {
         // grid
 
         int idx = 0;
-        System.out.println("idx, pan, xpos, zpos, ppan, pxpos, pzpos");
+        System.out.println("idx, pan, xpos, ypos, zpos, ppan, pxpos, pypos, pzpos");
         for (double pan = -Math.PI / 2; pan <= Math.PI / 2; pan += Math.PI / 8) {
             for (double zPos = -10.0; zPos <= -1.0; zPos += 1.0) {
                 point: for (double xPos = -4.0; xPos <= 4.0; xPos += 1.0) {
+                    // for (double pan = 0; pan <= 0; pan += Math.PI / 8) {
+                    // for (double zPos = -5.0; zPos <= -5.0; zPos += 1.0) {
+                    // point: for (double xPos = -0.0; xPos <= 0.0; xPos += 1.0) {
                     idx += 1;
 
                     // camera-to-world transforms
@@ -1280,6 +1314,17 @@ public class TestBinocular {
                     // System.out.println("leftPts");
                     // System.out.println(leftPts.dump());
 
+                    // perturb points
+                    List<Point> leftPtsList = new ArrayList<Point>();
+                    for (int reps = 0; reps < pointMultiplier; reps++) {
+                        for (Point p : leftPts.toList()) {
+                            p.x = p.x + rand.nextGaussian() * noisePixels;
+                            p.y = p.y + rand.nextGaussian() * noisePixels;
+                            leftPtsList.add(p);
+                        }
+                    }
+                    leftPts = new MatOfPoint2f(leftPtsList.toArray(new Point[0]));
+
                     Scalar green = new Scalar(0, 255, 0);
                     Mat imgLeft = Mat.zeros(height, width, CvType.CV_32FC3);
                     for (Point pt : leftPts.toList()) {
@@ -1306,6 +1351,17 @@ public class TestBinocular {
                     // System.out.println("rightPts");
                     // System.out.println(rightPts.dump());
 
+                    // perturb points
+                    List<Point> rightPtsList = new ArrayList<Point>();
+                    for (int reps = 0; reps < pointMultiplier; reps++) {
+                        for (Point p : rightPts.toList()) {
+                            p.x = p.x + rand.nextGaussian() * noisePixels;
+                            p.y = p.y + rand.nextGaussian() * noisePixels;
+                            rightPtsList.add(p);
+                        }
+                    }
+                    rightPts = new MatOfPoint2f(rightPtsList.toArray(new Point[0]));
+
                     Mat imgRight = Mat.zeros(height, width, CvType.CV_32FC3);
                     for (Point pt : rightPts.toList()) {
                         if (!viewport.contains(pt))
@@ -1327,7 +1383,13 @@ public class TestBinocular {
                     // System.out.println("predictedNormal");
                     // System.out.println(predictedNormal.channels());
                     // System.out.println(predictedNormal.dump());
-
+                    //
+                    //
+                    //
+                    // if (idx > 64) break;
+                    //
+                    //
+                    //
                     Mat predictedHomogeneousNormalized = new Mat();
                     Calib3d.convertPointsToHomogeneous(predictedNormal, predictedHomogeneousNormalized);
                     // System.out.println("predictedHomogeneousNormalized");
@@ -1353,8 +1415,9 @@ public class TestBinocular {
                     // System.out.println(targetGeometryMeters.dump());
 
                     // error is tiny, -1e6
-                    Mat triangulationError = new Mat();
-                    Core.subtract(targetGeometryMeters, predictedWorldNormal, triangulationError);
+                    // Mat triangulationError = new Mat();
+                    // Core.subtract(targetGeometryMeters, predictedWorldNormal,
+                    // triangulationError);
                     // System.out.println("triangulationError");
                     // System.out.println(triangulationError.dump());
 
@@ -1362,34 +1425,120 @@ public class TestBinocular {
 
                     // System.out.println("this is x");
                     // System.out.println("predictedHomogeneousNormalized");
-                    // System.out.println(predictedHomogeneousNormalized.t().dump());
+                    // System.out.println(predictedHomogeneousNormalized.dump());
                     // System.out.println("this is b");
                     // System.out.println("homogeneousTarget");
-                    // System.out.println(homogeneousTarget.t().dump());
+                    // System.out.println(homogeneousTarget.dump());
+                    // if (idx > 0)
+                    // continue;
 
                     // solves Ax=b. A * camera triangulation = world coords.
                     // System.out.println("solve Ax=b");
                     Mat A = new Mat();
+                    // Core.solve(predictedHomogeneousNormalized, homogeneousTarget, A,
+                    // Core.DECOMP_SVD);
                     Core.solve(predictedHomogeneousNormalized, homogeneousTarget, A, Core.DECOMP_SVD);
 
                     // System.out.println("AT");
                     // System.out.println(A.t().dump());
 
+                    //
+                    //
+                    //
+
+                    // so Core.solve seems to really suck at this, and it's more general than I
+                    // need. this is a 3d affine transform? actually affine includes
+                    // scaling which i don't want.
+                    // i could treat it as a 2d problem (just x and z) so i could
+                    // use estimateAffine2D.
+
+                    // but first try estimateAffine3D, it has a parameter to force scale (!)
+                    // ... but only in 4.6, and we use 4.5.2. copy the 4.6 one.
+                    // ... but it's in c++. try the one we do have first.
+
+                    {
+
+                        // System.out.println("try affine transform");
+                        // System.out.println("predictedNormal");
+                        // System.out.println(predictedNormal.dump());
+                        // System.out.println("targetPointsMultiplied");
+                        // System.out.println(targetPointsMultiplied.dump());
+                        Mat inliers = new Mat();
+                        Mat affineTransform1 = new Mat();
+                        Calib3d.estimateAffine3D(predictedNormal, targetPointsMultiplied,
+                                affineTransform1,
+                                inliers, 0.95);
+                        // System.out.println("affineTransform");
+                        // System.out.println(affineTransform1.dump());
+                        // System.out.println("inliers");
+                        // System.out.println(inliers.dump());
+                    }
+
+                    // System.out.println("try Umeyama affine transform");
+                    // System.out.println("predictedNormal");
+                    // System.out.println(predictedNormal.dump());
+                    // System.out.println("targetPointsMultiplied");
+                    // System.out.println(targetPointsMultiplied.dump());
+                    Mat affineTransform = MyCalib3d.estimateAffine3D(predictedNormal, targetPointsMultiplied, null,
+                            true);
+                    /// System.out.println("affineTransform");
+                    // System.out.println(affineTransform.dump());
+
+                    //
+                    //
+                    //
+                    // ok the 3d one basically doesn't work.
+                    // before porting the 4.6 version try the 2d version.
+                    //
+                    //
+                    //
+                    Mat prediction2d = Mat.zeros(predictedNormal.rows(), 2, CvType.CV_32F);
+                    for (int i = 0; i < predictedNormal.rows(); ++i) {
+                        prediction2d.put(i, 0, predictedNormal.reshape(1).get(i, 0)[0],
+                                predictedNormal.reshape(1).get(i, 2)[0]);
+                    }
+                    // System.out.println("prediction2d");
+                    // System.out.println(prediction2d.dump());
+
+                    Mat target2d = Mat.zeros(targetPointsMultiplied.rows(), 2, CvType.CV_32F);
+                    for (int i = 0; i < targetPointsMultiplied.rows(); ++i) {
+                        target2d.put(i, 0, targetPointsMultiplied.reshape(1).get(i, 0)[0],
+                                targetPointsMultiplied.reshape(1).get(i, 2)[0]);
+                    }
+                    // System.out.println("target2d");
+                    // System.out.println(target2d.dump());
+                    //
+                    //
+                    //
+                    {
+                        Mat inliers = new Mat();
+                        Mat affine2d = Calib3d.estimateAffinePartial2D(prediction2d, target2d, inliers, Calib3d.LMEDS,
+                                0.5,
+                                1000, 0.99, 1000);
+                        // System.out.println("affine2d");
+                        // System.out.println(affine2d.dump());
+                    }
+                    //
+                    //
+                    //
                     Mat predictedRV = Mat.zeros(3, 1, CvType.CV_32F);
-                    Calib3d.Rodrigues(A.t().rowRange(0, 3).colRange(0, 3), predictedRV);
+                    // Calib3d.Rodrigues(A.t().rowRange(0, 3).colRange(0, 3), predictedRV);
+                    Calib3d.Rodrigues(affineTransform.rowRange(0, 3).colRange(0, 3), predictedRV);
                     // System.out.println("predictedRV");
                     // System.out.println(predictedRV.dump());
 
-                    Mat predictedTV = A.t().colRange(3, 4).rowRange(0, 3);
+                    // Mat predictedTV = A.t().colRange(3, 4).rowRange(0, 3);
+                    Mat predictedTV = affineTransform.colRange(3, 4).rowRange(0, 3);
                     // System.out.println("predictedTV");
                     // System.out.println(predictedTV.dump());
 
                     double pxPos = predictedTV.get(0, 0)[0];
+                    double pyPos = predictedTV.get(1, 0)[0];
                     double pzPos = predictedTV.get(2, 0)[0];
                     double ppan = predictedRV.get(1, 0)[0];
 
-                    System.out.printf("%d, %5.2f, %5.2f, %5.2f, %5.2f, %5.2f, %5.2f\n",
-                            idx, pan, xPos, zPos, ppan, pxPos, pzPos);
+                    System.out.printf("%d, %5.2f, %5.2f, %5.2f, %5.2f, %5.2f, %5.2f, %5.2f, %5.2f\n",
+                            idx, pan, xPos, yPos, zPos, ppan, pxPos, pyPos, pzPos);
 
                 }
             }
