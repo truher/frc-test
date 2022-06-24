@@ -29,9 +29,17 @@ import vision.VisionUtil;
  */
 
 public class TestSVD {
+    public static final boolean DEBUG = false;
 
     public TestSVD() {
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
+    }
+
+    public static void debug( String msg, Mat m) {
+        if (!DEBUG)
+            return;
+        System.out.println(msg);
+        System.out.println(m.dump());
     }
 
     @Test
@@ -55,11 +63,9 @@ public class TestSVD {
         Rect viewport = new Rect(10, 10, width - 20, height - 20);
         final double f = 256.0;
         final Mat kMat = VisionUtil.makeIntrinsicMatrix(f, dsize);
-        // System.out.println("kMat");
-        // System.out.println(kMat.dump());
+        debug("kMat", kMat);
         final MatOfDouble dMat = new MatOfDouble(Mat.zeros(4, 1, CvType.CV_64F));
-        // System.out.println("dMat");
-        // System.out.println(dMat.dump());
+        debug("dMat", dMat);
 
         //
         //
@@ -86,8 +92,7 @@ public class TestSVD {
         Calib3d.convertPointsToHomogeneous(targetPointsMultiplied, homogeneousTarget);
         homogeneousTarget = homogeneousTarget.reshape(1).t();
         homogeneousTarget.convertTo(homogeneousTarget, CvType.CV_64F);
-        // System.out.println("homogeneousTarget");
-        // System.out.println(homogeneousTarget.dump());
+        debug("homogeneousTarget", homogeneousTarget);
 
         //
         //
@@ -539,12 +544,12 @@ public class TestSVD {
                     // Calib3d.Rodrigues(rmat, worldRvec);
                     Mat cameraTVec = Mat.zeros(2, 1, CvType.CV_64F);
                     cameraTVec.put(0, 0, transform.get(0, 2)[0], transform.get(1, 2)[0]);
-                    //System.out.println(cameraTVec.dump());
+                    // System.out.println(cameraTVec.dump());
                     Mat pworldTVec = new Mat();
-                   // System.out.println(rmat.dump());
+                    // System.out.println(rmat.dump());
                     Core.gemm(rmat.t(), cameraTVec, -1.0, new Mat(), 0.0, pworldTVec);
-                    //System.out.println(pworldTVec.dump());
-                    //System.out.println(pworldTVec.size());
+                    // System.out.println(pworldTVec.dump());
+                    // System.out.println(pworldTVec.size());
 
                     double pxPos = pworldTVec.get(0, 0)[0];
                     double pyPos = yPos;
