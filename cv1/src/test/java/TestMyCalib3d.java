@@ -14,6 +14,9 @@ public class TestMyCalib3d {
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
     }
 
+    /**
+     * this is a translation of the C++ test.
+     */
     @Test
     public void testCalib3d_EstimateAffine3D() { // umeyama_3_pt
 

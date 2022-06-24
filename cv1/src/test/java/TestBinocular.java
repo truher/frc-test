@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-import org.junit.Test;
+//import org.junit.Test;
 //import org.junit.Test;
 import org.opencv.calib3d.Calib3d;
 import org.opencv.core.Core;
@@ -1116,7 +1116,7 @@ public class TestBinocular {
     /**
      * ok now the grid works for all three dimensions (x, z, theta).
      */
-    @Test
+    // @Test
     public void testStereoGrid() {
 
         // global invariants
@@ -1511,10 +1511,11 @@ public class TestBinocular {
                     //
                     //
                     {
-                        Mat inliers = new Mat();
-                        Mat affine2d = Calib3d.estimateAffinePartial2D(prediction2d, target2d, inliers, Calib3d.LMEDS,
-                                0.5,
-                                1000, 0.99, 1000);
+                        // Mat inliers = new Mat();
+                        // Mat affine2d = Calib3d.estimateAffinePartial2D(prediction2d, target2d,
+                        // inliers, Calib3d.LMEDS,
+                        // 0.5,
+                        // 1000, 0.99, 1000);
                         // System.out.println("affine2d");
                         // System.out.println(affine2d.dump());
                     }

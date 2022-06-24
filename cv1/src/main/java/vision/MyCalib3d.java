@@ -1,6 +1,5 @@
 package vision;
 
-import java.security.InvalidParameterException;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 
@@ -57,12 +56,12 @@ public class MyCalib3d {
         // CV_CheckGE(count, 3, "Umeyama algorithm needs at least 3 points for affine
         // transformation estimation.");
         if (count < 3)
-            throw new InvalidParameterException(
+            throw new IllegalArgumentException(
                     "Umeyama algorithm needs at least 3 points for affine transformation estimation.");
         // CV_CheckEQ(to.checkVector(3), count, "Point sets need to have the same
         // size");
         if (to.checkVector(3) != count)
-            throw new InvalidParameterException("Point sets need to have the same size");
+            throw new IllegalArgumentException("Point sets need to have the same size");
 
         from = from.reshape(1, count);
         to = to.reshape(1, count);
@@ -116,7 +115,7 @@ public class MyCalib3d {
 
         // CV_CheckGE(countNonZero(d), 2, "Points cannot be colinear");
         if (Core.countNonZero(d) < 2)
-            throw new InvalidParameterException("Points cannot be colinear");
+            throw new IllegalArgumentException("Points cannot be colinear");
 
         Mat S = Mat.eye(3, 3, CvType.CV_64F);
         // det(d) can only ever be >=0, so we can always use this here (compared to the
