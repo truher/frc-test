@@ -30,6 +30,7 @@ import vision.VisionUtil;
 
 public class TestSVD {
     public static final boolean DEBUG = false;
+    public static final Scalar green = new Scalar(0, 255, 0);
 
     public TestSVD() {
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
@@ -52,6 +53,7 @@ public class TestSVD {
     @Test
     public void testSomething() {
         // global invariants
+        System.out.println("hi");
 
         Random rand = new Random(42);
         //
@@ -228,15 +230,9 @@ public class TestSVD {
                     }
                     leftPts = new MatOfPoint2f(leftPtsList.toArray(new Point[0]));
 
-                    Scalar green = new Scalar(0, 255, 0);
-                    Mat imgLeft = Mat.zeros(height, width, CvType.CV_32FC3);
-                    for (Point pt : leftPts.toList()) {
-                        if (!viewport.contains(pt))
-                            continue point;
-                        Imgproc.circle(imgLeft, pt, 6, green, 1);
-                    }
-                    Imgcodecs.imwrite(String.format("C:\\Users\\joelt\\Desktop\\pics\\svd-%d-left.png",
-                            idx), imgLeft);
+                    writePng(leftPts, width, height, viewport,
+                            String.format("C:\\Users\\joelt\\Desktop\\pics\\svd-%d-left.png",
+                                    idx));
 
                     Mat rightCamRV = Mat.zeros(3, 1, CvType.CV_32F);
                     Calib3d.Rodrigues(worldToRightEye.rowRange(0, 3).colRange(0, 3), rightCamRV);
@@ -262,14 +258,9 @@ public class TestSVD {
                     }
                     rightPts = new MatOfPoint2f(rightPtsList.toArray(new Point[0]));
 
-                    Mat imgRight = Mat.zeros(height, width, CvType.CV_32FC3);
-                    for (Point pt : rightPts.toList()) {
-                        if (!viewport.contains(pt))
-                            continue point;
-                        Imgproc.circle(imgRight, pt, 6, green, 1);
-                    }
-                    Imgcodecs.imwrite(String.format("C:\\Users\\joelt\\Desktop\\pics\\svd-%d-right.png",
-                            idx), imgRight);
+                    writePng(rightPts, width, height, viewport,
+                            String.format("C:\\Users\\joelt\\Desktop\\pics\\svd-%d-right.png",
+                                    idx));
 
                     //
                     //
@@ -525,5 +516,16 @@ public class TestSVD {
                 }
             }
         }
+    }
+
+    public static boolean writePng(MatOfPoint2f pts, int width, int height, Rect viewport, String filename) {
+        Mat img = Mat.zeros(height, width, CvType.CV_32FC3);
+        for (Point pt : pts.toList()) {
+            if (!viewport.contains(pt))
+                return false;
+            Imgproc.circle(img, pt, 6, green, 1);
+        }
+        Imgcodecs.imwrite(filename, img);
+        return true;
     }
 }
