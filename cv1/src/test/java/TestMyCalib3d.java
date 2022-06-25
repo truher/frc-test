@@ -15,7 +15,7 @@ public class TestMyCalib3d {
     }
 
     /**
-     * this is a translation of the C++ test.
+     * This is a translation of the C++ test calib3d/test/test_affine3d_estimator.cpp
      */
     @Test
     public void testCalib3d_EstimateAffine3D() { // umeyama_3_pt
@@ -43,6 +43,7 @@ public class TestMyCalib3d {
         Mat t = Mat.zeros(3, 1, CvType.CV_64F);
         t.put(0, 0, 1.0, 2.0, 3.0);
 
+        // Java does not have Affine3d, so it's just Mat.
         // cv::Affine3d transform(R, t);
         Mat transform = Mat.zeros(4, 4, CvType.CV_64F);
         transform.put(0, 0,
