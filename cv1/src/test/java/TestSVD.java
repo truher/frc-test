@@ -58,8 +58,7 @@ public class TestSVD {
 
     @Test
     public void testSomething() {
-
-        // "big" robot is ~0.8m wide, cameras can't be wider than that
+        // A "big" robot is ~0.8m wide, cameras can't be wider than that
         // Later: test sensitivity of width
         final double b = 0.8;
         // camera doesn't move vertically.
@@ -74,59 +73,24 @@ public class TestSVD {
                 point: for (double xPos = -4.0; xPos <= 4.0; xPos += 1.0) {
                     ++idx;
 
-                    //
-                    //
-                    // camera-to-world transforms
-                    //
-                    //
+                    // make transform from world origin to camera center
+                    Mat worldToCameraHomogeneous = makeWorldToCameraHomogeneous(pan, xPos, yPos, zPos);
 
-                    Mat worldTVec = Mat.zeros(3, 1, CvType.CV_32F);
-                    worldTVec.put(0, 0, xPos, yPos, zPos);
-                    debug("worldTVec", worldTVec);
-
-                    Mat worldRV = Mat.zeros(3, 1, CvType.CV_32F);
-                    worldRV.put(0, 0, 0.0, pan, 0.0);
-                    debug("worldRV", worldRV);
-
-                    Mat worldRMat = new Mat();
-                    Calib3d.Rodrigues(worldRV, worldRMat);
-
-                    Mat cameraToWorld = homogeneousRigidTransform(worldRMat, worldTVec);
-                    debug("cameraToWorld", cameraToWorld);
-
-                    // this is inverse(worldT*worldR)
-                    // inverse of multiplication is order-reversed multipication of inverses, so
-                    // which is worldR.t * -worldT or camR*-worldT
-                    Mat camRMat = worldRMat.t();
-                    Mat camTVec = new Mat();
-                    Core.gemm(camRMat, worldTVec, -1.0, new Mat(), 0, camTVec);
-                    debug("camTVec", camTVec);
-
-                    Mat worldToCamera = homogeneousRigidTransform(camRMat, camTVec);
-                    debug("worldToCamera", worldToCamera);
-
-                    // transform from camera center to each eye
-
-                    Mat worldToLeftEye = translateX(worldToCamera, b / 2);
-                    Mat worldToRightEye = translateX(worldToCamera, -b / 2);
+                    // apply transform from camera center to each eye
+                    Mat worldToLeftEye = translateX(worldToCameraHomogeneous, b / 2);
+                    Mat worldToRightEye = translateX(worldToCameraHomogeneous, -b / 2);
                     debug("worldToLeftEye", worldToLeftEye);
                     debug("worldToRightEye", worldToRightEye);
 
-                    // make images
-
+                    // make images based on target points and transforms
                     MatOfPoint2f leftPts = imagePoints(targetGeometryMeters, worldToLeftEye);
-
-                    if (!writePng(leftPts, width, height, viewport,
-                            String.format("C:\\Users\\joelt\\Desktop\\pics\\svd-%d-left.png",
-                                    idx)))
-                        continue point;
-
                     MatOfPoint2f rightPts = imagePoints(targetGeometryMeters, worldToRightEye);
-
-                    if (!writePng(rightPts, width, height, viewport,
-                            String.format("C:\\Users\\joelt\\Desktop\\pics\\svd-%d-right.png",
-                                    idx)))
+                    if (!inViewport(leftPts, viewport) || !inViewport(rightPts, viewport))
                         continue point;
+                    writePng(leftPts, width, height,
+                            String.format("C:\\Users\\joelt\\Desktop\\pics\\svd-%d-left.png", idx));
+                    writePng(rightPts, width, height,
+                            String.format("C:\\Users\\joelt\\Desktop\\pics\\svd-%d-right.png", idx));
 
                     //
                     //
@@ -451,15 +415,49 @@ public class TestSVD {
         return new MatOfPoint2f(ptsList.toArray(new Point[0]));
     }
 
-    public static boolean writePng(MatOfPoint2f pts, int width, int height, Rect viewport, String filename) {
-        Mat img = Mat.zeros(height, width, CvType.CV_32FC3);
+    public static boolean inViewport(MatOfPoint2f pts, Rect viewport) {
         for (Point pt : pts.toList()) {
             if (!viewport.contains(pt))
                 return false;
+        }
+        return true;
+    }
+
+    public static void writePng(MatOfPoint2f pts, int width, int height, String filename) {
+        Mat img = Mat.zeros(height, width, CvType.CV_32FC3);
+        for (Point pt : pts.toList()) {
             Imgproc.circle(img, pt, 6, green, 1);
         }
         Imgcodecs.imwrite(filename, img);
-        return true;
+    }
+
+    public static Mat makeWorldToCameraHomogeneous(double pan, double xPos, double yPos, double zPos) {
+        // these are camera-to-world transforms
+        Mat cameraToWorldTVec = Mat.zeros(3, 1, CvType.CV_32F);
+        cameraToWorldTVec.put(0, 0, xPos, yPos, zPos);
+        debug("worldTVec", cameraToWorldTVec);
+
+        Mat cameraToWorldRV = Mat.zeros(3, 1, CvType.CV_32F);
+        cameraToWorldRV.put(0, 0, 0.0, pan, 0.0);
+        debug("worldRV", cameraToWorldRV);
+
+        Mat cameraToWorldRMat = new Mat();
+        Calib3d.Rodrigues(cameraToWorldRV, cameraToWorldRMat);
+
+        Mat cameraToWorldHomogeneous = homogeneousRigidTransform(cameraToWorldRMat, cameraToWorldTVec);
+        debug("cameraToWorld (just to see)", cameraToWorldHomogeneous);
+
+        // this is inverse(worldT*worldR)
+        // inverse of multiplication is order-reversed multipication of inverses, so
+        // which is worldR.t * -worldT or camR*-worldT
+        Mat worldToCameraRMat = cameraToWorldRMat.t();
+        Mat worldToCameraTVec = new Mat();
+        Core.gemm(worldToCameraRMat, cameraToWorldTVec, -1.0, new Mat(), 0, worldToCameraTVec);
+        debug("camTVec", worldToCameraTVec);
+
+        Mat worldToCameraHomogeneous = homogeneousRigidTransform(worldToCameraRMat, worldToCameraTVec);
+        debug("worldToCamera", worldToCameraHomogeneous);
+        return worldToCameraHomogeneous;
     }
 
     public static void debug(String msg, Mat m) {
