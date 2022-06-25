@@ -363,14 +363,8 @@ public class TestSVD {
                     // so now Ax=b where X is the world geometry and b is above.
                     Mat AA = new Mat();
 
-                    // System.out.println("TinvMinvBmat (b data)");
-                    // System.out.println(TinvMinvBmat.type());
-                    // System.out.println(TinvMinvBmat.size());
-                    // System.out.println(TinvMinvBmat.dump());
-                    // System.out.println("targetPointsMultipliedXZHomogeneousMat (x data)");
-                    // System.out.println(targetPointsMultipliedXZHomogeneousMat.type());
-                    // System.out.println(targetPointsMultipliedXZHomogeneousMat.size());
-                    // System.out.println(targetPointsMultipliedXZHomogeneousMat.dump());
+                    debug("TinvMinvBmat (b data)", TinvMinvBmat);
+                    debug("targetPointsMultipliedXZHomogeneousMat (x data)", targetPointsMultipliedXZHomogeneousMat);
 
                     // remember the solver likes transposes which i find very strange
                     // but it is what it is
