@@ -35,11 +35,18 @@ public class TestSVD {
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
     }
 
-    public static void debug( String msg, Mat m) {
+    public static void debug(String msg, Mat m) {
         if (!DEBUG)
             return;
         System.out.println(msg);
         System.out.println(m.dump());
+    }
+
+    public static void debug(String msg, double d) {
+        if (!DEBUG)
+            return;
+        System.out.println(msg);
+        System.out.println(d);
     }
 
     @Test
@@ -123,13 +130,11 @@ public class TestSVD {
 
                     Mat worldTVec = Mat.zeros(3, 1, CvType.CV_32F);
                     worldTVec.put(0, 0, xPos, yPos, zPos);
-                    // System.out.println("worldTVec");
-                    // System.out.println(worldTVec.dump());
+                    debug("worldTVec", worldTVec);
 
                     Mat worldRV = Mat.zeros(3, 1, CvType.CV_32F);
                     worldRV.put(0, 0, 0.0, pan, 0.0);
-                    // System.out.println("worldRV");
-                    // System.out.println(worldRV.dump());
+                    debug("worldRV", worldRV);
 
                     Mat worldRMat = new Mat();
                     Calib3d.Rodrigues(worldRV, worldRMat);
@@ -137,8 +142,7 @@ public class TestSVD {
                     Mat camRMat = worldRMat.t();
                     Mat camRV = new Mat();
                     Calib3d.Rodrigues(camRMat, camRV);
-                    // System.out.println("camRV");
-                    // System.out.println(camRV.dump());
+                    debug("camRV", camRV);
 
                     // now the whole camera->world
                     Mat cameraToWorld = Mat.zeros(4, 4, CvType.CV_32F);
@@ -151,16 +155,14 @@ public class TestSVD {
                             worldTVec.get(2, 0)[0],
                             0, 0, 0, 1);
 
-                    // System.out.println("cameraToWorld");
-                    // System.out.println(cameraToWorld.dump());
+                    debug("cameraToWorld", cameraToWorld);
 
                     // this is inverse(worldT*worldR)
                     // inverse of multiplication is order-reversed multipication of inverses, so
                     // which is worldR.t * -worldT or camR*-worldT
                     Mat camTVec = new Mat();
                     Core.gemm(camRMat, worldTVec, -1.0, new Mat(), 0, camTVec);
-                    // System.out.println("camTVec");
-                    // System.out.println(camTVec.dump());
+                    debug("camTVec", camTVec);
 
                     // so the final (homogeneous) transform from world to camera
                     Mat worldToCamera = Mat.zeros(4, 4, CvType.CV_32F);
@@ -169,8 +171,7 @@ public class TestSVD {
                             camRMat.get(1, 0)[0], camRMat.get(1, 1)[0], camRMat.get(1, 2)[0], camTVec.get(1, 0)[0],
                             camRMat.get(2, 0)[0], camRMat.get(2, 1)[0], camRMat.get(2, 2)[0], camTVec.get(2, 0)[0],
                             0, 0, 0, 1);
-                    // System.out.println("worldToCamera");
-                    // System.out.println(worldToCamera.dump());
+                    debug("worldToCamera", worldToCamera);
 
                     // transform from camera center to left eye
                     Mat baseToLeftEye = Mat.zeros(4, 4, CvType.CV_32F);
@@ -179,13 +180,11 @@ public class TestSVD {
                             0, 1, 0, 0,
                             0, 0, 1, 0,
                             0, 0, 0, 1);
-                    // System.out.println("baseToLeftEye");
-                    // System.out.println(baseToLeftEye.dump());
+                    debug("baseToLeftEye", baseToLeftEye);
 
                     Mat worldToLeftEye = new Mat();
                     Core.gemm(baseToLeftEye, worldToCamera, 1.0, new Mat(), 0.0, worldToLeftEye);
-                    // System.out.println("worldToLeftEye");
-                    // System.out.println(worldToLeftEye.dump());
+                    debug("worldToLeftEye", worldToLeftEye);
 
                     Mat baseToRightEye = Mat.zeros(4, 4, CvType.CV_32F);
                     baseToRightEye.put(0, 0,
@@ -193,13 +192,11 @@ public class TestSVD {
                             0, 1, 0, 0,
                             0, 0, 1, 0,
                             0, 0, 0, 1);
-                    // System.out.println("baseToRightEye");
-                    // System.out.println(baseToRightEye.dump());
+                    debug("baseToRightEye", baseToRightEye);
 
                     Mat worldToRightEye = new Mat();
                     Core.gemm(baseToRightEye, worldToCamera, 1.0, new Mat(), 0.0, worldToRightEye);
-                    // System.out.println("worldToRightEye");
-                    // System.out.println(worldToRightEye.dump());
+                    debug("worldToRightEye", worldToRightEye);
 
                     //
                     //
@@ -209,19 +206,16 @@ public class TestSVD {
 
                     Mat leftCamRV = Mat.zeros(3, 1, CvType.CV_32F);
                     Calib3d.Rodrigues(worldToLeftEye.rowRange(0, 3).colRange(0, 3), leftCamRV);
-                    // System.out.println("leftCamRV");
-                    // System.out.println(leftCamRV.dump());
+                    debug("leftCamRV", leftCamRV);
                     Mat leftCamTVec = worldToLeftEye.colRange(3, 4).rowRange(0, 3);
-                    // System.out.println("leftCamTVec");
-                    // System.out.println(leftCamTVec.dump());
+                    debug("leftCamTVec", leftCamTVec);
 
                     MatOfPoint2f leftPts = new MatOfPoint2f();
                     Mat jacobian = new Mat();
                     // this wants world->camera transformation
                     Calib3d.projectPoints(targetGeometryMeters, leftCamRV, leftCamTVec, kMat, dMat,
                             leftPts, jacobian);
-                    // System.out.println("leftPts");
-                    // System.out.println(leftPts.dump());
+                    debug("leftPts", leftPts);
 
                     // perturb points
                     List<Point> leftPtsList = new ArrayList<Point>();
@@ -246,19 +240,16 @@ public class TestSVD {
 
                     Mat rightCamRV = Mat.zeros(3, 1, CvType.CV_32F);
                     Calib3d.Rodrigues(worldToRightEye.rowRange(0, 3).colRange(0, 3), rightCamRV);
-                    // System.out.println("rightCamRV");
-                    // System.out.println(rightCamRV.dump());
+                    debug("rightCamRV", rightCamRV);
                     Mat rightCamTVec = worldToRightEye.colRange(3, 4).rowRange(0, 3);
-                    // System.out.println("rightCamTVec");
-                    // System.out.println(rightCamTVec.dump());
+                    debug("rightCamTVec", rightCamTVec);
 
                     MatOfPoint2f rightPts = new MatOfPoint2f();
 
                     // this wants world->camera transformation
                     Calib3d.projectPoints(targetGeometryMeters, rightCamRV, rightCamTVec, kMat, dMat,
                             rightPts, jacobian);
-                    // System.out.println("rightPts");
-                    // System.out.println(rightPts.dump());
+                    debug("rightPts", rightPts);
 
                     // perturb points
                     List<Point> rightPtsList = new ArrayList<Point>();
@@ -312,8 +303,7 @@ public class TestSVD {
                     for (int i = 0; i < leftPtsList.size(); ++i) {
                         bMat.put(i, 0, leftPts.get(i, 0)[0], rightPts.get(i, 0)[0], 1.0);
                     }
-                    // System.out.println("bMat");
-                    // System.out.println(bMat.dump());
+                    debug("bMat", bMat);
 
                     // and the target drops Y
                     List<Point3> targetPointsMultipliedList = targetPointsMultiplied.toList();
@@ -336,33 +326,27 @@ public class TestSVD {
                             0, f, cx,
                             0, 0, 1);
 
-                    // System.out.println("M");
-                    // System.out.println(M.dump());
+                    debug("M", M);
                     Mat Minv = M.inv();
-                    // System.out.println("Minv");
-                    // System.out.println(Minv.dump());
+                    debug("Minv", Minv);
 
                     Mat T = Mat.zeros(3, 3, CvType.CV_64F);
                     T.put(0, 0,
                             1, 0, b / 2,
                             1, 0, -b / 2,
                             0, 1, 0);
-                    // System.out.println("T");
-                    // System.out.println(T.dump());
+                    debug("T", T);
                     Mat Tinv = T.inv();
-                    // System.out.println("Tinv");
-                    // System.out.println(Tinv.dump());
+                    debug("Tinv", Tinv);
 
                     // apply the inverses to the observations (the "b")
                     Mat MinvBmat = new Mat();
                     Core.gemm(Minv, bMat.t(), 1.0, new Mat(), 0.0, MinvBmat);
-                    // System.out.println("MinvBmat");
-                    // System.out.println(MinvBmat.dump());
+                    debug("MinvBmat", MinvBmat);
 
                     Mat TinvMinvBmat = new Mat();
                     Core.gemm(Tinv, MinvBmat, 1.0, new Mat(), 0.0, TinvMinvBmat);
-                    // System.out.println("TinvMinvBmat");
-                    // System.out.println(TinvMinvBmat.dump());
+                    debug("TinvMinvBmat", TinvMinvBmat);
 
                     // let's normalize that since it's supposed to be homogeneous?
                     // it represents the result of the rotation/translation we're trying to find
@@ -374,8 +358,7 @@ public class TestSVD {
                         TinvMinvBmat.put(1, col, zval / scaleVal);
                         TinvMinvBmat.put(2, col, 1.0);
                     }
-                    // System.out.println("TinvMinvBmat (scaled)");
-                    // System.out.println(TinvMinvBmat.dump());
+                    debug("TinvMinvBmat (scaled)", TinvMinvBmat);
 
                     // so now Ax=b where X is the world geometry and b is above.
                     Mat AA = new Mat();
@@ -394,8 +377,7 @@ public class TestSVD {
                     Core.solve(targetPointsMultipliedXZHomogeneousMat.t(), TinvMinvBmat.t(), AA, Core.DECOMP_SVD);
                     // solver produces transpose.
                     AA = AA.t();
-                    // System.out.println("AA");
-                    // System.out.println(AA.dump());
+                    debug("AA", AA);
 
                     // remember where we are:
                     // b = 0.4;
@@ -411,12 +393,10 @@ public class TestSVD {
 
                     double Ascale = AA.get(2, 2)[0];
                     Core.gemm(AA, Mat.eye(3, 3, CvType.CV_64F), 1 / Ascale, new Mat(), 0.0, AA);
-                    // System.out.println("AA scaled");
-                    // System.out.println(AA.dump());
+                    debug("AA scaled", AA);
 
                     double perhapsRotation = VisionUtil.rotm2euler2d(AA.submat(0, 2, 0, 2));
-                    // System.out.println("perhapsRotation");
-                    // System.out.println(perhapsRotation);
+                    debug("perhapsRotation", perhapsRotation);
 
                     // so with noise this produces non-rigid transforms.
                     // instead try the Omeyama way, adapted to 2d.
@@ -427,8 +407,7 @@ public class TestSVD {
                         from.put(1, col, targetPointsMultipliedXZHomogeneousMat.get(1, col)[0]);
                     }
                     from = from.t();
-                    // System.out.println("from");
-                    // System.out.println(from.dump());
+                    debug("from", from);
                     // Mat from = targetPointsMultipliedXZHomogeneousMat.t();
 
                     Mat to = Mat.zeros(2, TinvMinvBmat.cols(), CvType.CV_64F);
@@ -437,8 +416,7 @@ public class TestSVD {
                         to.put(1, col, TinvMinvBmat.get(1, col)[0]);
                     }
                     to = to.t();
-                    // System.out.println("to");
-                    // System.out.println(to.dump());
+                    debug("to", to);
 
                     // Mat to = TinvMinvBmat.t();
 
@@ -482,27 +460,21 @@ public class TestSVD {
                     Mat from_centered = demean.apply(from, from_mean);
                     Mat to_centered = demean.apply(to, to_mean);
 
-                    // System.out.println("from_centered");
-                    // System.out.println(from_centered.dump());
-                    // System.out.println("to_centered");
-                    // System.out.println(to_centered.dump());
+                    debug("from_centered", from_centered);
+                    debug("to_centered", to_centered);
 
                     // Mat cov = to_centered.t() * from_centered * one_over_n;
                     Mat cov = new Mat();
                     Core.gemm(to_centered.t(), from_centered, one_over_n, new Mat(), 0.0, cov);
-                    // System.out.println("cov");
-                    // System.out.println(cov.dump());
+                    debug("cov", cov);
 
                     Mat u = new Mat();
                     Mat d = new Mat();
                     Mat vt = new Mat();
                     Core.SVDecomp(cov, d, u, vt, Core.SVD_MODIFY_A | Core.SVD_FULL_UV);
-                    // System.out.println("u");
-                    // System.out.println(u.dump());
-                    // System.out.println("d");
-                    // System.out.println(d.dump());
-                    // System.out.println("vt");
-                    // System.out.println(vt.dump());
+                    debug("u", u);
+                    debug("d", d);
+                    debug("vt", vt);
 
                     // if (Core.countNonZero(d) < 2)
                     // throw new IllegalArgumentException("Points cannot be colinear");
@@ -527,15 +499,13 @@ public class TestSVD {
                     rmat.copyTo(r_part);
                     // transform.col(3) = to_mean.t() - new_to;
                     double euler = VisionUtil.rotm2euler2d(rmat);
-                    // System.out.println("euler");
-                    // System.out.println(euler);
+                    debug("euler", euler);
 
                     Mat t_part = transform.col(2);
                     Mat tmat = new Mat();
                     Core.subtract(to_mean.t(), new_to, tmat);
                     tmat.copyTo(t_part);
-                    // System.out.println("transform");
-                    // System.out.println(transform.dump());
+                    debug("transform", transform);
 
                     // ah this is the reverse transform so to get the world coords
                     // i need to transform back.
@@ -544,12 +514,11 @@ public class TestSVD {
                     // Calib3d.Rodrigues(rmat, worldRvec);
                     Mat cameraTVec = Mat.zeros(2, 1, CvType.CV_64F);
                     cameraTVec.put(0, 0, transform.get(0, 2)[0], transform.get(1, 2)[0]);
-                    // System.out.println(cameraTVec.dump());
+                    debug("cameraTVec", cameraTVec);
                     Mat pworldTVec = new Mat();
-                    // System.out.println(rmat.dump());
+                    debug("rmat", rmat);
                     Core.gemm(rmat.t(), cameraTVec, -1.0, new Mat(), 0.0, pworldTVec);
-                    // System.out.println(pworldTVec.dump());
-                    // System.out.println(pworldTVec.size());
+                    debug("pWorldTVec", pworldTVec);
 
                     double pxPos = pworldTVec.get(0, 0)[0];
                     double pyPos = yPos;

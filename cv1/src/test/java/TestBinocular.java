@@ -1,13 +1,10 @@
-//import java.util.List;
-
 import static org.junit.Assert.assertEquals;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-//import org.junit.Test;
-//import org.junit.Test;
+import org.junit.Test;
 import org.opencv.calib3d.Calib3d;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
@@ -30,21 +27,41 @@ import vision.VisionUtil;
  * Binocular vision to try to improve distant pose estimation.
  */
 public class TestBinocular {
-    public final double DELTA = 0.001;
+    public static final double DELTA = 0.001;
+    public static final boolean DEBUG = false;
 
     public TestBinocular() {
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
     }
 
-    // @Test
+    public static void debugmsg(String msg) {
+        if (!DEBUG)
+            return;
+        System.out.println(msg);
+    }
+
+    public static void debug(String msg, Mat m) {
+        if (!DEBUG)
+            return;
+        System.out.println(msg);
+        System.out.println(m.dump());
+    }
+
+    public static void debug(String msg, double d) {
+        if (!DEBUG)
+            return;
+        System.out.println(msg);
+        System.out.println(d);
+    }
+
+     @Test
     public void testSimple() {
         final int height = 540;
         final int width = 960;
         Size dsize = new Size(width, height);
         final double f = 256.0;
         Mat kMat = VisionUtil.makeIntrinsicMatrix(f, dsize);
-        System.out.println("kMat");
-        System.out.println(kMat.dump());
+        debug("kMat", kMat);
         MatOfDouble dMat = new MatOfDouble(Mat.zeros(4, 1, CvType.CV_64F));
 
         // target is 0.4m wide, 0.1m high
@@ -52,8 +69,7 @@ public class TestBinocular {
         final double targetHeight = 0.1;
         MatOfPoint3f targetGeometryMeters = VisionUtil.makeTargetGeometry3f2(targetWidth,
                 targetHeight);
-        System.out.println("targetGeometryMeters");
-        System.out.println(targetGeometryMeters.dump());
+        debug("targetGeometryMeters", targetGeometryMeters);
 
         // camera base at 0,0,-4, straight ahead, in meters, world coords
         // double xPos = 0.0;
@@ -91,8 +107,7 @@ public class TestBinocular {
                 // MatOfPoint2f leftPts = VisionUtil.getImagePoints(xPos - base / 2, yPos, zPos,
                 // tilt, pan, kMat, dMat,
                 // targetGeometryMeters);
-                System.out.println("leftPts");
-                System.out.println(leftPts.dump());
+                debug("leftPts", leftPts);
 
                 Mat leftImage = Mat.zeros(height, width, CvType.CV_32FC3);
                 for (Point pt : leftPts.toList()) {
@@ -108,8 +123,7 @@ public class TestBinocular {
 
                 MatOfPoint2f rightPts = VisionUtil.getImagePoints(xPos + base / 2, yPos, zPos, tilt, pan, kMat, dMat,
                         targetGeometryMeters);
-                System.out.println("rightPts");
-                System.out.println(rightPts.dump());
+                debug("rightPts", rightPts);
                 Mat rightImage = Mat.zeros(height, width, CvType.CV_32FC3);
                 for (Point pt : rightPts.toList()) {
                     // if (!viewport.contains(pt))
@@ -125,8 +139,6 @@ public class TestBinocular {
                 Mat camTV = Mat.zeros(3, 1, CvType.CV_32F);
                 camTV.put(0, 0,
                         -xPos, -yPos, -zPos);
-                System.out.println(camRM.t().type());
-                System.out.println(camTV.type());
                 Mat worldTV = new Mat();
                 Core.gemm(camRM.t(), camTV, -1.0, new Mat(), 0.0, worldTV);
                 Mat targetCameraRt = Mat.zeros(4, 4, CvType.CV_32F);
@@ -136,8 +148,7 @@ public class TestBinocular {
                         camRM.get(2, 0)[0], camRM.get(2, 1)[0], camRM.get(2, 2)[0], worldTV.get(2, 0)[0],
                         0, 0, 0, 1);
 
-                System.out.println("targetCameraRt");
-                System.out.println(targetCameraRt.dump());
+                debug("targetCameraRt", targetCameraRt);
 
                 // Camera projection matrices are offset but not rotated
                 // Mat RtLeft = Mat.zeros(3, 4, CvType.CV_32F);
@@ -160,8 +171,7 @@ public class TestBinocular {
                         0, f, height / 2, 0,
                         0, 0, 1, 0);
 
-                System.out.println("Pleft");
-                System.out.println(Pleft.dump());
+                debug("Pleft", Pleft);
 
                 Mat Pright = Mat.zeros(3, 4, CvType.CV_32F);
                 Pright.put(0, 0,
@@ -177,33 +187,28 @@ public class TestBinocular {
 
                 Mat homogeneousTarget = new Mat();
                 Calib3d.convertPointsToHomogeneous(targetGeometryMeters, homogeneousTarget);
-                System.out.println("homogeneousTarget");
-                System.out.println(homogeneousTarget.reshape(1).dump());
+                debug("homogeneousTarget", homogeneousTarget.reshape(1));
 
                 Mat targetInCamera = new Mat();
                 Core.gemm(targetCameraRt, homogeneousTarget.reshape(1).t(), 1.0, new Mat(), 0.0, targetInCamera);
-                System.out.println("targetInCamera");
-                System.out.println(targetInCamera.t().dump());
+                debug("targetInCamera", targetInCamera.t());
 
                 // this is meters i guess
                 Mat projectedTargetLeft = new Mat();
                 // Core.gemm(Pleft, homogeneousTarget.reshape(1).t(), 1.0, new Mat(), 0.0,
                 // projectedTargetLeft);
                 Core.gemm(Pleft, targetInCamera, 1.0, new Mat(), 0.0, projectedTargetLeft);
-                System.out.println("projectedTargetLeft");
-                System.out.println(projectedTargetLeft.t().dump());
+                debug("projectedTargetLeft", projectedTargetLeft.t());
 
                 Mat projectedTargetLeftNormal = new Mat();
                 Calib3d.convertPointsFromHomogeneous(projectedTargetLeft.t(), projectedTargetLeftNormal);
-                System.out.println("projectedTargetLeftNormal");
-                System.out.println(projectedTargetLeftNormal.dump());
+                debug("projectedTargetLeftNormal", projectedTargetLeftNormal);
 
                 Mat projectedTargetRight = new Mat();
                 // Core.gemm(Pright, homogeneousTarget.reshape(1).t(), 1.0, new Mat(), 0.0,
                 // projectedTargetRight);
                 Core.gemm(Pright, targetInCamera, 1.0, new Mat(), 0.0, projectedTargetRight);
-                System.out.println("projectedTargetRight");
-                System.out.println(projectedTargetRight.t().dump());
+                debug("projectedTargetRight", projectedTargetRight.t());
 
                 // points in the left camera's rectified coords, one channel
                 // pts are pixels
@@ -212,8 +217,7 @@ public class TestBinocular {
                 //
                 Mat predictedHomogeneous = new Mat();
                 Calib3d.triangulatePoints(Pleft, Pright, leftPts, rightPts, predictedHomogeneous);
-                System.out.println("predictedHomogeneous == what triangulatepoints says");
-                System.out.println(predictedHomogeneous.t().dump());
+                debug("predictedHomogeneous == what triangulatepoints says", predictedHomogeneous.t());
                 Mat fixBase = Mat.zeros(4, 4, CvType.CV_32F);
 
                 fixBase.put(0, 0,
@@ -225,20 +229,16 @@ public class TestBinocular {
                 Mat fixed = new Mat();
                 Core.gemm(fixBase, predictedHomogeneous, 1.0, new Mat(), 0.0, fixed);
                 Mat fixedT = fixed.t();
-                System.out.println("fixedT == camera view from base center, homogeneous");
-                System.out.println(fixedT.dump());
+                debug("fixedT == camera view from base center, homogeneous", fixedT);
                 //
                 Mat fixedTNormal = new Mat();
                 Calib3d.convertPointsFromHomogeneous(fixedT, fixedTNormal);
-                System.out.println("fixedTNormal == target points in camera coords, just to see");
-                System.out.println(fixedTNormal.dump());
+                debug("fixedTNormal == target points in camera coords, just to see", fixedTNormal);
 
                 Mat fullyFixed = new Mat();
                 Calib3d.convertPointsFromHomogeneous(fixedT, fullyFixed);
                 Calib3d.convertPointsToHomogeneous(fullyFixed, fixedT);
-                System.out.println("fixedT == camera view from base center, homogeneous, normalized?");
-                System.out.println(fixedT.reshape(1).size());
-                System.out.println(fixedT.reshape(1).dump());
+                debug("fixedT == camera view from base center, homogeneous, normalized?", fixedT.reshape(1));
 
                 // try dropping Y, since the robot is on the floor and the target height
                 // is fixed.
@@ -249,15 +249,11 @@ public class TestBinocular {
                         0, 0, 0, 1);
                 Mat fixedT2d = new Mat();
                 Core.gemm(dropY, fixedT.reshape(1).t(), 1.0, new Mat(), 0.0, fixedT2d);
-                System.out.println("fixedT2d");
-                System.out.println(fixedT2d.t().type());
-                System.out.println(fixedT2d.t().dump());
+                debug("fixedT2d", fixedT2d.t());
 
                 Mat homogeneousTarget2d = new Mat();
                 Core.gemm(dropY, homogeneousTarget.reshape(1).t(), 1.0, new Mat(), 0.0, homogeneousTarget2d);
-                System.out.println("homogeneousTarget2d");
-                System.out.println(homogeneousTarget2d.t().type());
-                System.out.println(homogeneousTarget2d.t().dump());
+                debug("homogeneousTarget2d", homogeneousTarget2d.t());
 
                 // solves Ax=b. A * camera triangulation = world coords.
                 Mat A = new Mat();
@@ -266,19 +262,16 @@ public class TestBinocular {
                 Core.solve(fixedT2d.t(), homogeneousTarget2d.t(), A, Core.DECOMP_SVD);
 
                 Mat Atp = A.t(); // why transpose? because it seems to produce the right answer? yuck.
-                System.out.println("Atp");
-                System.out.println(Atp.dump());
+                debug("Atp", Atp);
 
                 Mat reproject = new Mat();
                 // Core.gemm(Atp, fixedT.reshape(1).t(), 1.0, new Mat(), 0.0, reproject);
                 Core.gemm(Atp, fixedT2d, 1.0, new Mat(), 0.0, reproject);
-                System.out.println("reproject");
-                System.out.println(reproject.t().dump());
+                debug("reproject", reproject.t());
 
                 Mat reprojectionError = new Mat();
                 Core.subtract(homogeneousTarget2d.t(), reproject.t(), reprojectionError);
-                System.out.println("reprojectionError");
-                System.out.println(reprojectionError.dump());
+                debug("reprojectionError", reprojectionError);
 
                 // double scale = Atp.get(3, 3)[0];
                 // Mat tvec = Mat.zeros(3, 1, CvType.CV_32F);
@@ -293,8 +286,7 @@ public class TestBinocular {
                 Mat tvec = Mat.zeros(3, 1, CvType.CV_32F);
                 tvec.put(0, 0,
                         Atp.get(0, 2)[0] / scale, yPos, Atp.get(1, 2)[0] / scale);
-                System.out.println("tvec == translation of camera in world?");
-                System.out.println(tvec.dump());
+                debug("tvec == translation of camera in world?", tvec);
 
                 // Mat rmat = Mat.zeros(3, 3, CvType.CV_32F);
                 // rmat.put(0, 0,
@@ -309,21 +301,17 @@ public class TestBinocular {
                         Atp.get(0, 0)[0] / scale, 0.0, Atp.get(0, 1)[0] / scale,
                         0.0, 1.0, 0.0,
                         Atp.get(1, 0)[0] / scale, 0.0, Atp.get(1, 1)[0] / scale);
-                System.out.println("rmat = rotation of camera in world?");
-                System.out.println(rmat.dump());
+                debug("rmat = rotation of camera in world?", rmat);
 
                 Mat rvec = new Mat();
                 Mat jacobian = new Mat();
                 Calib3d.Rodrigues(rmat, rvec, jacobian);
-                System.out.println("rvec");
-                System.out.println(rvec.dump());
+                debug("rvec", rvec);
                 Mat euler = VisionUtil.rotm2euler(rmat);
-                System.out.println("euler");
-                System.out.println(euler.dump());
+                debug("euler", euler);
 
                 // double euler = VisionUtil.rotm2euler2d(rmat);
-                // System.out.println("euler");
-                // System.out.println(euler);
+                debug("euler", euler);
 
                 System.out.printf("%d, %5.3f, %5.3f, %5.3f, %5.3f, %5.3f,"
                         + " %5.3f, %5.3f, %5.3f, %5.3f, %5.3f\n",
@@ -351,11 +339,9 @@ public class TestBinocular {
         Size dsize = new Size(width, height);
         final double f = 256.0;
         Mat kMat = VisionUtil.makeIntrinsicMatrix(f, dsize);
-        System.out.println("kMat");
-        System.out.println(kMat.dump());
+        debug("kMat", kMat);
         MatOfDouble dMat = new MatOfDouble(Mat.zeros(4, 1, CvType.CV_64F));
-        System.out.println("dMat");
-        System.out.println(dMat.dump());
+        debug("dMat", dMat);
 
         // this is camera->world transformation
         // this is location of the camera in world coordinates
@@ -367,8 +353,7 @@ public class TestBinocular {
         double zPos = -3;
         Mat worldTVec = Mat.zeros(3, 1, CvType.CV_32F);
         worldTVec.put(0, 0, xPos, yPos, zPos);
-        System.out.println("worldTVec");
-        System.out.println(worldTVec.dump());
+        debug("worldTVec", worldTVec);
 
         // this is camera->world transformation
         // this is rotation of the camera in world coordinates
@@ -380,8 +365,7 @@ public class TestBinocular {
         double pan = 0.7854;
         Mat worldRV = Mat.zeros(3, 1, CvType.CV_32F);
         worldRV.put(0, 0, 0.0, pan, 0.0);
-        System.out.println("worldRV");
-        System.out.println(worldRV.dump());
+        debug("worldRV", worldRV);
 
         Mat worldRMat = new Mat();
         Calib3d.Rodrigues(worldRV, worldRMat);
@@ -389,16 +373,14 @@ public class TestBinocular {
         Mat camRMat = worldRMat.t();
         Mat camRV = new Mat();
         Calib3d.Rodrigues(camRMat, camRV);
-        System.out.println("camRV");
-        System.out.println(camRV.dump());
+        debug("camRV", camRV);
 
         // this is inverse(worldT*worldR)
         // inverse of multiplication is order-reversed multipication of inverses, so
         // which is worldR.t * -worldT or camR*-worldT
         Mat camTVec = new Mat();
         Core.gemm(camRMat, worldTVec, -1.0, new Mat(), 0, camTVec);
-        System.out.println("camTVec");
-        System.out.println(camTVec.dump());
+        debug("camTVec", camTVec);
 
         // so this is how the origin moves
         // worldTVec = (0,0,-3)
@@ -415,20 +397,17 @@ public class TestBinocular {
                 camRMat.get(1, 0)[0], camRMat.get(1, 1)[0], camRMat.get(1, 2)[0], camTVec.get(1, 0)[0],
                 camRMat.get(2, 0)[0], camRMat.get(2, 1)[0], camRMat.get(2, 2)[0], camTVec.get(2, 0)[0],
                 0, 0, 0, 1);
-        System.out.println("camTransform");
-        System.out.println(camTransform.dump());
+        debug("camTransform", camTransform);
 
         // example: (0,0,0) -> (-3sqrt(2)/2, 0, 3sqrt(2)/2)
         {
             Mat worldPoint = Mat.zeros(4, 1, CvType.CV_32F);
             worldPoint.put(0, 0,
                     0, 0, 0, 1);
-            System.out.println("point in world frame");
-            System.out.println(worldPoint.dump());
+            debug("point in world frame", worldPoint);
             Mat transformedPoint = new Mat();
             Core.gemm(camTransform, worldPoint, 1.0, new Mat(), 0, transformedPoint);
-            System.out.println("point in camera frame");
-            System.out.println(transformedPoint.dump());
+            debug("point in camera frame", transformedPoint);
             assertEquals(-3 * Math.sqrt(2) / 2, transformedPoint.get(0, 0)[0], DELTA);
             assertEquals(0, transformedPoint.get(1, 0)[0], DELTA);
             assertEquals(3 * Math.sqrt(2) / 2, transformedPoint.get(2, 0)[0], DELTA);
@@ -438,12 +417,10 @@ public class TestBinocular {
             Mat worldPoint = Mat.zeros(4, 1, CvType.CV_32F);
             worldPoint.put(0, 0,
                     1, 0, 0, 1);
-            System.out.println("point in world frame");
-            System.out.println(worldPoint.dump());
+            debug("point in world frame", worldPoint);
             Mat transformedPoint = new Mat();
             Core.gemm(camTransform, worldPoint, 1.0, new Mat(), 0, transformedPoint);
-            System.out.println("point in camera frame");
-            System.out.println(transformedPoint.dump());
+            debug("point in camera frame", transformedPoint);
             assertEquals(-Math.sqrt(2), transformedPoint.get(0, 0)[0], DELTA);
             assertEquals(0, transformedPoint.get(1, 0)[0], DELTA);
             assertEquals(2 * Math.sqrt(2), transformedPoint.get(2, 0)[0], DELTA);
@@ -458,11 +435,9 @@ public class TestBinocular {
         Size dsize = new Size(width, height);
         final double f = 256.0;
         Mat kMat = VisionUtil.makeIntrinsicMatrix(f, dsize);
-        System.out.println("kMat");
-        System.out.println(kMat.dump());
+        debug("kMat", kMat);
         MatOfDouble dMat = new MatOfDouble(Mat.zeros(4, 1, CvType.CV_64F));
-        System.out.println("dMat");
-        System.out.println(dMat.dump());
+        debug("dMat", dMat);
 
         MatOfPoint3f targetGeometryMeters = new MatOfPoint3f(
                 new Point3(0.0, 0.0, 0.0),
@@ -480,16 +455,14 @@ public class TestBinocular {
         double zPos = -3;
         Mat worldTVec = Mat.zeros(3, 1, CvType.CV_32F);
         worldTVec.put(0, 0, xPos, yPos, zPos);
-        System.out.println("worldTVec");
-        System.out.println(worldTVec.dump());
+        debug("worldTVec", worldTVec);
 
         // this is camera->world transformation
         // this is rotation of the camera in world coordinates
         double pan = 0.7854;
         Mat worldRV = Mat.zeros(3, 1, CvType.CV_32F);
         worldRV.put(0, 0, 0.0, pan, 0.0);
-        System.out.println("worldRV");
-        System.out.println(worldRV.dump());
+        debug("worldRV", worldRV);
 
         Mat worldRMat = new Mat();
         Calib3d.Rodrigues(worldRV, worldRMat);
@@ -497,16 +470,14 @@ public class TestBinocular {
         Mat camRMat = worldRMat.t();
         Mat camRV = new Mat();
         Calib3d.Rodrigues(camRMat, camRV);
-        System.out.println("camRV");
-        System.out.println(camRV.dump());
+        debug("camRV", camRV);
 
         // this is inverse(worldT*worldR)
         // inverse of multiplication is order-reversed multipication of inverses, so
         // which is worldR.t * -worldT or camR*-worldT
         Mat camTVec = new Mat();
         Core.gemm(camRMat, worldTVec, -1.0, new Mat(), 0, camTVec);
-        System.out.println("camTVec");
-        System.out.println(camTVec.dump());
+        debug("camTVec", camTVec);
 
         // so the final (homogeneous) transform from world to camera
         Mat camTransform = Mat.zeros(4, 4, CvType.CV_32F);
@@ -515,20 +486,17 @@ public class TestBinocular {
                 camRMat.get(1, 0)[0], camRMat.get(1, 1)[0], camRMat.get(1, 2)[0], camTVec.get(1, 0)[0],
                 camRMat.get(2, 0)[0], camRMat.get(2, 1)[0], camRMat.get(2, 2)[0], camTVec.get(2, 0)[0],
                 0, 0, 0, 1);
-        System.out.println("camTransform");
-        System.out.println(camTransform.dump());
+        debug("camTransform", camTransform);
 
         // and we can transform points this way
         for (Point3 p : targetGeometryMeters.toList()) {
             Mat pp = Mat.zeros(4, 1, CvType.CV_32F);
             pp.put(0, 0,
                     p.x, p.y, p.z, 1);
-            System.out.println("point in world frame");
-            System.out.println(pp.dump());
+            debug("point in world frame", pp);
             Mat transformedPoint = new Mat();
             Core.gemm(camTransform, pp, 1.0, new Mat(), 0, transformedPoint);
-            System.out.println("point in camera frame");
-            System.out.println(transformedPoint.dump());
+            debug("point in camera frame", transformedPoint);
         }
 
         MatOfPoint2f skewedImagePts2f = new MatOfPoint2f();
@@ -536,8 +504,7 @@ public class TestBinocular {
         // this wants world->camera transformation
         Calib3d.projectPoints(targetGeometryMeters, camRV, camTVec, kMat, dMat,
                 skewedImagePts2f, jacobian);
-        System.out.println("skewedImagePts2f");
-        System.out.println(skewedImagePts2f.dump());
+        debug("skewedImagePts2f", skewedImagePts2f);
 
         Scalar green = new Scalar(0, 255, 0);
         Mat img = Mat.zeros(height, width, CvType.CV_32FC3);
@@ -562,11 +529,9 @@ public class TestBinocular {
         Size dsize = new Size(width, height);
         final double f = 256.0;
         Mat kMat = VisionUtil.makeIntrinsicMatrix(f, dsize);
-        System.out.println("kMat");
-        System.out.println(kMat.dump());
+        debug("kMat", kMat);
         MatOfDouble dMat = new MatOfDouble(Mat.zeros(4, 1, CvType.CV_64F));
-        System.out.println("dMat");
-        System.out.println(dMat.dump());
+        debug("dMat", dMat);
 
         // this is camera->world transformation
         // this is location of the camera in world coordinates
@@ -575,16 +540,14 @@ public class TestBinocular {
         double zPos = -3;
         Mat worldTVec = Mat.zeros(3, 1, CvType.CV_32F);
         worldTVec.put(0, 0, xPos, yPos, zPos);
-        System.out.println("worldTVec");
-        System.out.println(worldTVec.dump());
+        debug("worldTVec", worldTVec);
 
         // this is camera->world transformation
         // this is rotation of the camera in world coordinates
         double pan = 0.7854;
         Mat worldRV = Mat.zeros(3, 1, CvType.CV_32F);
         worldRV.put(0, 0, 0.0, pan, 0.0);
-        System.out.println("worldRV");
-        System.out.println(worldRV.dump());
+        debug("worldRV", worldRV);
 
         Mat worldRMat = new Mat();
         Calib3d.Rodrigues(worldRV, worldRMat);
@@ -592,16 +555,14 @@ public class TestBinocular {
         Mat camRMat = worldRMat.t();
         Mat camRV = new Mat();
         Calib3d.Rodrigues(camRMat, camRV);
-        System.out.println("camRV");
-        System.out.println(camRV.dump());
+        debug("camRV", camRV);
 
         // this is inverse(worldT*worldR)
         // inverse of multiplication is order-reversed multipication of inverses, so
         // which is worldR.t * -worldT or camR*-worldT
         Mat camTVec = new Mat();
         Core.gemm(camRMat, worldTVec, -1.0, new Mat(), 0, camTVec);
-        System.out.println("camTVec");
-        System.out.println(camTVec.dump());
+        debug("camTVec", camTVec);
 
         // so the final (homogeneous) transform from world to camera
         Mat worldToCamera = Mat.zeros(4, 4, CvType.CV_32F);
@@ -610,8 +571,7 @@ public class TestBinocular {
                 camRMat.get(1, 0)[0], camRMat.get(1, 1)[0], camRMat.get(1, 2)[0], camTVec.get(1, 0)[0],
                 camRMat.get(2, 0)[0], camRMat.get(2, 1)[0], camRMat.get(2, 2)[0], camTVec.get(2, 0)[0],
                 0, 0, 0, 1);
-        System.out.println("worldToCamera");
-        System.out.println(worldToCamera.dump());
+        debug("worldToCamera", worldToCamera);
 
         final double base = 0.4; // 50cm camera separation (wide!)
         // transform from camera center to left eye
@@ -621,25 +581,21 @@ public class TestBinocular {
                 0, 1, 0, 0,
                 0, 0, 1, 0,
                 0, 0, 0, 1);
-        System.out.println("baseToLeftEye");
-        System.out.println(baseToLeftEye.dump());
+        debug("baseToLeftEye", baseToLeftEye);
 
         Mat worldToLeftEye = new Mat();
         Core.gemm(baseToLeftEye, worldToCamera, 1.0, new Mat(), 0.0, worldToLeftEye);
-        System.out.println("worldToLeftEye");
-        System.out.println(worldToLeftEye.dump());
+        debug("worldToLeftEye", worldToLeftEye);
 
         // example: (0,0,0) -> (-3sqrt(2)/2, 0, 3sqrt(2)/2)
         {
             Mat worldPoint = Mat.zeros(4, 1, CvType.CV_32F);
             worldPoint.put(0, 0,
                     0, 0, 0, 1);
-            System.out.println("point in world frame");
-            System.out.println(worldPoint.dump());
+            debug("point in world frame", worldPoint);
             Mat transformedPoint = new Mat();
             Core.gemm(worldToLeftEye, worldPoint, 1.0, new Mat(), 0, transformedPoint);
-            System.out.println("point in camera frame");
-            System.out.println(transformedPoint.dump());
+            debug("point in camera frame", transformedPoint);
             assertEquals(base / 2 - 3 * Math.sqrt(2) / 2, transformedPoint.get(0, 0)[0], DELTA);
             assertEquals(0, transformedPoint.get(1, 0)[0], DELTA);
             assertEquals(3 * Math.sqrt(2) / 2, transformedPoint.get(2, 0)[0], DELTA);
@@ -649,12 +605,10 @@ public class TestBinocular {
             Mat worldPoint = Mat.zeros(4, 1, CvType.CV_32F);
             worldPoint.put(0, 0,
                     1, 0, 0, 1);
-            System.out.println("point in world frame");
-            System.out.println(worldPoint.dump());
+            debug("point in world frame", worldPoint);
             Mat transformedPoint = new Mat();
             Core.gemm(worldToLeftEye, worldPoint, 1.0, new Mat(), 0, transformedPoint);
-            System.out.println("point in camera frame");
-            System.out.println(transformedPoint.dump());
+            debug("point in camera frame", transformedPoint);
             assertEquals(base / 2 - Math.sqrt(2), transformedPoint.get(0, 0)[0], DELTA);
             assertEquals(0, transformedPoint.get(1, 0)[0], DELTA);
             assertEquals(2 * Math.sqrt(2), transformedPoint.get(2, 0)[0], DELTA);
@@ -666,25 +620,21 @@ public class TestBinocular {
                 0, 1, 0, 0,
                 0, 0, 1, 0,
                 0, 0, 0, 1);
-        System.out.println("baseToRightEye");
-        System.out.println(baseToRightEye.dump());
+        debug("baseToRightEye", baseToRightEye);
 
         Mat worldToRightEye = new Mat();
         Core.gemm(baseToRightEye, worldToCamera, 1.0, new Mat(), 0.0, worldToRightEye);
-        System.out.println("worldToRightEye");
-        System.out.println(worldToRightEye.dump());
+        debug("worldToRightEye", worldToRightEye);
 
         // example: (0,0,0) -> (-3sqrt(2)/2, 0, 3sqrt(2)/2)
         {
             Mat worldPoint = Mat.zeros(4, 1, CvType.CV_32F);
             worldPoint.put(0, 0,
                     0, 0, 0, 1);
-            System.out.println("point in world frame");
-            System.out.println(worldPoint.dump());
+            debug("point in world frame", worldPoint);
             Mat transformedPoint = new Mat();
             Core.gemm(worldToRightEye, worldPoint, 1.0, new Mat(), 0, transformedPoint);
-            System.out.println("point in camera frame");
-            System.out.println(transformedPoint.dump());
+            debug("point in camera frame", transformedPoint);
             assertEquals(-base / 2 - 3 * Math.sqrt(2) / 2, transformedPoint.get(0, 0)[0], DELTA);
             assertEquals(0, transformedPoint.get(1, 0)[0], DELTA);
             assertEquals(3 * Math.sqrt(2) / 2, transformedPoint.get(2, 0)[0], DELTA);
@@ -694,12 +644,10 @@ public class TestBinocular {
             Mat worldPoint = Mat.zeros(4, 1, CvType.CV_32F);
             worldPoint.put(0, 0,
                     1, 0, 0, 1);
-            System.out.println("point in world frame");
-            System.out.println(worldPoint.dump());
+            debug("point in world frame", worldPoint);
             Mat transformedPoint = new Mat();
             Core.gemm(worldToRightEye, worldPoint, 1.0, new Mat(), 0, transformedPoint);
-            System.out.println("point in camera frame");
-            System.out.println(transformedPoint.dump());
+            debug("point in camera frame", transformedPoint);
             assertEquals(-base / 2 - Math.sqrt(2), transformedPoint.get(0, 0)[0], DELTA);
             assertEquals(0, transformedPoint.get(1, 0)[0], DELTA);
             assertEquals(2 * Math.sqrt(2), transformedPoint.get(2, 0)[0], DELTA);
@@ -716,11 +664,9 @@ public class TestBinocular {
         Size dsize = new Size(width, height);
         final double f = 256.0;
         Mat kMat = VisionUtil.makeIntrinsicMatrix(f, dsize);
-        System.out.println("kMat");
-        System.out.println(kMat.dump());
+        debug("kMat", kMat);
         MatOfDouble dMat = new MatOfDouble(Mat.zeros(4, 1, CvType.CV_64F));
-        System.out.println("dMat");
-        System.out.println(dMat.dump());
+        debug("dMat", dMat);
 
         // this is camera->world transformation
         // this is location of the camera in world coordinates
@@ -729,16 +675,14 @@ public class TestBinocular {
         double zPos = -3;
         Mat worldTVec = Mat.zeros(3, 1, CvType.CV_32F);
         worldTVec.put(0, 0, xPos, yPos, zPos);
-        System.out.println("worldTVec");
-        System.out.println(worldTVec.dump());
+        debug("worldTVec", worldTVec);
 
         // this is camera->world transformation
         // this is rotation of the camera in world coordinates
         double pan = 0.785398;
         Mat worldRV = Mat.zeros(3, 1, CvType.CV_32F);
         worldRV.put(0, 0, 0.0, pan, 0.0);
-        System.out.println("worldRV");
-        System.out.println(worldRV.dump());
+        debug("worldRV", worldRV);
 
         Mat worldRMat = new Mat();
         Calib3d.Rodrigues(worldRV, worldRMat);
@@ -746,16 +690,14 @@ public class TestBinocular {
         Mat camRMat = worldRMat.t();
         Mat camRV = new Mat();
         Calib3d.Rodrigues(camRMat, camRV);
-        System.out.println("camRV");
-        System.out.println(camRV.dump());
+        debug("camRV", camRV);
 
         // this is inverse(worldT*worldR)
         // inverse of multiplication is order-reversed multipication of inverses, so
         // which is worldR.t * -worldT or camR*-worldT
         Mat camTVec = new Mat();
         Core.gemm(camRMat, worldTVec, -1.0, new Mat(), 0, camTVec);
-        System.out.println("camTVec");
-        System.out.println(camTVec.dump());
+        debug("camTVec", camTVec);
 
         // so the final (homogeneous) transform from world to camera
         Mat worldToCamera = Mat.zeros(4, 4, CvType.CV_32F);
@@ -764,8 +706,7 @@ public class TestBinocular {
                 camRMat.get(1, 0)[0], camRMat.get(1, 1)[0], camRMat.get(1, 2)[0], camTVec.get(1, 0)[0],
                 camRMat.get(2, 0)[0], camRMat.get(2, 1)[0], camRMat.get(2, 2)[0], camTVec.get(2, 0)[0],
                 0, 0, 0, 1);
-        System.out.println("worldToCamera");
-        System.out.println(worldToCamera.dump());
+        debug("worldToCamera", worldToCamera);
 
         final double base = 0.4; // 50cm camera separation (wide!)
         // transform from camera center to left eye
@@ -775,13 +716,11 @@ public class TestBinocular {
                 0, 1, 0, 0,
                 0, 0, 1, 0,
                 0, 0, 0, 1);
-        System.out.println("baseToLeftEye");
-        System.out.println(baseToLeftEye.dump());
+        debug("baseToLeftEye", baseToLeftEye);
 
         Mat worldToLeftEye = new Mat();
         Core.gemm(baseToLeftEye, worldToCamera, 1.0, new Mat(), 0.0, worldToLeftEye);
-        System.out.println("worldToLeftEye");
-        System.out.println(worldToLeftEye.dump());
+        debug("worldToLeftEye", worldToLeftEye);
 
         Mat baseToRightEye = Mat.zeros(4, 4, CvType.CV_32F);
         baseToRightEye.put(0, 0,
@@ -789,13 +728,11 @@ public class TestBinocular {
                 0, 1, 0, 0,
                 0, 0, 1, 0,
                 0, 0, 0, 1);
-        System.out.println("baseToRightEye");
-        System.out.println(baseToRightEye.dump());
+        debug("baseToRightEye", baseToRightEye);
 
         Mat worldToRightEye = new Mat();
         Core.gemm(baseToRightEye, worldToCamera, 1.0, new Mat(), 0.0, worldToRightEye);
-        System.out.println("worldToRightEye");
-        System.out.println(worldToRightEye.dump());
+        debug("worldToRightEye", worldToRightEye);
 
         // start with one point at the origin
         MatOfPoint3f targetGeometryMeters = new MatOfPoint3f(
@@ -810,19 +747,18 @@ public class TestBinocular {
         {
             Mat leftCamRV = Mat.zeros(3, 1, CvType.CV_32F);
             Calib3d.Rodrigues(worldToLeftEye.rowRange(0, 3).colRange(0, 3), leftCamRV);
-            System.out.println("leftCamRV");
-            System.out.println(leftCamRV.dump());
+            debug("leftCamRV",
+                    leftCamRV);
             Mat leftCamTVec = worldToLeftEye.colRange(3, 4).rowRange(0, 3);
-            System.out.println("leftCamTVec");
-            System.out.println(leftCamTVec.dump());
+            debug("leftCamTVec",
+                    leftCamTVec);
 
             MatOfPoint2f leftPts = new MatOfPoint2f();
             Mat jacobian = new Mat();
             // this wants world->camera transformation
             Calib3d.projectPoints(targetGeometryMeters, leftCamRV, leftCamTVec, kMat, dMat,
                     leftPts, jacobian);
-            System.out.println("leftPts");
-            System.out.println(leftPts.dump());
+            debug("leftPts", leftPts);
 
             Scalar green = new Scalar(0, 255, 0);
             Mat imgLeft = Mat.zeros(height, width, CvType.CV_32FC3);
@@ -834,19 +770,17 @@ public class TestBinocular {
         {
             Mat rightCamRV = Mat.zeros(3, 1, CvType.CV_32F);
             Calib3d.Rodrigues(worldToRightEye.rowRange(0, 3).colRange(0, 3), rightCamRV);
-            System.out.println("rightCamRV");
-            System.out.println(rightCamRV.dump());
+            debug("rightCamRV", rightCamRV);
             Mat rightCamTVec = worldToRightEye.colRange(3, 4).rowRange(0, 3);
-            System.out.println("rightCamTVec");
-            System.out.println(rightCamTVec.dump());
+            debug("rightCamTVec", rightCamTVec);
 
             MatOfPoint2f rightPts = new MatOfPoint2f();
             Mat jacobian = new Mat();
             // this wants world->camera transformation
             Calib3d.projectPoints(targetGeometryMeters, rightCamRV, rightCamTVec, kMat, dMat,
                     rightPts, jacobian);
-            System.out.println("rightPts");
-            System.out.println(rightPts.dump());
+            debug("rightPts",
+                    rightPts);
 
             Scalar green = new Scalar(0, 255, 0);
             Mat imgRight = Mat.zeros(height, width, CvType.CV_32FC3);
@@ -868,11 +802,9 @@ public class TestBinocular {
         Size dsize = new Size(width, height);
         final double f = 256.0;
         Mat kMat = VisionUtil.makeIntrinsicMatrix(f, dsize);
-        System.out.println("kMat");
-        System.out.println(kMat.dump());
+        debug("kMat", kMat);
         MatOfDouble dMat = new MatOfDouble(Mat.zeros(4, 1, CvType.CV_64F));
-        System.out.println("dMat");
-        System.out.println(dMat.dump());
+        debug("dMat", dMat);
 
         // this is camera->world transformation
         // this is location of the camera in world coordinates
@@ -881,16 +813,15 @@ public class TestBinocular {
         double zPos = -3;
         Mat worldTVec = Mat.zeros(3, 1, CvType.CV_32F);
         worldTVec.put(0, 0, xPos, yPos, zPos);
-        System.out.println("worldTVec");
-        System.out.println(worldTVec.dump());
+        debug("worldTVec", worldTVec);
 
         // this is camera->world transformation
         // this is rotation of the camera in world coordinates
         double pan = 0.785398;
         Mat worldRV = Mat.zeros(3, 1, CvType.CV_32F);
         worldRV.put(0, 0, 0.0, pan, 0.0);
-        System.out.println("worldRV");
-        System.out.println(worldRV.dump());
+        debug("worldRV",
+                worldRV);
 
         Mat worldRMat = new Mat();
         Calib3d.Rodrigues(worldRV, worldRMat);
@@ -898,8 +829,7 @@ public class TestBinocular {
         Mat camRMat = worldRMat.t();
         Mat camRV = new Mat();
         Calib3d.Rodrigues(camRMat, camRV);
-        System.out.println("camRV");
-        System.out.println(camRV.dump());
+        debug("camRV", camRV);
 
         // now the whole camera->world
         Mat cameraToWorld = Mat.zeros(4, 4, CvType.CV_32F);
@@ -909,16 +839,14 @@ public class TestBinocular {
                 worldRMat.get(2, 0)[0], worldRMat.get(2, 1)[0], worldRMat.get(2, 2)[0], worldTVec.get(2, 0)[0],
                 0, 0, 0, 1);
 
-        System.out.println("cameraToWorld");
-        System.out.println(cameraToWorld.dump());
+        debug("cameraToWorld", cameraToWorld);
 
         // this is inverse(worldT*worldR)
         // inverse of multiplication is order-reversed multipication of inverses, so
         // which is worldR.t * -worldT or camR*-worldT
         Mat camTVec = new Mat();
         Core.gemm(camRMat, worldTVec, -1.0, new Mat(), 0, camTVec);
-        System.out.println("camTVec");
-        System.out.println(camTVec.dump());
+        debug("camTVec", camTVec);
 
         // so the final (homogeneous) transform from world to camera
         Mat worldToCamera = Mat.zeros(4, 4, CvType.CV_32F);
@@ -927,8 +855,7 @@ public class TestBinocular {
                 camRMat.get(1, 0)[0], camRMat.get(1, 1)[0], camRMat.get(1, 2)[0], camTVec.get(1, 0)[0],
                 camRMat.get(2, 0)[0], camRMat.get(2, 1)[0], camRMat.get(2, 2)[0], camTVec.get(2, 0)[0],
                 0, 0, 0, 1);
-        System.out.println("worldToCamera");
-        System.out.println(worldToCamera.dump());
+        debug("worldToCamera", worldToCamera);
 
         final double base = 0.4;
 
@@ -939,13 +866,11 @@ public class TestBinocular {
                 0, 1, 0, 0,
                 0, 0, 1, 0,
                 0, 0, 0, 1);
-        System.out.println("baseToLeftEye");
-        System.out.println(baseToLeftEye.dump());
+        debug("baseToLeftEye", baseToLeftEye);
 
         Mat worldToLeftEye = new Mat();
         Core.gemm(baseToLeftEye, worldToCamera, 1.0, new Mat(), 0.0, worldToLeftEye);
-        System.out.println("worldToLeftEye");
-        System.out.println(worldToLeftEye.dump());
+        debug("worldToLeftEye", worldToLeftEye);
 
         Mat baseToRightEye = Mat.zeros(4, 4, CvType.CV_32F);
         baseToRightEye.put(0, 0,
@@ -953,13 +878,11 @@ public class TestBinocular {
                 0, 1, 0, 0,
                 0, 0, 1, 0,
                 0, 0, 0, 1);
-        System.out.println("baseToRightEye");
-        System.out.println(baseToRightEye.dump());
+        debug("baseToRightEye", baseToRightEye);
 
         Mat worldToRightEye = new Mat();
         Core.gemm(baseToRightEye, worldToCamera, 1.0, new Mat(), 0.0, worldToRightEye);
-        System.out.println("worldToRightEye");
-        System.out.println(worldToRightEye.dump());
+        debug("worldToRightEye", worldToRightEye);
 
         MatOfPoint3f targetGeometryMeters = new MatOfPoint3f(
                 new Point3(0.0, 0.0, 0.01), // solver needs this little bit of non-planarity
@@ -973,24 +896,20 @@ public class TestBinocular {
         Mat homogeneousTarget = new Mat();
         Calib3d.convertPointsToHomogeneous(targetGeometryMeters, homogeneousTarget);
         homogeneousTarget = homogeneousTarget.reshape(1);
-        System.out.println("homogeneousTarget");
-        System.out.println(homogeneousTarget.dump());
+        debug("homogeneousTarget", homogeneousTarget);
 
         Mat leftCamRV = Mat.zeros(3, 1, CvType.CV_32F);
         Calib3d.Rodrigues(worldToLeftEye.rowRange(0, 3).colRange(0, 3), leftCamRV);
-        System.out.println("leftCamRV");
-        System.out.println(leftCamRV.dump());
+        debug("leftCamRV", leftCamRV);
         Mat leftCamTVec = worldToLeftEye.colRange(3, 4).rowRange(0, 3);
-        System.out.println("leftCamTVec");
-        System.out.println(leftCamTVec.dump());
+        debug("leftCamTVec", leftCamTVec);
 
         MatOfPoint2f leftPts = new MatOfPoint2f();
         Mat jacobian = new Mat();
         // this wants world->camera transformation
         Calib3d.projectPoints(targetGeometryMeters, leftCamRV, leftCamTVec, kMat, dMat,
                 leftPts, jacobian);
-        System.out.println("leftPts");
-        System.out.println(leftPts.dump());
+        debug("leftPts", leftPts);
 
         Scalar green = new Scalar(0, 255, 0);
         Mat imgLeft = Mat.zeros(height, width, CvType.CV_32FC3);
@@ -1001,19 +920,16 @@ public class TestBinocular {
 
         Mat rightCamRV = Mat.zeros(3, 1, CvType.CV_32F);
         Calib3d.Rodrigues(worldToRightEye.rowRange(0, 3).colRange(0, 3), rightCamRV);
-        System.out.println("rightCamRV");
-        System.out.println(rightCamRV.dump());
+        debug("rightCamRV", rightCamRV);
         Mat rightCamTVec = worldToRightEye.colRange(3, 4).rowRange(0, 3);
-        System.out.println("rightCamTVec");
-        System.out.println(rightCamTVec.dump());
+        debug("rightCamTVec", rightCamTVec);
 
         MatOfPoint2f rightPts = new MatOfPoint2f();
 
         // this wants world->camera transformation
         Calib3d.projectPoints(targetGeometryMeters, rightCamRV, rightCamTVec, kMat, dMat,
                 rightPts, jacobian);
-        System.out.println("rightPts");
-        System.out.println(rightPts.dump());
+        debug("rightPts", rightPts);
 
         Mat imgRight = Mat.zeros(height, width, CvType.CV_32FC3);
         for (Point pt : rightPts.toList()) {
@@ -1032,8 +948,7 @@ public class TestBinocular {
                 0, f, height / 2, 0,
                 0, 0, 1, 0);
 
-        System.out.println("Pleft");
-        System.out.println(Pleft.dump());
+        debug("Pleft", Pleft);
 
         Mat Pright = Mat.zeros(3, 4, CvType.CV_32F);
         Pright.put(0, 0,
@@ -1041,26 +956,21 @@ public class TestBinocular {
                 0, f, height / 2, 0,
                 0, 0, 1, 0);
 
-        System.out.println("Pright");
-        System.out.println(Pright.dump());
+        debug("Pright", Pright);
 
         Mat predictedHomogeneous = new Mat();
         Calib3d.triangulatePoints(Pleft, Pright, leftPts, rightPts, predictedHomogeneous);
-        System.out.println("predictedHomogeneous");
-        System.out.println(predictedHomogeneous.t().dump());
+        debug("predictedHomogeneous", predictedHomogeneous.t());
 
         Mat predictedNormal = new Mat();
         Calib3d.convertPointsFromHomogeneous(predictedHomogeneous.t(), predictedNormal);
-        System.out.println("predictedNormal");
-        System.out.println(predictedNormal.channels());
-        System.out.println(predictedNormal.dump());
+        debug("predictedNormal", predictedNormal);
 
         Mat predictedHomogeneousNormalized = new Mat();
         Calib3d.convertPointsToHomogeneous(predictedNormal, predictedHomogeneousNormalized);
-        System.out.println("predictedHomogeneousNormalized");
+
         predictedHomogeneousNormalized = predictedHomogeneousNormalized.reshape(1);
-        System.out.println(predictedHomogeneousNormalized.channels());
-        System.out.println(predictedHomogeneousNormalized.dump());
+        debug("predictedHomogeneousNormalized", predictedHomogeneousNormalized);
 
         // these are in camera frame
         // now transform back into world
@@ -1068,48 +978,39 @@ public class TestBinocular {
         // is exactly the triangulation, so cameraToWorld is what we want to solve for.
         Mat predictedWorld = new Mat();
         Core.gemm(cameraToWorld, predictedHomogeneous, 1.0, new Mat(), 0.0, predictedWorld);
-        System.out.println("predictedWorld");
-        System.out.println(predictedWorld.t().dump());
+        debug("predictedWorld", predictedWorld.t());
 
         Mat predictedWorldNormal = new Mat();
         Calib3d.convertPointsFromHomogeneous(predictedWorld.t(), predictedWorldNormal);
-        System.out.println("predictedWorldNormal");
-        System.out.println(predictedWorldNormal.dump());
+        debug("predictedWorldNormal", predictedWorldNormal);
 
-        System.out.println("targetGeometryMeters for comparison");
-        System.out.println(targetGeometryMeters.dump());
+        debug("targetGeometryMeters for comparison", targetGeometryMeters);
 
         // error is tiny, -1e6
         Mat triangulationError = new Mat();
         Core.subtract(targetGeometryMeters, predictedWorldNormal, triangulationError);
-        System.out.println("triangulationError");
-        System.out.println(triangulationError.dump());
+        debug("triangulationError", triangulationError);
 
         // so what we want is to derive cameratoworld, so solve for it.
 
-        System.out.println("this is x");
-        System.out.println("predictedHomogeneousNormalized");
-        System.out.println(predictedHomogeneousNormalized.t().dump());
-        System.out.println("this is b");
-        System.out.println("homogeneousTarget");
-        System.out.println(homogeneousTarget.t().dump());
+        debugmsg("this is x");
+        debug("predictedHomogeneousNormalized", predictedHomogeneousNormalized.t());
+        debugmsg("this is b");
+        debug("homogeneousTarget", homogeneousTarget.t());
 
         // solves Ax=b. A * camera triangulation = world coords.
-        System.out.println("solve Ax=b");
+        debugmsg("solve Ax=b");
         Mat A = new Mat();
         Core.solve(predictedHomogeneousNormalized, homogeneousTarget, A, Core.DECOMP_SVD);
 
-        System.out.println("AT");
-        System.out.println(A.t().dump());
+        debug("AT", A.t());
 
         Mat predictedRV = Mat.zeros(3, 1, CvType.CV_32F);
         Calib3d.Rodrigues(A.t().rowRange(0, 3).colRange(0, 3), predictedRV);
-        System.out.println("predictedRV");
-        System.out.println(predictedRV.dump());
+        debug("predictedRV", predictedRV);
 
         Mat predictedTV = A.t().colRange(3, 4).rowRange(0, 3);
-        System.out.println("predictedTV");
-        System.out.println(predictedTV.dump());
+        debug("predictedTV", predictedTV);
 
     }
 
@@ -1127,11 +1028,9 @@ public class TestBinocular {
         Rect viewport = new Rect(10, 10, width - 20, height - 20);
         final double f = 256.0;
         final Mat kMat = VisionUtil.makeIntrinsicMatrix(f, dsize);
-        // System.out.println("kMat");
-        // System.out.println(kMat.dump());
+        debug("kMat", kMat);
         final MatOfDouble dMat = new MatOfDouble(Mat.zeros(4, 1, CvType.CV_64F));
-        // System.out.println("dMat");
-        // System.out.println(dMat.dump());
+        debug("dMat", dMat);
 
         final double base = 0.4;
 
@@ -1162,8 +1061,7 @@ public class TestBinocular {
                 0, f, height / 2, 0,
                 0, 0, 1, 0);
 
-        // System.out.println("Pleft");
-        // System.out.println(Pleft.dump());
+        debug("Pleft", Pleft);
 
         Mat Pright = Mat.zeros(3, 4, CvType.CV_32F);
         Pright.put(0, 0,
@@ -1171,8 +1069,7 @@ public class TestBinocular {
                 0, f, height / 2, 0,
                 0, 0, 1, 0);
 
-        // System.out.println("Pright");
-        // System.out.println(Pright.dump());
+        debug("Pright", Pright);
 
         //
         //
@@ -1212,13 +1109,11 @@ public class TestBinocular {
 
                     Mat worldTVec = Mat.zeros(3, 1, CvType.CV_32F);
                     worldTVec.put(0, 0, xPos, yPos, zPos);
-                    // System.out.println("worldTVec");
-                    // System.out.println(worldTVec.dump());
+                    debug("worldTVec", worldTVec);
 
                     Mat worldRV = Mat.zeros(3, 1, CvType.CV_32F);
                     worldRV.put(0, 0, 0.0, pan, 0.0);
-                    // System.out.println("worldRV");
-                    // System.out.println(worldRV.dump());
+                    debug("worldRV", worldRV);
 
                     Mat worldRMat = new Mat();
                     Calib3d.Rodrigues(worldRV, worldRMat);
@@ -1226,8 +1121,7 @@ public class TestBinocular {
                     Mat camRMat = worldRMat.t();
                     Mat camRV = new Mat();
                     Calib3d.Rodrigues(camRMat, camRV);
-                    // System.out.println("camRV");
-                    // System.out.println(camRV.dump());
+                    debug("camRV", camRV);
 
                     // now the whole camera->world
                     Mat cameraToWorld = Mat.zeros(4, 4, CvType.CV_32F);
@@ -1240,16 +1134,14 @@ public class TestBinocular {
                             worldTVec.get(2, 0)[0],
                             0, 0, 0, 1);
 
-                    // System.out.println("cameraToWorld");
-                    // System.out.println(cameraToWorld.dump());
+                    debug("cameraToWorld", cameraToWorld);
 
                     // this is inverse(worldT*worldR)
                     // inverse of multiplication is order-reversed multipication of inverses, so
                     // which is worldR.t * -worldT or camR*-worldT
                     Mat camTVec = new Mat();
                     Core.gemm(camRMat, worldTVec, -1.0, new Mat(), 0, camTVec);
-                    // System.out.println("camTVec");
-                    // System.out.println(camTVec.dump());
+                    debug("camTVec", camTVec);
 
                     // so the final (homogeneous) transform from world to camera
                     Mat worldToCamera = Mat.zeros(4, 4, CvType.CV_32F);
@@ -1258,8 +1150,7 @@ public class TestBinocular {
                             camRMat.get(1, 0)[0], camRMat.get(1, 1)[0], camRMat.get(1, 2)[0], camTVec.get(1, 0)[0],
                             camRMat.get(2, 0)[0], camRMat.get(2, 1)[0], camRMat.get(2, 2)[0], camTVec.get(2, 0)[0],
                             0, 0, 0, 1);
-                    // System.out.println("worldToCamera");
-                    // System.out.println(worldToCamera.dump());
+                    debug("worldToCamera", worldToCamera);
 
                     // transform from camera center to left eye
                     Mat baseToLeftEye = Mat.zeros(4, 4, CvType.CV_32F);
@@ -1268,13 +1159,11 @@ public class TestBinocular {
                             0, 1, 0, 0,
                             0, 0, 1, 0,
                             0, 0, 0, 1);
-                    // System.out.println("baseToLeftEye");
-                    // System.out.println(baseToLeftEye.dump());
+                    debug("baseToLeftEye", baseToLeftEye);
 
                     Mat worldToLeftEye = new Mat();
                     Core.gemm(baseToLeftEye, worldToCamera, 1.0, new Mat(), 0.0, worldToLeftEye);
-                    // System.out.println("worldToLeftEye");
-                    // System.out.println(worldToLeftEye.dump());
+                    debug("worldToLeftEye", worldToLeftEye);
 
                     Mat baseToRightEye = Mat.zeros(4, 4, CvType.CV_32F);
                     baseToRightEye.put(0, 0,
@@ -1282,37 +1171,31 @@ public class TestBinocular {
                             0, 1, 0, 0,
                             0, 0, 1, 0,
                             0, 0, 0, 1);
-                    // System.out.println("baseToRightEye");
-                    // System.out.println(baseToRightEye.dump());
+                    debug("baseToRightEye", baseToRightEye);
 
                     Mat worldToRightEye = new Mat();
                     Core.gemm(baseToRightEye, worldToCamera, 1.0, new Mat(), 0.0, worldToRightEye);
-                    // System.out.println("worldToRightEye");
-                    // System.out.println(worldToRightEye.dump());
+                    debug("worldToRightEye", worldToRightEye);
 
                     // make images
 
                     Mat homogeneousTarget = new Mat();
                     Calib3d.convertPointsToHomogeneous(targetGeometryMeters, homogeneousTarget);
                     homogeneousTarget = homogeneousTarget.reshape(1);
-                    // System.out.println("homogeneousTarget");
-                    // System.out.println(homogeneousTarget.dump());
+                    debug("homogeneousTarget", homogeneousTarget);
 
                     Mat leftCamRV = Mat.zeros(3, 1, CvType.CV_32F);
                     Calib3d.Rodrigues(worldToLeftEye.rowRange(0, 3).colRange(0, 3), leftCamRV);
-                    // System.out.println("leftCamRV");
-                    // System.out.println(leftCamRV.dump());
+                    debug("leftCamRV", leftCamRV);
                     Mat leftCamTVec = worldToLeftEye.colRange(3, 4).rowRange(0, 3);
-                    // System.out.println("leftCamTVec");
-                    // System.out.println(leftCamTVec.dump());
+                    debug("leftCamTVec", leftCamTVec);
 
                     MatOfPoint2f leftPts = new MatOfPoint2f();
                     Mat jacobian = new Mat();
                     // this wants world->camera transformation
                     Calib3d.projectPoints(targetGeometryMeters, leftCamRV, leftCamTVec, kMat, dMat,
                             leftPts, jacobian);
-                    // System.out.println("leftPts");
-                    // System.out.println(leftPts.dump());
+                    debug("leftPts", leftPts);
 
                     // perturb points
                     List<Point> leftPtsList = new ArrayList<Point>();
@@ -1337,19 +1220,16 @@ public class TestBinocular {
 
                     Mat rightCamRV = Mat.zeros(3, 1, CvType.CV_32F);
                     Calib3d.Rodrigues(worldToRightEye.rowRange(0, 3).colRange(0, 3), rightCamRV);
-                    // System.out.println("rightCamRV");
-                    // System.out.println(rightCamRV.dump());
+                    debug("rightCamRV", rightCamRV);
                     Mat rightCamTVec = worldToRightEye.colRange(3, 4).rowRange(0, 3);
-                    // System.out.println("rightCamTVec");
-                    // System.out.println(rightCamTVec.dump());
+                    debug("rightCamTVec", rightCamTVec);
 
                     MatOfPoint2f rightPts = new MatOfPoint2f();
 
                     // this wants world->camera transformation
                     Calib3d.projectPoints(targetGeometryMeters, rightCamRV, rightCamTVec, kMat, dMat,
                             rightPts, jacobian);
-                    // System.out.println("rightPts");
-                    // System.out.println(rightPts.dump());
+                    debug("rightPts", rightPts);
 
                     // perturb points
                     List<Point> rightPtsList = new ArrayList<Point>();
@@ -1375,14 +1255,11 @@ public class TestBinocular {
 
                     Mat predictedHomogeneous = new Mat();
                     Calib3d.triangulatePoints(Pleft, Pright, leftPts, rightPts, predictedHomogeneous);
-                    // System.out.println("predictedHomogeneous");
-                    // System.out.println(predictedHomogeneous.t().dump());
+                    debug("predictedHomogeneous", predictedHomogeneous.t());
 
                     Mat predictedNormal = new Mat();
                     Calib3d.convertPointsFromHomogeneous(predictedHomogeneous.t(), predictedNormal);
-                    // System.out.println("predictedNormal");
-                    // System.out.println(predictedNormal.channels());
-                    // System.out.println(predictedNormal.dump());
+                    debug("predictedNormal", predictedNormal);
                     //
                     //
                     //
@@ -1392,10 +1269,9 @@ public class TestBinocular {
                     //
                     Mat predictedHomogeneousNormalized = new Mat();
                     Calib3d.convertPointsToHomogeneous(predictedNormal, predictedHomogeneousNormalized);
-                    // System.out.println("predictedHomogeneousNormalized");
+
                     predictedHomogeneousNormalized = predictedHomogeneousNormalized.reshape(1);
-                    // System.out.println(predictedHomogeneousNormalized.channels());
-                    // System.out.println(predictedHomogeneousNormalized.dump());
+                    debug("predictedHomogeneousNormalized", predictedHomogeneousNormalized);
 
                     // these are in camera frame
                     // now transform back into world
@@ -1403,44 +1279,37 @@ public class TestBinocular {
                     // is exactly the triangulation, so cameraToWorld is what we want to solve for.
                     Mat predictedWorld = new Mat();
                     Core.gemm(cameraToWorld, predictedHomogeneous, 1.0, new Mat(), 0.0, predictedWorld);
-                    // System.out.println("predictedWorld");
-                    // System.out.println(predictedWorld.t().dump());
+                    debug("predictedWorld", predictedWorld.t());
 
                     Mat predictedWorldNormal = new Mat();
                     Calib3d.convertPointsFromHomogeneous(predictedWorld.t(), predictedWorldNormal);
-                    // System.out.println("predictedWorldNormal");
-                    // System.out.println(predictedWorldNormal.dump());
+                    debug("predictedWorldNormal", predictedWorldNormal);
 
-                    // System.out.println("targetGeometryMeters for comparison");
-                    // System.out.println(targetGeometryMeters.dump());
+                    debug("targetGeometryMeters for comparison", targetGeometryMeters);
 
                     // error is tiny, -1e6
-                    // Mat triangulationError = new Mat();
-                    // Core.subtract(targetGeometryMeters, predictedWorldNormal,
-                    // triangulationError);
-                    // System.out.println("triangulationError");
-                    // System.out.println(triangulationError.dump());
+                    Mat triangulationError = new Mat();
+                    Core.subtract(targetGeometryMeters, predictedWorldNormal,
+                            triangulationError);
+                    debug("triangulationError", triangulationError);
 
                     // so what we want is to derive cameratoworld, so solve for it.
 
-                    // System.out.println("this is x");
-                    // System.out.println("predictedHomogeneousNormalized");
-                    // System.out.println(predictedHomogeneousNormalized.dump());
-                    // System.out.println("this is b");
-                    // System.out.println("homogeneousTarget");
-                    // System.out.println(homogeneousTarget.dump());
+                    debugmsg("this is x");
+                    debug("predictedHomogeneousNormalized", predictedHomogeneousNormalized);
+                    debugmsg("this is b");
+                    debug("homogeneousTarget", homogeneousTarget);
                     // if (idx > 0)
                     // continue;
 
                     // solves Ax=b. A * camera triangulation = world coords.
-                    // System.out.println("solve Ax=b");
+                    debugmsg("solve Ax=b");
                     Mat A = new Mat();
                     // Core.solve(predictedHomogeneousNormalized, homogeneousTarget, A,
                     // Core.DECOMP_SVD);
                     Core.solve(predictedHomogeneousNormalized, homogeneousTarget, A, Core.DECOMP_SVD);
 
-                    // System.out.println("AT");
-                    // System.out.println(A.t().dump());
+                    debug("AT", A.t());
 
                     //
                     //
@@ -1458,31 +1327,24 @@ public class TestBinocular {
 
                     {
 
-                        // System.out.println("try affine transform");
-                        // System.out.println("predictedNormal");
-                        // System.out.println(predictedNormal.dump());
-                        // System.out.println("targetPointsMultiplied");
-                        // System.out.println(targetPointsMultiplied.dump());
+                        debugmsg("try affine transform");
+                        debug("predictedNormal", predictedNormal);
+                        debug("targetPointsMultiplied", targetPointsMultiplied);
                         Mat inliers = new Mat();
                         Mat affineTransform1 = new Mat();
                         Calib3d.estimateAffine3D(predictedNormal, targetPointsMultiplied,
                                 affineTransform1,
                                 inliers, 0.95);
-                        // System.out.println("affineTransform");
-                        // System.out.println(affineTransform1.dump());
-                        // System.out.println("inliers");
-                        // System.out.println(inliers.dump());
+                        debug("affineTransform", affineTransform1);
+                        debug("inliers", inliers);
                     }
 
-                    // System.out.println("try Umeyama affine transform");
-                    // System.out.println("predictedNormal");
-                    // System.out.println(predictedNormal.dump());
-                    // System.out.println("targetPointsMultiplied");
-                    // System.out.println(targetPointsMultiplied.dump());
+                    debugmsg("try Umeyama affine transform");
+                    debug("predictedNormal", predictedNormal);
+                    debug("targetPointsMultiplied", targetPointsMultiplied);
                     Mat affineTransform = MyCalib3d.estimateAffine3D(predictedNormal, targetPointsMultiplied, null,
                             true);
-                    /// System.out.println("affineTransform");
-                    // System.out.println(affineTransform.dump());
+                    debug("affineTransform", affineTransform);
 
                     //
                     //
@@ -1497,27 +1359,24 @@ public class TestBinocular {
                         prediction2d.put(i, 0, predictedNormal.reshape(1).get(i, 0)[0],
                                 predictedNormal.reshape(1).get(i, 2)[0]);
                     }
-                    // System.out.println("prediction2d");
-                    // System.out.println(prediction2d.dump());
+                    debug("prediction2d", prediction2d);
 
                     Mat target2d = Mat.zeros(targetPointsMultiplied.rows(), 2, CvType.CV_32F);
                     for (int i = 0; i < targetPointsMultiplied.rows(); ++i) {
                         target2d.put(i, 0, targetPointsMultiplied.reshape(1).get(i, 0)[0],
                                 targetPointsMultiplied.reshape(1).get(i, 2)[0]);
                     }
-                    // System.out.println("target2d");
-                    // System.out.println(target2d.dump());
+                    debug("target2d", target2d);
                     //
                     //
                     //
                     {
-                        // Mat inliers = new Mat();
-                        // Mat affine2d = Calib3d.estimateAffinePartial2D(prediction2d, target2d,
-                        // inliers, Calib3d.LMEDS,
-                        // 0.5,
-                        // 1000, 0.99, 1000);
-                        // System.out.println("affine2d");
-                        // System.out.println(affine2d.dump());
+                        Mat inliers = new Mat();
+                        Mat affine2d = Calib3d.estimateAffinePartial2D(prediction2d, target2d,
+                                inliers, Calib3d.LMEDS,
+                                0.5,
+                                1000, 0.99, 1000);
+                        debug("affine2d", affine2d);
                     }
                     //
                     //
@@ -1525,13 +1384,11 @@ public class TestBinocular {
                     Mat predictedRV = Mat.zeros(3, 1, CvType.CV_32F);
                     // Calib3d.Rodrigues(A.t().rowRange(0, 3).colRange(0, 3), predictedRV);
                     Calib3d.Rodrigues(affineTransform.rowRange(0, 3).colRange(0, 3), predictedRV);
-                    // System.out.println("predictedRV");
-                    // System.out.println(predictedRV.dump());
+                    debug("predictedRV", predictedRV);
 
                     // Mat predictedTV = A.t().colRange(3, 4).rowRange(0, 3);
                     Mat predictedTV = affineTransform.colRange(3, 4).rowRange(0, 3);
-                    // System.out.println("predictedTV");
-                    // System.out.println(predictedTV.dump());
+                    debug("predictedTV", predictedTV);
 
                     double pxPos = predictedTV.get(0, 0)[0];
                     double pyPos = predictedTV.get(1, 0)[0];
