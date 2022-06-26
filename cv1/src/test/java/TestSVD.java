@@ -56,6 +56,18 @@ public class TestSVD {
         homogeneousTarget = homogenize(targetPointsMultiplied);
     }
 
+    static void normalize(Mat TinvMinvBmat) {
+        for (int col = 0; col < TinvMinvBmat.cols(); ++col) {
+            double xval = TinvMinvBmat.get(0, col)[0];
+            double zval = TinvMinvBmat.get(1, col)[0];
+            double scaleVal = TinvMinvBmat.get(2, col)[0];
+            TinvMinvBmat.put(0, col, xval / scaleVal);
+            TinvMinvBmat.put(1, col, zval / scaleVal);
+            TinvMinvBmat.put(2, col, 1.0);
+        }
+        debug("TinvMinvBmat (scaled)", TinvMinvBmat);
+    }
+
     @Test
     public void testSomething() {
         // A "big" robot is ~0.8m wide, cameras can't be wider than that
@@ -92,131 +104,48 @@ public class TestSVD {
                     writePng(rightPts, width, height,
                             String.format("C:\\Users\\joelt\\Desktop\\pics\\svd-%d-right.png", idx));
 
-                    //
-                    //
-                    // triangulate and solve
-                    //
-                    //
-                    // just ignore Y and v, use X, u(left) and u'(right).
-                    //
-                    // so s(u,u',1) = [f 0 cx; 0 f cx; 0 0 1] * [1 0 b/2; 1 0 -b/2; 0 1 0] * [R|t] *
-                    // (X Z 1)
-                    // i.e. intrinsic matrix + eye transform * change of basis * points.
+                    // To solve Ax=b triangulation, first make b:
+                    Mat bMat = makeBMat(leftPts, rightPts, b);
 
-                    // so call this something like MTAx=b
-                    // where M and T are invertible, so:
-                    // Ax = Tinv * Minv * b
+                    // ... and x: (X, Z, 1):
+                    Mat XMat = makeXMat();
+                    debug("XMat (x data)", XMat);
+
+                    // so now Ax=b where X is the world geometry and b is as prepared.
+                    Mat AA = solve(XMat, bMat);
+
+                    // TODO: make this its own thing, loop through the results.
+
+                    double perhapsRotation = VisionUtil.rotm2euler2d(AA.submat(0, 2, 0, 2));
+                    debug("perhapsRotation", perhapsRotation);
+
                     //
-                    // i could then solve that with Core.solve()
+                    //
+                    //
+                    //
                     //
                     // alternatively i could do this:
                     //
                     // A = Tinv * Minv * b * xinv
                     //
                     // and then decompose A.
-                    //
-                    // start with the solver i guess?
-                    //
-                    // for this formulation the data are not two separate sets of (u,v)left and
-                    // (u,v)right, it's (uleft, uright, 1).
-                    //
-                    Mat bMat = Mat.zeros(leftPts.toList().size(), 3, CvType.CV_64F);
-                    for (int i = 0; i < leftPts.toList().size(); ++i) {
-                        bMat.put(i, 0, leftPts.get(i, 0)[0], rightPts.get(i, 0)[0], 1.0);
-                    }
-                    debug("bMat", bMat);
-
-                    // and the target drops Y
-                    List<Point3> targetPointsMultipliedList = targetPointsMultiplied.toList();
-
-                    List<Point3> listOfXZ = new ArrayList<Point3>();
-                    for (Point3 p3 : targetPointsMultipliedList) {
-                        listOfXZ.add(new Point3(p3.x, p3.z, 1));
-                    }
-                    MatOfPoint3f targetPointsMultipliedXZHomogeneous = new MatOfPoint3f(
-                            listOfXZ.toArray(new Point3[0]));
-
-                    Mat targetPointsMultipliedXZHomogeneousMat = targetPointsMultipliedXZHomogeneous.reshape(1).t();
-
-                    targetPointsMultipliedXZHomogeneousMat.convertTo(targetPointsMultipliedXZHomogeneousMat,
-                            CvType.CV_64F);
-
-                    Mat M = Mat.zeros(3, 3, CvType.CV_64F);
-                    M.put(0, 0,
-                            f, 0, cx,
-                            0, f, cx,
-                            0, 0, 1);
-
-                    debug("M", M);
-                    Mat Minv = M.inv();
-                    debug("Minv", Minv);
-
-                    Mat T = Mat.zeros(3, 3, CvType.CV_64F);
-                    T.put(0, 0,
-                            1, 0, b / 2,
-                            1, 0, -b / 2,
-                            0, 1, 0);
-                    debug("T", T);
-                    Mat Tinv = T.inv();
-                    debug("Tinv", Tinv);
-
-                    // apply the inverses to the observations (the "b")
-                    Mat MinvBmat = new Mat();
-                    Core.gemm(Minv, bMat.t(), 1.0, new Mat(), 0.0, MinvBmat);
-                    debug("MinvBmat", MinvBmat);
-
-                    Mat TinvMinvBmat = new Mat();
-                    Core.gemm(Tinv, MinvBmat, 1.0, new Mat(), 0.0, TinvMinvBmat);
-                    debug("TinvMinvBmat", TinvMinvBmat);
-
-                    // let's normalize that since it's supposed to be homogeneous?
-                    // it represents the result of the rotation/translation we're trying to find
-                    for (int col = 0; col < TinvMinvBmat.cols(); ++col) {
-                        double xval = TinvMinvBmat.get(0, col)[0];
-                        double zval = TinvMinvBmat.get(1, col)[0];
-                        double scaleVal = TinvMinvBmat.get(2, col)[0];
-                        TinvMinvBmat.put(0, col, xval / scaleVal);
-                        TinvMinvBmat.put(1, col, zval / scaleVal);
-                        TinvMinvBmat.put(2, col, 1.0);
-                    }
-                    debug("TinvMinvBmat (scaled)", TinvMinvBmat);
-
-                    // so now Ax=b where X is the world geometry and b is above.
-                    Mat AA = new Mat();
-
-                    debug("TinvMinvBmat (b data)", TinvMinvBmat);
-                    debug("targetPointsMultipliedXZHomogeneousMat (x data)", targetPointsMultipliedXZHomogeneousMat);
-
-                    // remember the solver likes transposes which i find very strange
-                    // but it is what it is
-                    Core.solve(targetPointsMultipliedXZHomogeneousMat.t(), TinvMinvBmat.t(), AA, Core.DECOMP_SVD);
-                    // solver produces transpose.
-                    AA = AA.t();
-                    debug("AA", AA);
-
-                    double Ascale = AA.get(2, 2)[0];
-                    Core.gemm(AA, Mat.eye(3, 3, CvType.CV_64F), 1 / Ascale, new Mat(), 0.0, AA);
-                    debug("AA scaled", AA);
-
-                    double perhapsRotation = VisionUtil.rotm2euler2d(AA.submat(0, 2, 0, 2));
-                    debug("perhapsRotation", perhapsRotation);
 
                     // so with noise this produces non-rigid transforms.
                     // instead try the Omeyama way, adapted to 2d.
 
-                    Mat from = Mat.zeros(2, targetPointsMultipliedXZHomogeneousMat.cols(), CvType.CV_64F);
-                    for (int col = 0; col < targetPointsMultipliedXZHomogeneousMat.cols(); ++col) {
-                        from.put(0, col, targetPointsMultipliedXZHomogeneousMat.get(0, col)[0]);
-                        from.put(1, col, targetPointsMultipliedXZHomogeneousMat.get(1, col)[0]);
+                    Mat from = Mat.zeros(2, XMat.cols(), CvType.CV_64F);
+                    for (int col = 0; col < XMat.cols(); ++col) {
+                        from.put(0, col, XMat.get(0, col)[0]);
+                        from.put(1, col, XMat.get(1, col)[0]);
                     }
                     from = from.t();
                     debug("from", from);
                     // Mat from = targetPointsMultipliedXZHomogeneousMat.t();
 
-                    Mat to = Mat.zeros(2, TinvMinvBmat.cols(), CvType.CV_64F);
-                    for (int col = 0; col < TinvMinvBmat.cols(); ++col) {
-                        to.put(0, col, TinvMinvBmat.get(0, col)[0]);
-                        to.put(1, col, TinvMinvBmat.get(1, col)[0]);
+                    Mat to = Mat.zeros(2, bMat.cols(), CvType.CV_64F);
+                    for (int col = 0; col < bMat.cols(); ++col) {
+                        to.put(0, col, bMat.get(0, col)[0]);
+                        to.put(1, col, bMat.get(1, col)[0]);
                     }
                     to = to.t();
                     debug("to", to);
@@ -458,6 +387,95 @@ public class TestSVD {
         Mat worldToCameraHomogeneous = homogeneousRigidTransform(worldToCameraRMat, worldToCameraTVec);
         debug("worldToCamera", worldToCameraHomogeneous);
         return worldToCameraHomogeneous;
+    }
+
+    static Mat makeUMat(MatOfPoint2f leftPts, MatOfPoint2f rightPts) {
+        Mat uMat = Mat.zeros(leftPts.toList().size(), 3, CvType.CV_64F);
+        for (int i = 0; i < leftPts.toList().size(); ++i) {
+            uMat.put(i, 0, leftPts.get(i, 0)[0], rightPts.get(i, 0)[0], 1.0);
+        }
+        debug("uMat", uMat);
+        return uMat;
+    }
+
+    Mat makeXMat() {
+        List<Point3> targetPointsMultipliedList = targetPointsMultiplied.toList();
+
+        List<Point3> listOfXZ = new ArrayList<Point3>();
+        for (Point3 p3 : targetPointsMultipliedList) {
+            listOfXZ.add(new Point3(p3.x, p3.z, 1));
+        }
+        MatOfPoint3f targetPointsMultipliedXZHomogeneous = new MatOfPoint3f(
+                listOfXZ.toArray(new Point3[0]));
+
+        Mat targetPointsMultipliedXZHomogeneousMat = targetPointsMultipliedXZHomogeneous.reshape(1).t();
+
+        targetPointsMultipliedXZHomogeneousMat.convertTo(targetPointsMultipliedXZHomogeneousMat,
+                CvType.CV_64F);
+        return targetPointsMultipliedXZHomogeneousMat;
+    }
+
+    static Mat makeMInv() {
+        Mat M = Mat.zeros(3, 3, CvType.CV_64F);
+        M.put(0, 0,
+                f, 0, cx,
+                0, f, cx,
+                0, 0, 1);
+        debug("M", M);
+        Mat Minv = M.inv();
+        debug("Minv", Minv);
+        return Minv;
+    }
+
+    static Mat makeTInv(double b) {
+        Mat T = Mat.zeros(3, 3, CvType.CV_64F);
+        T.put(0, 0,
+                1, 0, b / 2,
+                1, 0, -b / 2,
+                0, 1, 0);
+        debug("T", T);
+        Mat Tinv = T.inv();
+        debug("Tinv", Tinv);
+        return Tinv;
+    }
+
+    static Mat makeBMat(MatOfPoint2f leftPts, MatOfPoint2f rightPts, double b) {
+        // To solve Ax=b triangulation (Ax=M-1T-1u), first make u: (u,u',1):
+        Mat uMat = makeUMat(leftPts, rightPts);
+
+        // and the inverse transforms we're going to apply:
+        Mat Minv = makeMInv();
+        Mat Tinv = makeTInv(b);
+
+        // apply the inverses to the observations (the "u") in the correct order:
+        Mat MinvUmat = new Mat();
+        Core.gemm(Minv, uMat.t(), 1.0, new Mat(), 0.0, MinvUmat);
+        debug("MinvUmat", MinvUmat);
+
+        Mat bMat = new Mat();
+        Core.gemm(Tinv, MinvUmat, 1.0, new Mat(), 0.0, bMat);
+        debug("bMat", bMat);
+
+        // Make the result look homogeneous
+        normalize(bMat);
+        debug("bMat normalized", bMat);
+        return bMat;
+    }
+
+    Mat solve(Mat XMat, Mat bMat) {
+        // so now Ax=b where X is the world geometry and b is above.
+        Mat AA = new Mat();
+
+        // remember the solver likes transposes
+        Core.solve(XMat.t(), bMat.t(), AA, Core.DECOMP_SVD);
+        // ...and produces a transpose.
+        AA = AA.t();
+        debug("AA", AA);
+
+        double Ascale = AA.get(2, 2)[0];
+        Core.gemm(AA, Mat.eye(3, 3, CvType.CV_64F), 1 / Ascale, new Mat(), 0.0, AA);
+        debug("AA scaled", AA);
+        return AA;
     }
 
     public static void debug(String msg, Mat m) {
