@@ -400,7 +400,41 @@ I also tried a 2d adaptation of the Omeyama method, which yields the same result
 but requires a giant multiplication.  Does the solve method do that?
 
 
+# Including Y
+
+As an aside, instead of dropping Y, we could take advantage of the target geometry where Y is a constant, and we'd have this:
 
 
+$$
+s
+\begin{pmatrix}u\\
+u'\\
+1\end{pmatrix}=
+\begin{bmatrix}
+f & 0 & 0 & c_x \\
+0 & f & 0 & c_x \\
+0 & 0 & f & c_y \\
+0 & 0 & 0 & 1
+\end{bmatrix}
+\times
+\begin{bmatrix}
+1 & 0 & \frac{b}{2}\\
+1 & 0 & -\frac{b}{2}\\
+0 & 0 & Y \\
+0 & 1 & 0
+\end{bmatrix}
+\times
+\begin{bmatrix}
+r_{11} & r_{12} & t_x\\
+r_{11} & r_{22} & t_z\\
+0      & 0      & 1
+\end{bmatrix}
+\times
+\begin{pmatrix}
+X \\\ Z \\\ 1
+\end{pmatrix}
+$$
 
-(a note about Github LaTeX: equals sign on a line by itself is interpreted as "make the preceding line a heading" which breaks everything.
+I'm not sure that would be better, but I could measure that.
+
+Also, a note about Github LaTeX: equals sign on a line by itself is interpreted as "make the preceding line a heading" which breaks everything.
