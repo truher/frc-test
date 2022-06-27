@@ -36,9 +36,10 @@ public class TestSVD {
     static final int LEVEL = 1;
     static final Scalar green = new Scalar(0, 255, 0);
     static final Random rand = new Random(42);
-    static final double f = 256.0;
-    static final int height = 540;
-    static final int width = 960;
+    // this is the arducam ov9281 thing
+    static final double f = 914;
+    static final int height = 800;
+    static final int width = 1280;
     static final Size dsize = new Size(width, height);
     static final Mat kMat = VisionUtil.makeIntrinsicMatrix(f, dsize);
     static final MatOfDouble dMat = new MatOfDouble(Mat.zeros(4, 1, CvType.CV_64F));
@@ -67,6 +68,36 @@ public class TestSVD {
             TinvMinvBmat.put(2, col, 1.0);
         }
         debug(0, "TinvMinvBmat (scaled)", TinvMinvBmat);
+    }
+
+    @Test
+    public void testNothing() {
+    }
+
+    /**
+     * this is for the arducam OV9281 default M12 lens
+     */
+    // @Test
+    public void testFOV() {
+        final double myF = 914;
+        final int myHeight = 800;
+        final int myWidth = 1280;
+        final Size mySize = new Size(myWidth, myHeight);
+        Mat myKMat = VisionUtil.makeIntrinsicMatrix(myF, mySize);
+        double[] fovx = new double[1];
+        double[] fovy = new double[1];
+        double[] focalLength = new double[1];
+        Point principalPoint = new Point();
+        double[] aspectRatio = new double[1];
+
+        // this is the 1/2.7" OV9281 sensor size in mm
+        double apertureWidth = 5.37;
+        double apertureHeight = 4.04;
+        Calib3d.calibrationMatrixValues(myKMat, mySize, apertureWidth, apertureHeight, fovx, fovy, focalLength,
+                principalPoint, aspectRatio);
+        System.out.printf("fovx %f, fovy %f, focalLength %f, principalPoint x %f y %f, aspectRatio %f\n",
+                fovx[0], fovy[0], focalLength[0], principalPoint.x, principalPoint.y, aspectRatio[0]);
+
     }
 
     @Test
@@ -461,23 +492,23 @@ public class TestSVD {
 
     static MatOfPoint3f makeTarget() {
         final MatOfPoint3f targetGeometryMeters = new MatOfPoint3f(
-                new Point3(0.0, 0.0, 0.0),
-                new Point3(1.0, 1.0, 0.0),
-                new Point3(1.0, -1.0, 0.0),
-                new Point3(-1.0, -1.0, 0.0),
-                new Point3(-1.0, 1.0, 0.0));
+                // new Point3(0.0, 0.0, 0.0),
+                new Point3(0.2, -0.1, 0.0),
+                new Point3(0.2, 0.0, 0.0),
+                new Point3(-0.2, 0.0, 0.0),
+                new Point3(-0.2, -0.1, 0.0));
         return targetGeometryMeters;
     }
 
-    static MatOfPoint3f makeNonplanarTarget() {
-        final MatOfPoint3f targetGeometryMeters = new MatOfPoint3f(
-                new Point3(0.0, 0.0, 0.1),
-                new Point3(1.0, 1.0, 0.0),
-                new Point3(1.0, -1.0, 0.1),
-                new Point3(-1.0, -1.0, 0.0),
-                new Point3(-1.0, 1.0, 0.1));
-        return targetGeometryMeters;
-    }
+    // static MatOfPoint3f makeNonplanarTarget() {
+    // final MatOfPoint3f targetGeometryMeters = new MatOfPoint3f(
+    // new Point3(0.0, 0.0, 0.1),
+    // new Point3(1.0, 1.0, 0.0),
+    // new Point3(1.0, -1.0, 0.1),
+    // new Point3(-1.0, -1.0, 0.0),
+    // new Point3(-1.0, 1.0, 0.1));
+    // return targetGeometryMeters;
+    // }
 
     static MatOfPoint3f duplicatePoints(MatOfPoint3f targetGeometryMeters, int pointMultiplier) {
         MatOfPoint3f targetPointsMultiplied = new MatOfPoint3f();
