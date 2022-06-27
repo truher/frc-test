@@ -29,7 +29,11 @@ import vision.VisionUtil;
  */
 
 public class TestSVD {
+    static {
+        System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
+    }
     static final boolean DEBUG = false;
+    static final int LEVEL = 1;
     static final Scalar green = new Scalar(0, 255, 0);
     static final Random rand = new Random(42);
     static final double f = 256.0;
@@ -39,21 +43,18 @@ public class TestSVD {
     static final Mat kMat = VisionUtil.makeIntrinsicMatrix(f, dsize);
     static final MatOfDouble dMat = new MatOfDouble(Mat.zeros(4, 1, CvType.CV_64F));
     static final int pointMultiplier = 1;
-    static final double noisePixels = 2;
+    static final double noisePixels = 1;
     static final int cx = width / 2;
-    static final Rect viewport = new Rect(10, 10, width - 20, height - 20);
+    static final Rect viewport = new Rect(0, 0, width, height);
 
-    final MatOfPoint3f targetGeometryMeters;
-    final MatOfPoint3f targetPointsMultiplied;
-    final Mat homogeneousTarget;
+    MatOfPoint3f targetGeometryMeters;
+    MatOfPoint3f targetPointsMultiplied;
+    Mat homogeneousTarget;
 
     public TestSVD() {
-        System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
-        debug("kMat", kMat);
-        debug("dMat", dMat);
-        targetGeometryMeters = makeTarget();
-        targetPointsMultiplied = duplicatePoints(targetGeometryMeters, pointMultiplier);
-        homogeneousTarget = homogenize(targetPointsMultiplied);
+        debug(0, "kMat", kMat);
+        debug(0, "dMat", dMat);
+
     }
 
     static void normalize(Mat TinvMinvBmat) {
@@ -65,25 +66,47 @@ public class TestSVD {
             TinvMinvBmat.put(1, col, zval / scaleVal);
             TinvMinvBmat.put(2, col, 1.0);
         }
-        debug("TinvMinvBmat (scaled)", TinvMinvBmat);
+        debug(0, "TinvMinvBmat (scaled)", TinvMinvBmat);
     }
 
     @Test
-    public void testSomething() {
+    public void testSolve() {
+        targetGeometryMeters = makeTarget();
+        targetPointsMultiplied = duplicatePoints(targetGeometryMeters, pointMultiplier);
+        homogeneousTarget = homogenize(targetPointsMultiplied);
         // A "big" robot is ~0.8m wide, cameras can't be wider than that
         // Later: test sensitivity of width
         final double b = 0.8;
         // camera doesn't move vertically.
         final double yPos = 0;
 
-        int idx = 1;
-        System.out.println("idx, pan, xpos, ypos, zpos, ppan, pxpos, pypos, pzpos");
-        for (double pan = -Math.PI / 2; pan <= Math.PI / 2; pan += Math.PI / 8) {
+        long startTime = System.currentTimeMillis();
+        int idx = 0;
+
+        double panErrSquareSum = 0.0;
+        double xErrSquareSum = 0.0;
+        double zErrSquareSum = 0.0;
+        double relativeBearingErrSquareSum = 0.0;
+        double rangeErrSquareSum = 0.0;
+
+        System.out.println(
+                "idx, pan, xpos, ypos, zpos, rbear, range, ppan, pxpos, pypos, pzpos, prbear, prange, panErr, xErr, zErr, relativeBearingErr, rangeErr");
+        // pan is a world transformation i.e. positive means turning the camera to the
+        // right
+        for (double pan = -3 * Math.PI / 8; pan <= 3 * Math.PI / 8; pan += Math.PI / 8) {
             // field is 16m long, say half the field is relevant
-            for (double zPos = -8.0; zPos <= -1.0; zPos += 1.0) {
+            for (double zPos = -10.0; zPos <= -1.0; zPos += 1.0) {
                 // field is 8m wide, so +/- 4m
-                point: for (double xPos = -4.0; xPos <= 4.0; xPos += 1.0) {
-                    ++idx;
+
+                for (double xPos = -5; xPos <= 5; xPos += 1.0) {
+
+                    double navBearing = Math.atan2(xPos, -zPos);
+                    double relativeBearing = navBearing + pan;
+                    double range = Math.sqrt(xPos * xPos + zPos * zPos);
+
+                    // don't bother with oblique angles, the projection is wrong for these cases.
+                    if (Math.abs(relativeBearing) > Math.PI / 2)
+                        continue;
 
                     // make transform from world origin to camera center
                     Mat worldToCameraHomogeneous = makeWorldToCameraHomogeneous(pan, xPos, yPos, zPos);
@@ -91,14 +114,16 @@ public class TestSVD {
                     // apply transform from camera center to each eye
                     Mat worldToLeftEye = translateX(worldToCameraHomogeneous, b / 2);
                     Mat worldToRightEye = translateX(worldToCameraHomogeneous, -b / 2);
-                    debug("worldToLeftEye", worldToLeftEye);
-                    debug("worldToRightEye", worldToRightEye);
+                    debug(0, "worldToLeftEye", worldToLeftEye);
+                    debug(0, "worldToRightEye", worldToRightEye);
 
                     // make images based on target points and transforms
                     MatOfPoint2f leftPts = imagePoints(targetGeometryMeters, worldToLeftEye);
                     MatOfPoint2f rightPts = imagePoints(targetGeometryMeters, worldToRightEye);
                     if (!inViewport(leftPts, viewport) || !inViewport(rightPts, viewport))
-                        continue point;
+                        continue;
+
+                    ++idx;
                     writePng(leftPts, width, height,
                             String.format("C:\\Users\\joelt\\Desktop\\pics\\svd-%d-left.png", idx));
                     writePng(rightPts, width, height,
@@ -109,15 +134,147 @@ public class TestSVD {
 
                     // ... and x: (X, Z, 1):
                     Mat XMat = makeXMat();
-                    debug("XMat (x data)", XMat);
+                    debug(0, "XMat (x data)", XMat);
 
                     // so now Ax=b where X is the world geometry and b is as prepared.
                     Mat AA = solve(XMat, bMat);
 
-                    // TODO: make this its own thing, loop through the results.
+                    // ah this is the reverse transform so to get the world coords
+                    // i need to transform back.
+                    Mat rmat = AA.submat(0, 2, 0, 2);
+                    debug(1, "rmat", rmat);
+                    // this often returns nonrotations so fix it? hm.
+                    double euler = VisionUtil.rotm2euler2d(rmat);
+                    debug(0, "euler", euler);
+                    rmat.put(0, 0,
+                            Math.cos(euler), -Math.sin(euler),
+                            Math.sin(euler), Math.cos(euler));
+                    debug(1, "rmat repaired", rmat);
 
-                    double perhapsRotation = VisionUtil.rotm2euler2d(AA.submat(0, 2, 0, 2));
-                    debug("perhapsRotation", perhapsRotation);
+                    // Mat worldRvec = new Mat();
+                    // Calib3d.Rodrigues(rmat, worldRvec);
+                    Mat cameraTVec = Mat.zeros(2, 1, CvType.CV_64F);
+                    cameraTVec.put(0, 0, AA.get(0, 2)[0], AA.get(1, 2)[0]);
+                    debug(1, "cameraTVec", cameraTVec);
+                    Mat pworldTVec = new Mat();
+
+                    Core.gemm(rmat.t(), cameraTVec, -1.0, new Mat(), 0.0, pworldTVec);
+                    debug(1, "pWorldTVec", pworldTVec);
+
+                    double pxPos = pworldTVec.get(0, 0)[0];
+                    // double pxPos = cameraTVec.get(0, 0)[0];
+                    double pyPos = yPos;
+                    double pzPos = pworldTVec.get(1, 0)[0];
+                    // double pzPos = cameraTVec.get(1, 0)[0];
+                    double ppan = euler;
+
+                    double pNavBearing = Math.atan2(pxPos, -pzPos);
+                    double pRelativeBearing = pNavBearing + ppan;
+                    double pRange = Math.sqrt(pxPos * pxPos + pzPos * pzPos);
+
+                    double panErr = pan - ppan;
+                    double xErr = xPos - pxPos;
+                    double zErr = zPos - pzPos;
+                    double relativeBearingErr = relativeBearing - pRelativeBearing;
+                    double rangeErr = range - pRange;
+
+                    panErrSquareSum += panErr * panErr;
+                    xErrSquareSum += xErr * xErr;
+                    zErrSquareSum += zErr * zErr;
+                    relativeBearingErrSquareSum += relativeBearingErr * relativeBearingErr;
+                    rangeErrSquareSum += rangeErr * rangeErr;
+
+                    System.out.printf(
+                            "%d, %5.2f, %5.2f, %5.2f, %5.2f, %5.2f, %5.2f, %5.2f, %5.2f, %5.2f, %5.2f, %5.2f, %5.2f, %5.2f, %5.2f, %5.2f, %7.4f, %5.2f\n",
+                            idx, pan, xPos, yPos, zPos, relativeBearing, range, ppan, pxPos, pyPos, pzPos,
+                            pRelativeBearing, pRange,
+                            panErr, xErr, zErr, relativeBearingErr, rangeErr);
+
+                }
+            }
+        }
+
+        double panRMSE = Math.sqrt(panErrSquareSum / idx);
+        double xRMSE = Math.sqrt(xErrSquareSum / idx);
+        double zRMSE = Math.sqrt(zErrSquareSum / idx);
+        double relativeBearingRMSE = Math.sqrt(relativeBearingErrSquareSum / idx);
+        double rangeRMSE = Math.sqrt(rangeErrSquareSum / idx);
+        System.out.printf("panRMSE %f\n", panRMSE);
+        System.out.printf("xRMSE %f\n", xRMSE);
+        System.out.printf("zRMSE %f\n", zRMSE);
+        System.out.printf("relativeBearingRMSE %f\n", relativeBearingRMSE);
+        System.out.printf("rangeRMSE %f\n", rangeRMSE);
+
+        long endTime = System.currentTimeMillis();
+        System.out.println(endTime - startTime);
+
+    }
+
+    // @Test
+    public void testUmeyama() {
+        targetGeometryMeters = makeTarget();
+        targetPointsMultiplied = duplicatePoints(targetGeometryMeters, pointMultiplier);
+        homogeneousTarget = homogenize(targetPointsMultiplied);
+        // A "big" robot is ~0.8m wide, cameras can't be wider than that
+        // Later: test sensitivity of width
+        final double b = 0.8;
+        // camera doesn't move vertically.
+        final double yPos = 0;
+        long startTime = System.currentTimeMillis();
+        int idx = 0;
+
+        double panErrSquareSum = 0.0;
+        double xErrSquareSum = 0.0;
+        double zErrSquareSum = 0.0;
+        double relativeBearingErrSquareSum = 0.0;
+        double rangeErrSquareSum = 0.0;
+
+        // System.out.println("idx, pan, xpos, ypos, zpos, ppan, pxpos, pypos, pzpos");
+        System.out.println(
+                "idx, pan, xpos, ypos, zpos, rbear, range, ppan, pxpos, pypos, pzpos, prbear, prange, panErr, xErr, zErr, relativeBearingErr, rangeErr");
+
+        for (double pan = -3 * Math.PI / 8; pan <= 3 * Math.PI / 8; pan += Math.PI / 8) {
+            // field is 16m long, say half the field is relevant
+            for (double zPos = -10.0; zPos <= -1.0; zPos += 1.0) {
+                // field is 8m wide, so +/- 4m
+
+                for (double xPos = -5; xPos <= 5; xPos += 1.0) {
+
+                    double navBearing = Math.atan2(xPos, -zPos);
+                    double relativeBearing = navBearing + pan;
+                    double range = Math.sqrt(xPos * xPos + zPos * zPos);
+
+                    // don't bother with oblique angles, the projection is wrong for these cases.
+                    if (Math.abs(relativeBearing) > Math.PI / 2)
+                        continue;
+
+                    // make transform from world origin to camera center
+                    Mat worldToCameraHomogeneous = makeWorldToCameraHomogeneous(pan, xPos, yPos, zPos);
+
+                    // apply transform from camera center to each eye
+                    Mat worldToLeftEye = translateX(worldToCameraHomogeneous, b / 2);
+                    Mat worldToRightEye = translateX(worldToCameraHomogeneous, -b / 2);
+                    debug(0, "worldToLeftEye", worldToLeftEye);
+                    debug(0, "worldToRightEye", worldToRightEye);
+
+                    // make images based on target points and transforms
+                    MatOfPoint2f leftPts = imagePoints(targetGeometryMeters, worldToLeftEye);
+                    MatOfPoint2f rightPts = imagePoints(targetGeometryMeters, worldToRightEye);
+                    if (!inViewport(leftPts, viewport) || !inViewport(rightPts, viewport))
+                        continue;
+
+                    ++idx;
+                    writePng(leftPts, width, height,
+                            String.format("C:\\Users\\joelt\\Desktop\\pics\\svd-%d-left.png", idx));
+                    writePng(rightPts, width, height,
+                            String.format("C:\\Users\\joelt\\Desktop\\pics\\svd-%d-right.png", idx));
+
+                    // To solve Ax=b triangulation, first make b:
+                    Mat bMat = makeBMat(leftPts, rightPts, b);
+
+                    // ... and x: (X, Z, 1):
+                    Mat XMat = makeXMat();
+                    debug(0, "XMat (x data)", XMat);
 
                     //
                     //
@@ -139,7 +296,7 @@ public class TestSVD {
                         from.put(1, col, XMat.get(1, col)[0]);
                     }
                     from = from.t();
-                    debug("from", from);
+                    debug(0, "from", from);
                     // Mat from = targetPointsMultipliedXZHomogeneousMat.t();
 
                     Mat to = Mat.zeros(2, bMat.cols(), CvType.CV_64F);
@@ -148,7 +305,7 @@ public class TestSVD {
                         to.put(1, col, bMat.get(1, col)[0]);
                     }
                     to = to.t();
-                    debug("to", to);
+                    debug(0, "to", to);
 
                     // Mat to = TinvMinvBmat.t();
 
@@ -192,21 +349,21 @@ public class TestSVD {
                     Mat from_centered = demean.apply(from, from_mean);
                     Mat to_centered = demean.apply(to, to_mean);
 
-                    debug("from_centered", from_centered);
-                    debug("to_centered", to_centered);
+                    debug(0, "from_centered", from_centered);
+                    debug(0, "to_centered", to_centered);
 
                     // Mat cov = to_centered.t() * from_centered * one_over_n;
                     Mat cov = new Mat();
                     Core.gemm(to_centered.t(), from_centered, one_over_n, new Mat(), 0.0, cov);
-                    debug("cov", cov);
+                    debug(0, "cov", cov);
 
                     Mat u = new Mat();
                     Mat d = new Mat();
                     Mat vt = new Mat();
                     Core.SVDecomp(cov, d, u, vt, Core.SVD_MODIFY_A | Core.SVD_FULL_UV);
-                    debug("u", u);
-                    debug("d", d);
-                    debug("vt", vt);
+                    debug(0, "u", u);
+                    debug(0, "d", d);
+                    debug(0, "vt", vt);
 
                     // if (Core.countNonZero(d) < 2)
                     // throw new IllegalArgumentException("Points cannot be colinear");
@@ -231,13 +388,17 @@ public class TestSVD {
                     rmat.copyTo(r_part);
                     // transform.col(3) = to_mean.t() - new_to;
                     double euler = VisionUtil.rotm2euler2d(rmat);
-                    debug("euler", euler);
+                    debug(0, "euler", euler);
 
                     Mat t_part = transform.col(2);
                     Mat tmat = new Mat();
                     Core.subtract(to_mean.t(), new_to, tmat);
                     tmat.copyTo(t_part);
-                    debug("transform", transform);
+                    debug(0, "transform", transform);
+
+                    //
+                    //
+                    //
 
                     // ah this is the reverse transform so to get the world coords
                     // i need to transform back.
@@ -246,23 +407,56 @@ public class TestSVD {
                     // Calib3d.Rodrigues(rmat, worldRvec);
                     Mat cameraTVec = Mat.zeros(2, 1, CvType.CV_64F);
                     cameraTVec.put(0, 0, transform.get(0, 2)[0], transform.get(1, 2)[0]);
-                    debug("cameraTVec", cameraTVec);
+                    debug(0, "cameraTVec", cameraTVec);
                     Mat pworldTVec = new Mat();
-                    debug("rmat", rmat);
+                    debug(0, "rmat", rmat);
                     Core.gemm(rmat.t(), cameraTVec, -1.0, new Mat(), 0.0, pworldTVec);
-                    debug("pWorldTVec", pworldTVec);
+                    debug(0, "pWorldTVec", pworldTVec);
 
                     double pxPos = pworldTVec.get(0, 0)[0];
                     double pyPos = yPos;
                     double pzPos = pworldTVec.get(1, 0)[0];
                     double ppan = euler;
 
-                    System.out.printf("%d, %5.2f, %5.2f, %5.2f, %5.2f, %5.2f, %5.2f, %5.2f, %5.2f\n",
-                            idx, pan, xPos, yPos, zPos, ppan, pxPos, pyPos, pzPos);
+                    double pNavBearing = Math.atan2(pxPos, -pzPos);
+                    double pRelativeBearing = pNavBearing + ppan;
+                    double pRange = Math.sqrt(pxPos * pxPos + pzPos * pzPos);
+
+                    double panErr = pan - ppan;
+                    double xErr = xPos - pxPos;
+                    double zErr = zPos - pzPos;
+                    double relativeBearingErr = relativeBearing - pRelativeBearing;
+                    double rangeErr = range - pRange;
+
+                    panErrSquareSum += panErr * panErr;
+                    xErrSquareSum += xErr * xErr;
+                    zErrSquareSum += zErr * zErr;
+                    relativeBearingErrSquareSum += relativeBearingErr * relativeBearingErr;
+                    rangeErrSquareSum += rangeErr * rangeErr;
+
+                    System.out.printf(
+                            "%d, %5.2f, %5.2f, %5.2f, %5.2f, %5.2f, %5.2f, %5.2f, %5.2f, %5.2f, %5.2f, %5.2f, %5.2f, %5.2f, %5.2f, %5.2f, %7.4f, %5.2f\n",
+                            idx, pan, xPos, yPos, zPos, relativeBearing, range, ppan, pxPos, pyPos, pzPos,
+                            pRelativeBearing, pRange,
+                            panErr, xErr, zErr, relativeBearingErr, rangeErr);
 
                 }
             }
         }
+
+        double panRMSE = Math.sqrt(panErrSquareSum / idx);
+        double xRMSE = Math.sqrt(xErrSquareSum / idx);
+        double zRMSE = Math.sqrt(zErrSquareSum / idx);
+        double relativeBearingRMSE = Math.sqrt(relativeBearingErrSquareSum / idx);
+        double rangeRMSE = Math.sqrt(rangeErrSquareSum / idx);
+        System.out.printf("panRMSE %f\n", panRMSE);
+        System.out.printf("xRMSE %f\n", xRMSE);
+        System.out.printf("zRMSE %f\n", zRMSE);
+        System.out.printf("relativeBearingRMSE %f\n", relativeBearingRMSE);
+        System.out.printf("rangeRMSE %f\n", rangeRMSE);
+
+        long endTime = System.currentTimeMillis();
+        System.out.println(endTime - startTime);
     }
 
     static MatOfPoint3f makeTarget() {
@@ -272,6 +466,16 @@ public class TestSVD {
                 new Point3(1.0, -1.0, 0.0),
                 new Point3(-1.0, -1.0, 0.0),
                 new Point3(-1.0, 1.0, 0.0));
+        return targetGeometryMeters;
+    }
+
+    static MatOfPoint3f makeNonplanarTarget() {
+        final MatOfPoint3f targetGeometryMeters = new MatOfPoint3f(
+                new Point3(0.0, 0.0, 0.1),
+                new Point3(1.0, 1.0, 0.0),
+                new Point3(1.0, -1.0, 0.1),
+                new Point3(-1.0, -1.0, 0.0),
+                new Point3(-1.0, 1.0, 0.1));
         return targetGeometryMeters;
     }
 
@@ -292,7 +496,7 @@ public class TestSVD {
         Calib3d.convertPointsToHomogeneous(targetPointsMultiplied, homogeneousTarget);
         homogeneousTarget = homogeneousTarget.reshape(1).t();
         homogeneousTarget.convertTo(homogeneousTarget, CvType.CV_64F);
-        debug("homogeneousTarget", homogeneousTarget);
+        debug(0, "homogeneousTarget", homogeneousTarget);
         return homogeneousTarget;
     }
 
@@ -313,10 +517,10 @@ public class TestSVD {
                 0, 1, 0, 0,
                 0, 0, 1, 0,
                 0, 0, 0, 1);
-        debug("translation", translation);
+        debug(0, "translation", translation);
         Mat result = new Mat();
         Core.gemm(translation, worldToCamera, 1.0, new Mat(), 0.0, result);
-        debug("result", result);
+        debug(0, "result", result);
         return result;
     }
 
@@ -324,14 +528,14 @@ public class TestSVD {
 
         Mat Rvec = Mat.zeros(3, 1, CvType.CV_32F);
         Calib3d.Rodrigues(worldToCamera.rowRange(0, 3).colRange(0, 3), Rvec);
-        debug("Rvec", Rvec);
+        debug(0, "Rvec", Rvec);
         Mat t = worldToCamera.colRange(3, 4).rowRange(0, 3);
-        debug("t", t);
+        debug(0, "t", t);
 
         MatOfPoint2f pts = new MatOfPoint2f();
         Mat jacobian = new Mat();
         Calib3d.projectPoints(geometry, Rvec, t, kMat, dMat, pts, jacobian);
-        debug("pts", pts);
+        debug(0, "pts", pts);
         // add image noise in image coords
         List<Point> ptsList = new ArrayList<Point>();
         for (int reps = 0; reps < pointMultiplier; reps++) {
@@ -364,17 +568,17 @@ public class TestSVD {
         // these are camera-to-world transforms
         Mat cameraToWorldTVec = Mat.zeros(3, 1, CvType.CV_32F);
         cameraToWorldTVec.put(0, 0, xPos, yPos, zPos);
-        debug("worldTVec", cameraToWorldTVec);
+        debug(0, "worldTVec", cameraToWorldTVec);
 
         Mat cameraToWorldRV = Mat.zeros(3, 1, CvType.CV_32F);
         cameraToWorldRV.put(0, 0, 0.0, pan, 0.0);
-        debug("worldRV", cameraToWorldRV);
+        debug(0, "worldRV", cameraToWorldRV);
 
         Mat cameraToWorldRMat = new Mat();
         Calib3d.Rodrigues(cameraToWorldRV, cameraToWorldRMat);
 
         Mat cameraToWorldHomogeneous = homogeneousRigidTransform(cameraToWorldRMat, cameraToWorldTVec);
-        debug("cameraToWorld (just to see)", cameraToWorldHomogeneous);
+        debug(0, "cameraToWorld (just to see)", cameraToWorldHomogeneous);
 
         // this is inverse(worldT*worldR)
         // inverse of multiplication is order-reversed multipication of inverses, so
@@ -382,10 +586,10 @@ public class TestSVD {
         Mat worldToCameraRMat = cameraToWorldRMat.t();
         Mat worldToCameraTVec = new Mat();
         Core.gemm(worldToCameraRMat, cameraToWorldTVec, -1.0, new Mat(), 0, worldToCameraTVec);
-        debug("camTVec", worldToCameraTVec);
+        debug(0, "camTVec", worldToCameraTVec);
 
         Mat worldToCameraHomogeneous = homogeneousRigidTransform(worldToCameraRMat, worldToCameraTVec);
-        debug("worldToCamera", worldToCameraHomogeneous);
+        debug(0, "worldToCamera", worldToCameraHomogeneous);
         return worldToCameraHomogeneous;
     }
 
@@ -394,7 +598,7 @@ public class TestSVD {
         for (int i = 0; i < leftPts.toList().size(); ++i) {
             uMat.put(i, 0, leftPts.get(i, 0)[0], rightPts.get(i, 0)[0], 1.0);
         }
-        debug("uMat", uMat);
+        debug(0, "uMat", uMat);
         return uMat;
     }
 
@@ -421,9 +625,9 @@ public class TestSVD {
                 f, 0, cx,
                 0, f, cx,
                 0, 0, 1);
-        debug("M", M);
+        debug(0, "M", M);
         Mat Minv = M.inv();
-        debug("Minv", Minv);
+        debug(0, "Minv", Minv);
         return Minv;
     }
 
@@ -433,9 +637,9 @@ public class TestSVD {
                 1, 0, b / 2,
                 1, 0, -b / 2,
                 0, 1, 0);
-        debug("T", T);
+        debug(0, "T", T);
         Mat Tinv = T.inv();
-        debug("Tinv", Tinv);
+        debug(0, "Tinv", Tinv);
         return Tinv;
     }
 
@@ -450,18 +654,21 @@ public class TestSVD {
         // apply the inverses to the observations (the "u") in the correct order:
         Mat MinvUmat = new Mat();
         Core.gemm(Minv, uMat.t(), 1.0, new Mat(), 0.0, MinvUmat);
-        debug("MinvUmat", MinvUmat);
+        debug(0, "MinvUmat", MinvUmat);
 
         Mat bMat = new Mat();
         Core.gemm(Tinv, MinvUmat, 1.0, new Mat(), 0.0, bMat);
-        debug("bMat", bMat);
+        debug(0, "bMat", bMat);
 
         // Make the result look homogeneous
         normalize(bMat);
-        debug("bMat normalized", bMat);
+        debug(0, "bMat normalized", bMat);
         return bMat;
     }
 
+    /**
+     * use OpenCV Core.solve(X, b, A, DECOMP_SVD), return A.
+     */
     Mat solve(Mat XMat, Mat bMat) {
         // so now Ax=b where X is the world geometry and b is above.
         Mat AA = new Mat();
@@ -470,23 +677,27 @@ public class TestSVD {
         Core.solve(XMat.t(), bMat.t(), AA, Core.DECOMP_SVD);
         // ...and produces a transpose.
         AA = AA.t();
-        debug("AA", AA);
+        debug(0, "AA", AA);
 
         double Ascale = AA.get(2, 2)[0];
         Core.gemm(AA, Mat.eye(3, 3, CvType.CV_64F), 1 / Ascale, new Mat(), 0.0, AA);
-        debug("AA scaled", AA);
+        debug(1, "AA scaled", AA);
         return AA;
     }
 
-    public static void debug(String msg, Mat m) {
+    public static void debug(int level, String msg, Mat m) {
         if (!DEBUG)
+            return;
+        if (level < LEVEL)
             return;
         System.out.println(msg);
         System.out.println(m.dump());
     }
 
-    public static void debug(String msg, double d) {
+    public static void debug(int level, String msg, double d) {
         if (!DEBUG)
+            return;
+        if (level < LEVEL)
             return;
         System.out.println(msg);
         System.out.println(d);
