@@ -388,19 +388,42 @@ u'\\
 1\end{pmatrix}
 $$
 
+I tried solving this system a very large simulated 2x2 meter target using a grid of poses
+from 1 to 10 meters Z, -5 to 5 meters X, and +/- 67 degrees, with 1 pixel of noise, using the 
+camera parameters I'd like to use, the [Arducam OV9281 global shutter binocular setup](https://www.arducam.com/product/arducam-1mp2-stereoscopic-camera-bundle-kit-for-raspberry-pi-nvidia-jetson-nano-xavier-nx-two-ov9281-global-shutter-monochrome-camera-modules-and-camarray-stereo-camera-hat/),
+which has a FOV of 70 degrees (H) and resolution 1280x800.  This yields accuracy as follows:
+
+| measure | RMSE |
+| --- | --- |
+| pan | 7.1 degrees |
+| X position | 1.1 meters |
+| Z position | 0.39 meters |
+| relative bearing | 0.092 degrees |
+| range | 0.12 meters |
+
+The X and Z accuracy is quite good within a few meters of the target; less good past about 5 meters.  The relative bearing accuracy is phenomenal no matter the range.  The X error exhibits the same shape as the PnP estimates: more than 5 or 6 meters away from the target, there is little 
+
+<img src="grid.svg"/>
+
+Running again using a more realistic target size of 0.4 x 0.1 meters, over the same large (10x10 meter) yields much
+worse X/Y accuracy, though still excellent bearing/range accuracy.
+
+| measure | RMSE |
+| --- | --- |
+| pan | 27 degrees |
+| X position | 3.7 meters |
+| Z position | 1.6 meters |
+| relative bearing | 0.04 degrees |
+| range | 0.13 meters |
 
 
 
+# Binocular 2d Omeyama method
+
+I also tried a 2d adaptation of the Omeyama method, which yields essentially the same result as the 2d solver, above.
 
 
-
-# 5. Binocular 2d Omeyama method
-
-I also tried a 2d adaptation of the Omeyama method, which yields the same result as the 2d solver, above, 
-but requires a giant multiplication.  Does the solve method do that?
-
-
-# Including Y
+# Alternative: Including Y
 
 As an aside, instead of dropping Y, we could take advantage of the target geometry where Y is a constant, and we'd have this:
 
