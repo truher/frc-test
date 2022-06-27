@@ -390,8 +390,7 @@ $$
 
 I tried solving this system a very large simulated 2x2 meter target using a grid of poses
 from 1 to 10 meters Z, -5 to 5 meters X, and +/- 67 degrees, with 1 pixel of noise, using the 
-camera parameters I'd like to use, the [Arducam OV9281 global shutter binocular setup](https://www.arducam.com/product/arducam-1mp2-stereoscopic-camera-bundle-kit-for-raspberry-pi-nvidia-jetson-nano-xavier-nx-two-ov9281-global-shutter-monochrome-camera-modules-and-camarray-stereo-camera-hat/),
-which has a FOV of 70 degrees (H) and resolution 1280x800.  This yields accuracy as follows:
+a relatively wide lens (120 degrees horizontal) and resolution 1280x800.  This yields accuracy as follows:
 
 | measure | RMSE |
 | --- | --- |
@@ -405,16 +404,19 @@ The X and Z accuracy is quite good within a few meters of the target; less good 
 
 <img src="grid.svg"/>
 
-Running again using a more realistic target size of 0.4 x 0.1 meters, over the same large (10x10 meter) yields much
+Running again using a more realistic target size of 0.4 x 0.1 meters, and using the narrower 2.8mm lens as supplied with
+the [Arducam OV9281 global shutter binocular setup](https://www.arducam.com/product/arducam-1mp2-stereoscopic-camera-bundle-kit-for-raspberry-pi-nvidia-jetson-nano-xavier-nx-two-ov9281-global-shutter-monochrome-camera-modules-and-camarray-stereo-camera-hat/),
+over the same large (10x10 meter) yields much
 worse X/Y accuracy, though still excellent bearing/range accuracy.
 
 | measure | RMSE |
 | --- | --- |
-| pan | 27 degrees |
-| X position | 3.7 meters |
-| Z position | 1.6 meters |
-| relative bearing | 0.04 degrees |
-| range | 0.13 meters |
+| pan | 14 degrees |
+| X position | 2.1 meters |
+| Z position | 0.79 meters |
+| relative bearing | 0.02 degrees |
+| range | 0.057 meters |
+
 
 
 
