@@ -52,7 +52,7 @@ public class TestCV {
         System.out.println(d);
     }
 
-    @Test
+    //@Test
     public void testCombiningRotations() {
         Mat pan = Mat.zeros(3, 1, CvType.CV_64F);
         pan.put(0, 0, 0.0, -0.5, 0.0); // pan to right, world to left, so negative

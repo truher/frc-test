@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import org.junit.Test;
 import org.opencv.calib3d.Calib3d;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
@@ -33,27 +34,7 @@ public class TestBinocular {
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
     }
 
-    public static void debugmsg(String msg) {
-        if (!DEBUG)
-            return;
-        System.out.println(msg);
-    }
-
-    public static void debug(String msg, Mat m) {
-        if (!DEBUG)
-            return;
-        System.out.println(msg);
-        System.out.println(m.dump());
-    }
-
-    public static void debug(String msg, double d) {
-        if (!DEBUG)
-            return;
-        System.out.println(msg);
-        System.out.println(d);
-    }
-
-    // @Test
+   // @Test
     public void testSimple() {
         final int height = 540;
         final int width = 960;
@@ -331,7 +312,7 @@ public class TestBinocular {
      * without
      * rotation etc.
      */
-    // @Test
+   // @Test
     public void testProjection() {
         final int height = 540;
         final int width = 960;
@@ -427,7 +408,7 @@ public class TestBinocular {
 
     }
 
-    // @Test
+  //  @Test
     public void testProjection2() {
         final int height = 540; // c=270
         final int width = 960; // c=480
@@ -521,7 +502,7 @@ public class TestBinocular {
      * add a step to the world->camera translation so it's world->camera->eye
      * 
      */
-    // @Test
+  //  @Test
     public void testEyes() {
         final int height = 540; // c=270
         final int width = 960; // c=480
@@ -656,7 +637,7 @@ public class TestBinocular {
     /**
      * now extract R and t for each eye and make some pictures. pics seem good.
      */
-    // @Test
+   // @Test
     public void testEyeImages() {
         final int height = 540; // c=270
         final int width = 960; // c=480
@@ -794,7 +775,7 @@ public class TestBinocular {
     /**
      * now using the eye points, triangulate
      */
-    // @Test
+  //  @Test
     public void testEyeTriangulate() {
         final int height = 540; // c=270
         final int width = 960; // c=480
@@ -1016,7 +997,7 @@ public class TestBinocular {
     /**
      * ok now the grid works for all three dimensions (x, z, theta).
      */
-    // @Test
+    @Test
     public void testStereoGrid() {
 
         // global invariants
@@ -1285,10 +1266,11 @@ public class TestBinocular {
                     debug("predictedWorldNormal", predictedWorldNormal);
 
                     debug("targetGeometryMeters for comparison", targetGeometryMeters);
+                     
 
                     // error is tiny, -1e6
                     Mat triangulationError = new Mat();
-                    Core.subtract(targetGeometryMeters, predictedWorldNormal,
+                    Core.subtract(targetPointsMultiplied, predictedWorldNormal,
                             triangulationError);
                     debug("triangulationError", triangulationError);
 
@@ -1401,6 +1383,26 @@ public class TestBinocular {
             }
         }
 
+    }
+
+    public static void debugmsg(String msg) {
+        if (!DEBUG)
+            return;
+        System.out.println(msg);
+    }
+
+    public static void debug(String msg, Mat m) {
+        if (!DEBUG)
+            return;
+        System.out.println(msg);
+        System.out.println(m.dump());
+    }
+
+    public static void debug(String msg, double d) {
+        if (!DEBUG)
+            return;
+        System.out.println(msg);
+        System.out.println(d);
     }
 
 }

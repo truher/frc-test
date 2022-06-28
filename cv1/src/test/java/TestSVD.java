@@ -70,7 +70,7 @@ public class TestSVD {
         debug(0, "TinvMinvBmat (scaled)", TinvMinvBmat);
     }
 
-    @Test
+   // @Test
     public void testNothing() {
     }
 
@@ -100,7 +100,7 @@ public class TestSVD {
 
     }
 
-    @Test
+   // @Test
     public void testSolve() {
         targetGeometryMeters = makeTarget();
         targetPointsMultiplied = duplicatePoints(targetGeometryMeters, pointMultiplier);
