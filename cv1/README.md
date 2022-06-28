@@ -482,9 +482,17 @@ f & 0 & 0 & c_x \\
 \end{bmatrix}
 \times
 \begin{bmatrix}
-1 & 0 & 0 & \frac{b}{2}\\
-0 & 1 & 0 & -\frac{b}{2}\\
-0 & 0 & 1 & 0\\
+1 & 0 & 0 & 0 & 0 \\
+0 & 1 & 0 & 0 & 0 \\
+0 & 0 & 1 & 0 & 0 \\
+0 & 0 & 0 & 1 & 0
+\end{bmatrix}
+\times
+\begin{bmatrix}
+1 & 0 & 0 & \frac{b}{2} \\
+1 & 0 & 0 & -\frac{b}{2} \\
+0 & 1 & 0 & 0 \\
+0 & 0 & 1 & 0 \\
 0 & 0 & 0 & 1
 \end{bmatrix}
 \times
@@ -520,6 +528,13 @@ s
 0 & 1 & 0 & -\frac{b}{2}\\
 0 & 0 & 1 & 0\\
 0 & 0 & 0 & 1
+\end{bmatrix}^{-1}
+\times
+\begin{bmatrix}
+1 & 0 & 0 & 0 & 0 \\
+0 & 1 & 0 & 0 & 0 \\
+0 & 0 & 1 & 0 & 0 \\
+0 & 0 & 0 & 1 & 0
 \end{bmatrix}^{-1}
 \times
 \begin{bmatrix}
