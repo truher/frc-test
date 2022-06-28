@@ -432,9 +432,9 @@ As an aside, instead of dropping Y, we could take advantage of the target geomet
 
 $$
 s
-\begin{pmatrix}u\\
-u'\\
-1\end{pmatrix}=
+\begin{pmatrix}
+u \\\ u' \\\ v \\\ 1
+\end{pmatrix}=
 \begin{bmatrix}
 f & 0 & 0 & c_x \\
 0 & f & 0 & c_x \\
@@ -461,5 +461,82 @@ X \\\ Z \\\ 1
 $$
 
 I'm not sure that would be better, but I could measure that.
+
+# Alternative: constrained solver
+
+Rather than try to use an overly-general canned solver, or split up Y and XZ, we could solve the full system with constraints.
+
+The system for both eyes including Y:
+
+
+$$
+s
+\begin{pmatrix}
+u \\\ u' \\\ v \\\ 1
+\end{pmatrix}=
+\begin{bmatrix}
+f & 0 & 0 & c_x \\
+0 & f & 0 & c_x \\
+0 & 0 & f & c_y \\
+0 & 0 & 0 & 1
+\end{bmatrix}
+\times
+\begin{bmatrix}
+1 & 0 & 0 & \frac{b}{2}\\
+0 & 1 & 0 & -\frac{b}{2}\\
+0 & 0 & 1 & 0\\
+0 & 0 & 0 & 1
+\end{bmatrix}
+\times
+\begin{bmatrix}
+r_{11} & r_{12} & r_{13} & t_x\\
+r_{21} & r_{22} & r_{23} & t_y\\
+r_{31} & r_{32} & r_{33} & t_z\\
+0    & 0    & 0    & 1
+\end{bmatrix}
+\times
+\begin{pmatrix}
+X \\\ Y \\\ Z \\\ 1
+\end{pmatrix}
+$$
+
+Rearranged as Ax=b:
+
+
+$$
+\begin{bmatrix}
+r_{11} & r_{12} & r_{13} & t_x\\
+r_{21} & r_{22} & r_{23} & t_y\\
+r_{31} & r_{32} & r_{33} & t_z\\
+0    & 0    & 0    & 1
+\end{bmatrix}
+\times
+\begin{pmatrix}
+X \\\ Y \\\ Z \\\ 1
+\end{pmatrix}=
+s
+\begin{bmatrix}
+1 & 0 & 0 & \frac{b}{2}\\
+0 & 1 & 0 & -\frac{b}{2}\\
+0 & 0 & 1 & 0\\
+0 & 0 & 0 & 1
+\end{bmatrix}^{-1}
+\times
+\begin{bmatrix}
+f & 0 & 0 & c_x \\
+0 & f & 0 & c_x \\
+0 & 0 & f & c_y \\
+0 & 0 & 0 & 1
+\end{bmatrix}^{-1}
+\times
+\begin{pmatrix}
+u \\\ u' \\\ v \\\ 1
+\end{pmatrix}
+$$
+
+
+
+
+---
 
 Also, a note about Github LaTeX: equals sign on a line by itself is interpreted as "make the preceding line a heading" which breaks everything.
