@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Random;
 
 import org.opencv.calib3d.Calib3d;
 import org.opencv.core.Core;
@@ -23,6 +24,12 @@ import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 
 public abstract class VisionUtil {
+    static {
+        System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
+    }
+    static final boolean DEBUG = false;
+    static final int LEVEL = 1;
+
     /**
      * return the Tait-Bryan (ZYX) "Euler" angles for the supplied rotation matrix.
      * 
@@ -151,6 +158,17 @@ public abstract class VisionUtil {
     }
 
     /**
+     * specify corner points (x1,y1) and (x2,y2), return rectangle at z=0.
+     */
+    public static MatOfPoint3f makeTarget(double x1, double y1, double x2, double y2) {
+        return new MatOfPoint3f(
+                new Point3(x2, y1, 0.0),
+                new Point3(x2, y2, 0.0),
+                new Point3(x1, y2, 0.0),
+                new Point3(x1, y1, 0.0));
+    }
+
+    /**
      * more points
      */
     public static MatOfPoint3f makeTargetGeometry3f2(double width, double height) {
@@ -188,6 +206,45 @@ public abstract class VisionUtil {
                     (p.y - minY) * scalePixelsPerMeter));
         }
         return new MatOfPoint2f(pointList.toArray(new Point[0]));
+    }
+
+    static Mat homogeneousRigidTransform(Mat R, Mat t) {
+        Mat worldToCamera = Mat.zeros(4, 4, CvType.CV_32F);
+        worldToCamera.put(0, 0,
+                R.get(0, 0)[0], R.get(0, 1)[0], R.get(0, 2)[0], t.get(0, 0)[0],
+                R.get(1, 0)[0], R.get(1, 1)[0], R.get(1, 2)[0], t.get(1, 0)[0],
+                R.get(2, 0)[0], R.get(2, 1)[0], R.get(2, 2)[0], t.get(2, 0)[0],
+                0, 0, 0, 1);
+        return worldToCamera;
+    }
+
+    public static Mat makeWorldToCameraHomogeneous(double pan, double xPos, double yPos, double zPos) {
+        // these are camera-to-world transforms
+        Mat cameraToWorldTVec = Mat.zeros(3, 1, CvType.CV_32F);
+        cameraToWorldTVec.put(0, 0, xPos, yPos, zPos);
+        debug(0, "worldTVec", cameraToWorldTVec);
+
+        Mat cameraToWorldRV = Mat.zeros(3, 1, CvType.CV_32F);
+        cameraToWorldRV.put(0, 0, 0.0, pan, 0.0);
+        debug(0, "worldRV", cameraToWorldRV);
+
+        Mat cameraToWorldRMat = new Mat();
+        Calib3d.Rodrigues(cameraToWorldRV, cameraToWorldRMat);
+
+        Mat cameraToWorldHomogeneous = homogeneousRigidTransform(cameraToWorldRMat, cameraToWorldTVec);
+        debug(0, "cameraToWorld (just to see)", cameraToWorldHomogeneous);
+
+        // this is inverse(worldT*worldR)
+        // inverse of multiplication is order-reversed multipication of inverses, so
+        // which is worldR.t * -worldT or camR*-worldT
+        Mat worldToCameraRMat = cameraToWorldRMat.t();
+        Mat worldToCameraTVec = new Mat();
+        Core.gemm(worldToCameraRMat, cameraToWorldTVec, -1.0, new Mat(), 0, worldToCameraTVec);
+        debug(0, "camTVec", worldToCameraTVec);
+
+        Mat worldToCameraHomogeneous = homogeneousRigidTransform(worldToCameraRMat, worldToCameraTVec);
+        debug(0, "worldToCamera", worldToCameraHomogeneous);
+        return worldToCameraHomogeneous;
     }
 
     /**
@@ -317,6 +374,56 @@ public abstract class VisionUtil {
         Mat camTVec = new Mat();
         Core.gemm(worldRMat.t(), worldTVec, -1.0, new Mat(), 0.0, camTVec);
         return camTVec;
+    }
+
+    /**
+     * apply an dx-translation transform to the given transform (i.e. multiply it)
+     */
+    public static Mat translateX(Mat worldToCamera, double dx) {
+        Mat translation = Mat.zeros(4, 4, CvType.CV_32F);
+        translation.put(0, 0,
+                1, 0, 0, dx,
+                0, 1, 0, 0,
+                0, 0, 1, 0,
+                0, 0, 0, 1);
+        debug(0, "translation", translation);
+        Mat result = new Mat();
+        Core.gemm(translation, worldToCamera, 1.0, new Mat(), 0.0, result);
+        debug(0, "result", result);
+        return result;
+    }
+
+    public static boolean inViewport(MatOfPoint2f pts, Rect viewport) {
+        for (Point pt : pts.toList()) {
+            if (!viewport.contains(pt))
+                return false;
+        }
+        return true;
+    }
+
+    public static MatOfPoint2f imagePoints(Mat kMat, MatOfDouble dMat, MatOfPoint3f geometry, Mat worldToCamera,
+            int pointMultiplier, double noisePixels) {
+        Random rand = new Random();
+        Mat Rvec = Mat.zeros(3, 1, CvType.CV_32F);
+        Calib3d.Rodrigues(worldToCamera.rowRange(0, 3).colRange(0, 3), Rvec);
+        debug(0, "Rvec", Rvec);
+        Mat t = worldToCamera.colRange(3, 4).rowRange(0, 3);
+        debug(0, "t", t);
+
+        MatOfPoint2f pts = new MatOfPoint2f();
+        Mat jacobian = new Mat();
+        Calib3d.projectPoints(geometry, Rvec, t, kMat, dMat, pts, jacobian);
+        debug(0, "pts", pts);
+        // add image noise in image coords
+        List<Point> ptsList = new ArrayList<Point>();
+        for (int reps = 0; reps < pointMultiplier; reps++) {
+            for (Point p : pts.toList()) {
+                p.x = p.x + rand.nextGaussian() * noisePixels;
+                p.y = p.y + rand.nextGaussian() * noisePixels;
+                ptsList.add(p);
+            }
+        }
+        return new MatOfPoint2f(ptsList.toArray(new Point[0]));
     }
 
     public static MatOfPoint2f getImagePoints(
@@ -455,6 +562,33 @@ public abstract class VisionUtil {
         Imgproc.warpPerspective(visionTarget, cameraView, transformMat, dsize);
 
         return cameraView;
+    }
+
+    public static void writePng(MatOfPoint2f pts, int width, int height, String filename) {
+        final Scalar green = new Scalar(0, 255, 0);
+        Mat img = Mat.zeros(height, width, CvType.CV_32FC3);
+        for (Point pt : pts.toList()) {
+            Imgproc.circle(img, pt, 6, green, 1);
+        }
+        Imgcodecs.imwrite(filename, img);
+    }
+
+    public static void debug(int level, String msg, Mat m) {
+        if (!DEBUG)
+            return;
+        if (level < LEVEL)
+            return;
+        System.out.println(msg);
+        System.out.println(m.dump());
+    }
+
+    public static void debug(int level, String msg, double d) {
+        if (!DEBUG)
+            return;
+        if (level < LEVEL)
+            return;
+        System.out.println(msg);
+        System.out.println(d);
     }
 
 }

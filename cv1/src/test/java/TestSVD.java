@@ -15,11 +15,7 @@ import org.opencv.core.MatOfPoint3f;
 import org.opencv.core.Point;
 import org.opencv.core.Point3;
 import org.opencv.core.Rect;
-import org.opencv.core.Scalar;
 import org.opencv.core.Size;
-import org.opencv.imgcodecs.Imgcodecs;
-import org.opencv.imgproc.Imgproc;
-
 import vision.VisionUtil;
 
 /**
@@ -34,7 +30,7 @@ public class TestSVD {
     }
     static final boolean DEBUG = false;
     static final int LEVEL = 1;
-    static final Scalar green = new Scalar(0, 255, 0);
+
     static final Random rand = new Random(42);
     // this is the arducam ov9281 thing
     static final double f = 914;
@@ -50,7 +46,7 @@ public class TestSVD {
 
     MatOfPoint3f targetGeometryMeters;
     MatOfPoint3f targetPointsMultiplied;
-    Mat homogeneousTarget;
+    // Mat homogeneousTarget;
 
     public TestSVD() {
         debug(0, "kMat", kMat);
@@ -70,7 +66,7 @@ public class TestSVD {
         debug(0, "TinvMinvBmat (scaled)", TinvMinvBmat);
     }
 
-   // @Test
+    // @Test
     public void testNothing() {
     }
 
@@ -100,11 +96,11 @@ public class TestSVD {
 
     }
 
-   // @Test
+    // @Test
     public void testSolve() {
-        targetGeometryMeters = makeTarget();
+        targetGeometryMeters = VisionUtil.makeTarget(-0.2, -0.1, 0.2, 0.0);
         targetPointsMultiplied = duplicatePoints(targetGeometryMeters, pointMultiplier);
-        homogeneousTarget = homogenize(targetPointsMultiplied);
+        // homogeneousTarget = homogenize(targetPointsMultiplied);
         // A "big" robot is ~0.8m wide, cameras can't be wider than that
         // Later: test sensitivity of width
         final double b = 0.8;
@@ -140,24 +136,26 @@ public class TestSVD {
                         continue;
 
                     // make transform from world origin to camera center
-                    Mat worldToCameraHomogeneous = makeWorldToCameraHomogeneous(pan, xPos, yPos, zPos);
+                    Mat worldToCameraHomogeneous = VisionUtil.makeWorldToCameraHomogeneous(pan, xPos, yPos, zPos);
 
                     // apply transform from camera center to each eye
-                    Mat worldToLeftEye = translateX(worldToCameraHomogeneous, b / 2);
-                    Mat worldToRightEye = translateX(worldToCameraHomogeneous, -b / 2);
+                    Mat worldToLeftEye = VisionUtil.translateX(worldToCameraHomogeneous, b / 2);
+                    Mat worldToRightEye = VisionUtil.translateX(worldToCameraHomogeneous, -b / 2);
                     debug(0, "worldToLeftEye", worldToLeftEye);
                     debug(0, "worldToRightEye", worldToRightEye);
 
                     // make images based on target points and transforms
-                    MatOfPoint2f leftPts = imagePoints(targetGeometryMeters, worldToLeftEye);
-                    MatOfPoint2f rightPts = imagePoints(targetGeometryMeters, worldToRightEye);
-                    if (!inViewport(leftPts, viewport) || !inViewport(rightPts, viewport))
+                    MatOfPoint2f leftPts = VisionUtil.imagePoints(kMat, dMat, targetGeometryMeters, worldToLeftEye,
+                            pointMultiplier, noisePixels);
+                    MatOfPoint2f rightPts = VisionUtil.imagePoints(kMat, dMat, targetGeometryMeters, worldToRightEye,
+                            pointMultiplier, noisePixels);
+                    if (!VisionUtil.inViewport(leftPts, viewport) || !VisionUtil.inViewport(rightPts, viewport))
                         continue;
 
                     ++idx;
-                    writePng(leftPts, width, height,
+                    VisionUtil.writePng(leftPts, width, height,
                             String.format("C:\\Users\\joelt\\Desktop\\pics\\svd-%d-left.png", idx));
-                    writePng(rightPts, width, height,
+                    VisionUtil.writePng(rightPts, width, height,
                             String.format("C:\\Users\\joelt\\Desktop\\pics\\svd-%d-right.png", idx));
 
                     // To solve Ax=b triangulation, first make b:
@@ -241,11 +239,11 @@ public class TestSVD {
 
     }
 
-    // @Test
+    @Test
     public void testUmeyama() {
-        targetGeometryMeters = makeTarget();
+        targetGeometryMeters = VisionUtil.makeTarget(-0.2, -0.1, 0.2, 0.0);
         targetPointsMultiplied = duplicatePoints(targetGeometryMeters, pointMultiplier);
-        homogeneousTarget = homogenize(targetPointsMultiplied);
+        // homogeneousTarget = homogenize(targetPointsMultiplied);
         // A "big" robot is ~0.8m wide, cameras can't be wider than that
         // Later: test sensitivity of width
         final double b = 0.8;
@@ -280,24 +278,26 @@ public class TestSVD {
                         continue;
 
                     // make transform from world origin to camera center
-                    Mat worldToCameraHomogeneous = makeWorldToCameraHomogeneous(pan, xPos, yPos, zPos);
+                    Mat worldToCameraHomogeneous = VisionUtil.makeWorldToCameraHomogeneous(pan, xPos, yPos, zPos);
 
                     // apply transform from camera center to each eye
-                    Mat worldToLeftEye = translateX(worldToCameraHomogeneous, b / 2);
-                    Mat worldToRightEye = translateX(worldToCameraHomogeneous, -b / 2);
+                    Mat worldToLeftEye = VisionUtil.translateX(worldToCameraHomogeneous, b / 2);
+                    Mat worldToRightEye = VisionUtil.translateX(worldToCameraHomogeneous, -b / 2);
                     debug(0, "worldToLeftEye", worldToLeftEye);
                     debug(0, "worldToRightEye", worldToRightEye);
 
                     // make images based on target points and transforms
-                    MatOfPoint2f leftPts = imagePoints(targetGeometryMeters, worldToLeftEye);
-                    MatOfPoint2f rightPts = imagePoints(targetGeometryMeters, worldToRightEye);
-                    if (!inViewport(leftPts, viewport) || !inViewport(rightPts, viewport))
+                    MatOfPoint2f leftPts = VisionUtil.imagePoints(kMat, dMat, targetGeometryMeters, worldToLeftEye,
+                            pointMultiplier, noisePixels);
+                    MatOfPoint2f rightPts = VisionUtil.imagePoints(kMat, dMat, targetGeometryMeters, worldToRightEye,
+                            pointMultiplier, noisePixels);
+                    if (!VisionUtil.inViewport(leftPts, viewport) || !VisionUtil.inViewport(rightPts, viewport))
                         continue;
 
                     ++idx;
-                    writePng(leftPts, width, height,
+                    VisionUtil.writePng(leftPts, width, height,
                             String.format("C:\\Users\\joelt\\Desktop\\pics\\svd-%d-left.png", idx));
-                    writePng(rightPts, width, height,
+                    VisionUtil.writePng(rightPts, width, height,
                             String.format("C:\\Users\\joelt\\Desktop\\pics\\svd-%d-right.png", idx));
 
                     // To solve Ax=b triangulation, first make b:
@@ -490,26 +490,6 @@ public class TestSVD {
         System.out.println(endTime - startTime);
     }
 
-    static MatOfPoint3f makeTarget() {
-        final MatOfPoint3f targetGeometryMeters = new MatOfPoint3f(
-                // new Point3(0.0, 0.0, 0.0),
-                new Point3(0.2, -0.1, 0.0),
-                new Point3(0.2, 0.0, 0.0),
-                new Point3(-0.2, 0.0, 0.0),
-                new Point3(-0.2, -0.1, 0.0));
-        return targetGeometryMeters;
-    }
-
-    // static MatOfPoint3f makeNonplanarTarget() {
-    // final MatOfPoint3f targetGeometryMeters = new MatOfPoint3f(
-    // new Point3(0.0, 0.0, 0.1),
-    // new Point3(1.0, 1.0, 0.0),
-    // new Point3(1.0, -1.0, 0.1),
-    // new Point3(-1.0, -1.0, 0.0),
-    // new Point3(-1.0, 1.0, 0.1));
-    // return targetGeometryMeters;
-    // }
-
     static MatOfPoint3f duplicatePoints(MatOfPoint3f targetGeometryMeters, int pointMultiplier) {
         MatOfPoint3f targetPointsMultiplied = new MatOfPoint3f();
         List<Point3> targetpointlist = new ArrayList<Point3>();
@@ -529,99 +509,6 @@ public class TestSVD {
         homogeneousTarget.convertTo(homogeneousTarget, CvType.CV_64F);
         debug(0, "homogeneousTarget", homogeneousTarget);
         return homogeneousTarget;
-    }
-
-    static Mat homogeneousRigidTransform(Mat R, Mat t) {
-        Mat worldToCamera = Mat.zeros(4, 4, CvType.CV_32F);
-        worldToCamera.put(0, 0,
-                R.get(0, 0)[0], R.get(0, 1)[0], R.get(0, 2)[0], t.get(0, 0)[0],
-                R.get(1, 0)[0], R.get(1, 1)[0], R.get(1, 2)[0], t.get(1, 0)[0],
-                R.get(2, 0)[0], R.get(2, 1)[0], R.get(2, 2)[0], t.get(2, 0)[0],
-                0, 0, 0, 1);
-        return worldToCamera;
-    }
-
-    static Mat translateX(Mat worldToCamera, double dx) {
-        Mat translation = Mat.zeros(4, 4, CvType.CV_32F);
-        translation.put(0, 0,
-                1, 0, 0, dx,
-                0, 1, 0, 0,
-                0, 0, 1, 0,
-                0, 0, 0, 1);
-        debug(0, "translation", translation);
-        Mat result = new Mat();
-        Core.gemm(translation, worldToCamera, 1.0, new Mat(), 0.0, result);
-        debug(0, "result", result);
-        return result;
-    }
-
-    static MatOfPoint2f imagePoints(MatOfPoint3f geometry, Mat worldToCamera) {
-
-        Mat Rvec = Mat.zeros(3, 1, CvType.CV_32F);
-        Calib3d.Rodrigues(worldToCamera.rowRange(0, 3).colRange(0, 3), Rvec);
-        debug(0, "Rvec", Rvec);
-        Mat t = worldToCamera.colRange(3, 4).rowRange(0, 3);
-        debug(0, "t", t);
-
-        MatOfPoint2f pts = new MatOfPoint2f();
-        Mat jacobian = new Mat();
-        Calib3d.projectPoints(geometry, Rvec, t, kMat, dMat, pts, jacobian);
-        debug(0, "pts", pts);
-        // add image noise in image coords
-        List<Point> ptsList = new ArrayList<Point>();
-        for (int reps = 0; reps < pointMultiplier; reps++) {
-            for (Point p : pts.toList()) {
-                p.x = p.x + rand.nextGaussian() * noisePixels;
-                p.y = p.y + rand.nextGaussian() * noisePixels;
-                ptsList.add(p);
-            }
-        }
-        return new MatOfPoint2f(ptsList.toArray(new Point[0]));
-    }
-
-    public static boolean inViewport(MatOfPoint2f pts, Rect viewport) {
-        for (Point pt : pts.toList()) {
-            if (!viewport.contains(pt))
-                return false;
-        }
-        return true;
-    }
-
-    public static void writePng(MatOfPoint2f pts, int width, int height, String filename) {
-        Mat img = Mat.zeros(height, width, CvType.CV_32FC3);
-        for (Point pt : pts.toList()) {
-            Imgproc.circle(img, pt, 6, green, 1);
-        }
-        Imgcodecs.imwrite(filename, img);
-    }
-
-    public static Mat makeWorldToCameraHomogeneous(double pan, double xPos, double yPos, double zPos) {
-        // these are camera-to-world transforms
-        Mat cameraToWorldTVec = Mat.zeros(3, 1, CvType.CV_32F);
-        cameraToWorldTVec.put(0, 0, xPos, yPos, zPos);
-        debug(0, "worldTVec", cameraToWorldTVec);
-
-        Mat cameraToWorldRV = Mat.zeros(3, 1, CvType.CV_32F);
-        cameraToWorldRV.put(0, 0, 0.0, pan, 0.0);
-        debug(0, "worldRV", cameraToWorldRV);
-
-        Mat cameraToWorldRMat = new Mat();
-        Calib3d.Rodrigues(cameraToWorldRV, cameraToWorldRMat);
-
-        Mat cameraToWorldHomogeneous = homogeneousRigidTransform(cameraToWorldRMat, cameraToWorldTVec);
-        debug(0, "cameraToWorld (just to see)", cameraToWorldHomogeneous);
-
-        // this is inverse(worldT*worldR)
-        // inverse of multiplication is order-reversed multipication of inverses, so
-        // which is worldR.t * -worldT or camR*-worldT
-        Mat worldToCameraRMat = cameraToWorldRMat.t();
-        Mat worldToCameraTVec = new Mat();
-        Core.gemm(worldToCameraRMat, cameraToWorldTVec, -1.0, new Mat(), 0, worldToCameraTVec);
-        debug(0, "camTVec", worldToCameraTVec);
-
-        Mat worldToCameraHomogeneous = homogeneousRigidTransform(worldToCameraRMat, worldToCameraTVec);
-        debug(0, "worldToCamera", worldToCameraHomogeneous);
-        return worldToCameraHomogeneous;
     }
 
     static Mat makeUMat(MatOfPoint2f leftPts, MatOfPoint2f rightPts) {
