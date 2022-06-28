@@ -508,7 +508,41 @@ X \\\ Y \\\ Z \\\ 1
 \end{pmatrix}
 $$
 
-Rearranged as Ax=b:
+Let's make that middle thing square:
+
+
+$$
+s
+\begin{pmatrix}
+u \\\ u' \\\ v \\\ 1
+\end{pmatrix}=
+\begin{bmatrix}
+f & 0 & 0 & c_x \\
+0 & f & 0 & c_x \\
+0 & 0 & f & c_y \\
+0 & 0 & 0 & 1
+\end{bmatrix}
+\times
+\begin{bmatrix}
+1 & 0 & 0 & \frac{b}{2} \\
+1 & 0 & 0 & -\frac{b}{2} \\
+0 & 1 & 0 & 0 \\
+0 & 0 & 1 & 0
+\end{bmatrix}
+\times
+\begin{bmatrix}
+r_{11} & r_{12} & r_{13} & t_x\\
+r_{21} & r_{22} & r_{23} & t_y\\
+r_{31} & r_{32} & r_{33} & t_z\\
+0    & 0    & 0    & 1
+\end{bmatrix}
+\times
+\begin{pmatrix}
+X \\\ Y \\\ Z \\\ 1
+\end{pmatrix}
+$$
+
+Then we can invert everything and rearrange as Ax=b:
 
 
 $$
@@ -527,15 +561,7 @@ s
 1 & 0 & 0 & \frac{b}{2} \\
 1 & 0 & 0 & -\frac{b}{2} \\
 0 & 1 & 0 & 0 \\
-0 & 0 & 1 & 0 \\
-0 & 0 & 0 & 1
-\end{bmatrix}^{-1}
-\times
-\begin{bmatrix}
-1 & 0 & 0 & 0 & 0 \\
-0 & 1 & 0 & 0 & 0 \\
-0 & 0 & 1 & 0 & 0 \\
-0 & 0 & 0 & 1 & 0
+0 & 0 & 1 & 0
 \end{bmatrix}^{-1}
 \times
 \begin{bmatrix}
