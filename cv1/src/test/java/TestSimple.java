@@ -168,7 +168,12 @@ public class TestSimple {
         Mat kMat = VisionUtil.makeIntrinsicMatrix(512.0, dsize);
         MatOfDouble dMat = new MatOfDouble(Mat.zeros(4, 1, CvType.CV_64F));
 
-        MatOfPoint3f targetGeometryMeters = new MatOfPoint3f(new Point3(0.0, 0.01, 0));
+        MatOfPoint3f targetGeometryMeters = new MatOfPoint3f(
+            new Point3(1.0, 0.0, 0),
+            new Point3(1.0, 1.0, 0),
+            new Point3(0.0, 1.0, 0),
+            new Point3(0.0, 0.0, 0));
+        
         debug("target geometry", targetGeometryMeters);
 
         // in meters
