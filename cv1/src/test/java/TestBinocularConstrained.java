@@ -1,4 +1,3 @@
-
 import static org.junit.Assert.assertEquals;
 
 import java.util.Random;
@@ -18,8 +17,11 @@ import org.opencv.core.Size;
 
 import vision.VisionUtil;
 
-public class TestCVGyro {
-
+/**
+ * Solve the 3d binocular pose estimation problem constrained to rotation and
+ * translation in the XZ plane.
+ */
+public class TestBinocularConstrained {
     static {
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
     }
@@ -27,7 +29,7 @@ public class TestCVGyro {
     static final int LEVEL = 1;
     static final double DELTA = 0.001;
 
-    // @Test
+    @Test
     public void testHomogeneous() {
         MatOfPoint3f targetGeometryMeters = VisionUtil.makeTarget(-0.2, -0.1, 0.2, 0.0);
         debug(1, "target", targetGeometryMeters);
@@ -51,23 +53,11 @@ public class TestCVGyro {
         // MatOfPoint3f targetGeometryMeters = VisionUtil.makeTarget(-0.2, -0.1, 0.2,
         // 0.0);
         MatOfPoint3f targetGeometryMeters = VisionUtil.makeTarget(-0.25, 0, 0.25, -0.5);
-        // camera frame rate is 50fps. aim for 10hz update rate, so 5-fold averaging
-        final int pointMultiplier = 5;
-        // TODO: contour should average the sides of the target so this pixel estimate
-        // should be an **overestimate.**
-        // TODO: quantify blur and strobe requirements.
-        // TODO: explore deblurring and/or contour thresholding etc.
-        final double noisePixels = 1;
-        // pigeon/navx claim 1.5 degrees for fused output
-        // final double gyroNoise = 0.025;
-        // LIS3MDL claims about 1% thermal noise at 80hz
-        // average 8 samples = 1/sqrt(8)
-        final double gyroNoise = 0.0035;
-
+        int pointMultiplier = 1;
+        double noisePixels = 1;
         MatOfPoint3f targetPointsMultiplied = VisionUtil.duplicatePoints(targetGeometryMeters, pointMultiplier);
 
-        // TODO: parameter study of b vs errors
-        final double b = 0.5; // camera width meters
+        final double b = 0.4; // camera width meters
         // double pan = 0;
         // double xPos = 0;
         // double pan = Math.PI / 4;
@@ -93,9 +83,6 @@ public class TestCVGyro {
                 // field is 8m wide, so +/- 4m
 
                 for (double xPos = -5; xPos <= 5; xPos += 1.0) {
-                    // so now we have a GYRO which is a noisy copy of the pan (absolute heading)
-                    // signal.
-                    double gyro = pan + (gyroNoise * rand.nextGaussian());
 
                     double navBearing = Math.atan2(xPos, -zPos);
                     double relativeBearing = navBearing + pan;
@@ -211,18 +198,14 @@ public class TestCVGyro {
                     debug(1, "reproj without rotation", reproj.t());
                     debug(1, "to centered", to_centered);
 
-                    // double averageAngleDiff = averageAngularError(to_centered, reproj.t());
+                    double averageAngleDiff = averageAngularError(to_centered, reproj.t());
 
-                    // debug(1, "averageAngleDiff", averageAngleDiff);
+                    debug(1, "averageAngleDiff", averageAngleDiff);
 
-                    // fix the transform ...
-                    // this time "fix" it by just making the rotation
-                    // exactly equal to the gyro observation.
+                    // fix the transform
 
-                    // double c = Math.cos(averageAngleDiff);
-                    // double s = Math.sin(averageAngleDiff);
-                    double c = Math.cos(gyro);
-                    double s = Math.sin(gyro);
+                    double c = Math.cos(averageAngleDiff);
+                    double s = Math.sin(averageAngleDiff);
                     Mat newR = Mat.zeros(3, 3, CvType.CV_64F);
                     newR.put(0, 0,
                             c, 0, -s,

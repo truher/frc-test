@@ -3,12 +3,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.junit.Test;
 //import org.junit.Test;
 import org.opencv.calib3d.Calib3d;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
-import org.opencv.core.MatOfByte;
 import org.opencv.core.MatOfDouble;
 import org.opencv.core.MatOfInt;
 import org.opencv.core.MatOfPoint;
@@ -24,346 +24,24 @@ import org.opencv.imgproc.Imgproc;
 
 import vision.VisionUtil;
 
-public class TestCV {
+/**
+ * This uses {@link Calib3d#solvePnP()} to estimate poses using a single camera.
+ */
+public class TestPnP {
     public static final double DELTA = 0.00001;
     public static final boolean DEBUG = false;
 
-    public TestCV() {
+    public TestPnP() {
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
     }
 
-    public static void debugmsg(String msg) {
-        if (!DEBUG)
-            return;
-        System.out.println(msg);
-    }
-
-    public static void debug(String msg, Mat m) {
-        if (!DEBUG)
-            return;
-        System.out.println(msg);
-        System.out.println(m.dump());
-    }
-
-    public static void debug(String msg, double d) {
-        if (!DEBUG)
-            return;
-        System.out.println(msg);
-        System.out.println(d);
-    }
-
-    //@Test
-    public void testCombiningRotations() {
-        Mat pan = Mat.zeros(3, 1, CvType.CV_64F);
-        pan.put(0, 0, 0.0, -0.5, 0.0); // pan to right, world to left, so negative
-        Mat tilt = Mat.zeros(3, 1, CvType.CV_64F);
-        tilt.put(0, 0, -0.5, 0.0, 0.0); // tilt up, world down, so negative
-        debug("pan vector", pan);
-        debug("tilt vector", tilt);
-        // pan first to keep horizon horizontal
-        Mat productV = VisionUtil.combineRotations(pan, tilt);
-        debug("product vector",productV);
-        assertEquals(-0.48945, productV.get(0, 0)[0], DELTA);
-        assertEquals(-0.48945, productV.get(1, 0)[0], DELTA);
-        assertEquals(0.12498, productV.get(2, 0)[0], DELTA);
-    }
-
-    // @Test
-    public void testRotm2euler() {
-        Mat pan = Mat.zeros(3, 1, CvType.CV_64F);
-        pan.put(0, 0, 0.0, -0.7854, 0.0); // pan 45deg to right, world to left, so
-        // negative
-        Mat tilt = Mat.zeros(3, 1, CvType.CV_64F);
-        tilt.put(0, 0, -0.7854, 0.0, 0.0); // tilt 45deg up, world down, so negative
-        debug("pan vector",pan);
-        debug("tilt vector",tilt);
-        // pan first to keep horizon horizontal
-        Mat productV = VisionUtil.combineRotations(pan, tilt);
-        Mat productM = new Mat();
-        Calib3d.Rodrigues(productV, productM);
-
-        Mat r = productM.t();
-
-        debug("result",r);
-
-        Mat euler = VisionUtil.rotm2euler(r);
-
-        debug("euler radians",euler);
-
-        assertEquals(0.7854, euler.get(0, 0)[0], DELTA); // upward tilt
-        assertEquals(0.7854, euler.get(1, 0)[0], DELTA); // rightward pan
-        assertEquals(0, euler.get(2, 0)[0], DELTA); // no rotation around the camera axis
-    }
-
     /**
-     * figure out how to read a file.
+     * Try using {@link Calib3d#solvePnP()}. This takes some 3d points and projects
+     * them into a single camera, then reverses to get the pose of the camera.
      */
-    // @Test
-    public void testFile() throws Exception {
-
-        String foo = new String(getClass().getClassLoader().getResourceAsStream("readme.md").readAllBytes());
-        assertEquals("hello", foo);
-    }
-
-    /**
-     * figure out how to read an image file and find contours in it
-     */
-    // @Test
-    public void testImage() throws Exception {
-
-        // (100,100), (200,200)
-        // (300,300), (400,400)
-        byte[] imgbytes = getClass().getClassLoader().getResourceAsStream("two_squares.png").readAllBytes();
-        Mat matrix = Imgcodecs.imdecode(new MatOfByte(imgbytes), Imgcodecs.IMREAD_UNCHANGED);
-        assertEquals(512, matrix.rows());
-        assertEquals(512, matrix.cols());
-
-        List<MatOfPoint> contours = new ArrayList<>();
-        Mat hierarchy = new Mat();
-        // Imgproc.RETR_CCOMP == 2 level hierarchy
-        // Imgproc.RETR_EXTERNAL == outer contours only
-        // Imgproc.RETR_LIST == flat list
-        Imgproc.findContours(matrix, // input
-                contours, // output contours
-                hierarchy, // output topology
-                Imgproc.RETR_TREE, // return full hierarchy.
-                Imgproc.CHAIN_APPROX_SIMPLE); // rectangular
-        // contour == rectangle with all four corners.
-
-        assertEquals(2, contours.size());
-        assertEquals(4, contours.get(0).rows());
-        assertEquals(1, contours.get(0).cols());
-        assertEquals(4, contours.get(0).toArray().length, DELTA);
-        assertEquals(300, contours.get(0).toArray()[0].x, DELTA);
-        assertEquals(300, contours.get(0).toArray()[0].y, DELTA);
-        assertEquals(300, contours.get(0).toArray()[1].x, DELTA);
-        assertEquals(400, contours.get(0).toArray()[1].y, DELTA);
-        assertEquals(400, contours.get(0).toArray()[2].x, DELTA);
-        assertEquals(400, contours.get(0).toArray()[2].y, DELTA);
-        assertEquals(400, contours.get(0).toArray()[3].x, DELTA);
-        assertEquals(300, contours.get(0).toArray()[3].y, DELTA);
-        assertEquals(4, contours.get(1).rows());
-        assertEquals(1, contours.get(1).cols());
-        assertEquals(4, contours.get(1).toArray().length, DELTA);
-        assertEquals(100, contours.get(1).toArray()[0].x, DELTA);
-        assertEquals(100, contours.get(1).toArray()[0].y, DELTA);
-        assertEquals(100, contours.get(1).toArray()[1].x, DELTA);
-        assertEquals(200, contours.get(1).toArray()[1].y, DELTA);
-        assertEquals(200, contours.get(1).toArray()[2].x, DELTA);
-        assertEquals(200, contours.get(1).toArray()[2].y, DELTA);
-        assertEquals(200, contours.get(1).toArray()[3].x, DELTA);
-        assertEquals(100, contours.get(1).toArray()[3].y, DELTA);
-    }
-
-    // @Test
-    public void testGeneratedImage() throws Exception {
-        Mat matrix = Mat.zeros(512, 512, CvType.CV_8U);
-        Imgproc.rectangle(matrix,
-                new Point(100, 200),
-                new Point(300, 400),
-                new Scalar(255, 255, 255),
-                Imgproc.FILLED);
-        // look at it. Imgcodecs.imwrite("C:\\Users\\joelt\\Desktop\\pics\\foo.jpg",
-        // matrix);
-        List<MatOfPoint> contours = new ArrayList<>();
-        Mat hierarchy = new Mat();
-        Imgproc.findContours(matrix, contours, hierarchy, Imgproc.RETR_LIST, Imgproc.CHAIN_APPROX_SIMPLE);
-        assertEquals(1, contours.size()); // just the one rectangle
-        assertEquals(4, contours.get(0).rows());
-        assertEquals(1, contours.get(0).cols());
-        assertEquals(4, contours.get(0).toArray().length, DELTA);
-        assertEquals(100, contours.get(0).toArray()[0].x, DELTA);
-        assertEquals(200, contours.get(0).toArray()[0].y, DELTA);
-        assertEquals(100, contours.get(0).toArray()[1].x, DELTA);
-        assertEquals(400, contours.get(0).toArray()[1].y, DELTA);
-        assertEquals(300, contours.get(0).toArray()[2].x, DELTA);
-        assertEquals(400, contours.get(0).toArray()[2].y, DELTA);
-        assertEquals(300, contours.get(0).toArray()[3].x, DELTA);
-        assertEquals(200, contours.get(0).toArray()[3].y, DELTA);
-    }
-
-    // @Test
-    public void testGeometry() {
-        // this is an example that illustrates a bug, apparently fixed.
-        // three points in a line
-        MatOfPoint3f objectPts3f = new MatOfPoint3f(
-                new Point3(0.0, 1.0, 1.0),
-                new Point3(0.0, 1.0, 5.0),
-                new Point3(0.0, 1.0, 10.0));
-        MatOfPoint2f imagePts2f = new MatOfPoint2f();
-
-        // no rotation, no translation, means camera is at the world origin
-        // pointing along z
-        Mat rVec = Mat.zeros(3, 1, CvType.CV_64F);
-        Mat tVec = Mat.zeros(3, 1, CvType.CV_64F);
-
-        // "camera matrix" is about the lens:
-        // "focal length" is 100
-        // "optical center" is (0,0).
-        Mat kMat = Mat.zeros(3, 3, CvType.CV_64F);
-        kMat.put(0, 0,
-                100.0, 0.0, 0.0,
-                0.0, 100.0, 0.0,
-                0.0, 0.0, 1.0);
-        // no distortion
-        MatOfDouble dMat = new MatOfDouble(Mat.zeros(4, 1, CvType.CV_64F));
-        Calib3d.projectPoints(objectPts3f, rVec, tVec, kMat, dMat, imagePts2f);
-        assertEquals(0, imagePts2f.toList().get(0).x, DELTA);
-        assertEquals(100, imagePts2f.toList().get(0).y, DELTA);
-        assertEquals(0, imagePts2f.toList().get(1).x, DELTA);
-        assertEquals(20, imagePts2f.toList().get(1).y, DELTA);
-        assertEquals(0, imagePts2f.toList().get(2).x, DELTA);
-        assertEquals(10, imagePts2f.toList().get(2).y, DELTA);
-
-        debug("objectpts3f", objectPts3f);
-        debug("imagepts2f", imagePts2f);
-    }
-
-    // @Test
-    public void testGeneratedGeometry() {
-        MatOfPoint3f objectPts3f = new MatOfPoint3f(
-                new Point3(0.0, 1.0, 1.0),
-                new Point3(0.0, 1.0, 5.0),
-                new Point3(0.0, 1.0, 10.0));
-        MatOfPoint2f imagePts2f = new MatOfPoint2f();
-
-        // no rotation, no translation, means camera is at the world origin
-        // pointing along z
-        Mat rVec = Mat.zeros(3, 1, CvType.CV_64F);
-        Mat tVec = Mat.zeros(3, 1, CvType.CV_64F);
-        tVec.put(0, 0,
-                0.0, 0.0, 0.0);
-
-        // "camera matrix" is about the lens:
-        // "focal length" is 100
-        // "optical center" is (0,0).
-        Mat kMat = Mat.zeros(3, 3, CvType.CV_64F);
-        kMat.put(0, 0,
-                100.0, 0.0, 0.0,
-                0.0, 100.0, 0.0,
-                0.0, 0.0, 1.0);
-        // no distortion
-        MatOfDouble dMat = new MatOfDouble(Mat.zeros(4, 1, CvType.CV_64F));
-        Calib3d.projectPoints(objectPts3f, rVec, tVec, kMat, dMat, imagePts2f);
-        assertEquals(0, imagePts2f.toList().get(0).x, DELTA);
-        assertEquals(100, imagePts2f.toList().get(0).y, DELTA);
-        assertEquals(0, imagePts2f.toList().get(1).x, DELTA);
-        assertEquals(20, imagePts2f.toList().get(1).y, DELTA);
-        assertEquals(0, imagePts2f.toList().get(2).x, DELTA);
-        assertEquals(10, imagePts2f.toList().get(2).y, DELTA);
-
-        debug("objectpts3f", objectPts3f);
-        debug("imagepts2f", imagePts2f);
-
-        int rows = 512;
-        int cols = 512;
-        Mat matrix = Mat.zeros(rows, cols, CvType.CV_8U);
-        for (Point pt : imagePts2f.toList()) {
-            Imgproc.circle(matrix,
-                    new Point(pt.x + rows / 2, pt.y + cols / 2),
-                    10,
-                    new Scalar(255, 255, 255),
-                    Imgproc.FILLED);
-        }
-
-        Imgcodecs.imwrite("C:\\Users\\joelt\\Desktop\\pics\\foo.jpg", matrix);
-
-    }
-
-    // @Test
-    public void testGeneratedGeometry2() {
-        MatOfPoint3f objectPts3f = new MatOfPoint3f(
-                // outer
-                new Point3(1.1, 1.1, 10.0),
-                new Point3(1.1, -1.1, 10.0),
-                new Point3(-1.1, -1.1, 10.0),
-                new Point3(-1.1, 1.1, 10.0),
-                // inner
-                new Point3(1.0, 1.0, 10.0),
-                new Point3(1.0, -1.0, 10.0),
-                new Point3(-1.0, -1.0, 10.0),
-                new Point3(-1.0, 1.0, 10.0));
-        MatOfPoint2f imagePts2f = new MatOfPoint2f();
-
-        // no rotation, no translation, means camera is at the world origin
-        // pointing along z
-        // rotation vector is along the rotation axis,
-        // magnitude is rotation in radians
-        // ok i was wrong before, this is rotating the world at the camera center,
-        // not the translated world center.
-        // Mat rVec = Mat.zeros(3, 1, CvType.CV_64F);
-        Mat rVec = Mat.zeros(3, 1, CvType.CV_64F);
-        rVec.put(0, 0,
-                0.0, 0.78, 0.0);
-        // 0.0, 0.1, 0.0);
-        Mat tVec = Mat.zeros(3, 1, CvType.CV_64F);
-        tVec.put(0, 0,
-                4.0, -2.0, 10.0);
-        // 4.0, -2.0, 10.0);
-
-        // "camera matrix" is about the lens:
-        // "focal length" is 100
-        // "optical center" is (0,0).
-        Mat kMat = Mat.zeros(3, 3, CvType.CV_64F);
-        // camera matrix includes where the camera center is (cx, cy)
-        // in *image coordinates* (i.e. *pixels*)
-        // and focal length (fx, fy)
-        kMat.put(0, 0,
-                200.0, 0.0, 256.0,
-                0.0, 200.0, 256.0,
-                0.0, 0.0, 1.0);
-        // no distortion
-        MatOfDouble dMat = new MatOfDouble(Mat.zeros(4, 1, CvType.CV_64F));
-        Calib3d.projectPoints(objectPts3f, rVec, tVec, kMat, dMat, imagePts2f);
-        // assertEquals(2, imagePts2f.toList().size());
-        // assertEquals(40, imagePts2f.toList().get(0).x, DELTA);
-        // assertEquals(0, imagePts2f.toList().get(0).y, DELTA);
-        // assertEquals(-40, imagePts2f.toList().get(1).x, DELTA);
-        // assertEquals(0, imagePts2f.toList().get(1).y, DELTA);
-
-        debug("objectpts3f", objectPts3f);
-        debug("imagepts2f", imagePts2f);
-
-        // blank image
-        int rows = 512;
-        int cols = 512;
-        Mat matrix = Mat.zeros(rows, cols, CvType.CV_8U);
-        // this is wrong, lines are straight.
-        Imgproc.fillPoly(matrix,
-                List.of(new MatOfPoint(imagePts2f.toList().subList(0, 4).toArray(new Point[0]))),
-                new Scalar(255, 255, 255),
-                Imgproc.LINE_8, 0,
-                // new Point(rows / 2, cols / 2));
-                new Point());
-        Imgproc.fillPoly(matrix,
-                List.of(new MatOfPoint(imagePts2f.toList().subList(4, 8).toArray(new Point[0]))),
-                new Scalar(0, 0, 0),
-                Imgproc.LINE_8, 0,
-                // new Point(rows / 2, cols / 2));
-                new Point());
-
-        Imgcodecs.imwrite("C:\\Users\\joelt\\Desktop\\pics\\foo2.jpg", matrix);
-
-    }
-
-    /**
-     * this takes some 3d points and projects them into a camera, then reverses
-     * to get the pose of the camera.
-     */
-    // @Test
-    public void testGeneratedGeometry3() {
+    @Test
+    public void testSolvePnP() {
         // known "world" geometry
-        // MatOfPoint3f objectPts3f = new MatOfPoint3f(
-        // // outer
-        // new Point3(1.1, 1.1, 0.0),
-        // new Point3(1.1, -1.1, 0.0),
-        // new Point3(-1.1, -1.1, 0.0),
-        // new Point3(-1.1, 1.1, 0.0),
-        // // inner
-        // new Point3(1.0, 1.0, 0.0),
-        // new Point3(1.0, -1.0, 0.0),
-        // new Point3(-1.0, -1.0, 0.0),
-        // new Point3(-1.0, 1.0, 0.0));
         MatOfPoint3f objectPts3f = new MatOfPoint3f(
                 new Point3(-20, -10, 0.0),
                 new Point3(-20, 10, 0.0),
@@ -390,8 +68,8 @@ public class TestCV {
         MatOfPoint2f imagePts2f = new MatOfPoint2f();
         Calib3d.projectPoints(objectPts3f, rVec, tVec, kMat, dMat, imagePts2f);
 
-        debug("object in world coordinates",objectPts3f);
-        debug("projection in camera",imagePts2f);
+        debug("object in world coordinates", objectPts3f);
+        debug("projection in camera", imagePts2f);
 
         Mat newRVec = new Mat();
         Mat newTVec = new Mat();
@@ -402,15 +80,15 @@ public class TestCV {
         // these describe the world from the camera point of view:
         // first translate the world origin, then rotate the world.
         // rotation is correct to about 1e-6
-        debug("actual camera rotation",rVec);
-        debug("derived camera rotation",newRVec);
+        debug("actual camera rotation", rVec);
+        debug("derived camera rotation", newRVec);
         // translation is correct to about 1e-6
-        debug("actual camera translation",tVec);
-        debug("derived camera translation",newTVec);
+        debug("actual camera translation", tVec);
+        debug("derived camera translation", newTVec);
 
         Mat rotM = new Mat();
         Calib3d.Rodrigues(newRVec, rotM);
-        debug("rotation matrix",rotM);
+        debug("rotation matrix", rotM);
 
         // what is the camera pose from the world perspective?
         // (this would be given to the pose estimator)
@@ -419,19 +97,20 @@ public class TestCV {
         // camera rotation is (0, -1, 0) (just the opposite)
         Mat camRot = new Mat();
         Calib3d.Rodrigues(rotM.t(), camRot);
-        debug("camera rotation",camRot);
+        debug("camera rotation", camRot);
 
         // camera origin is at roughly (6.5, 2, -8)
         Mat inv = new Mat();
         Core.gemm(rotM.t(), newTVec, -1.0, new Mat(), 0.0, inv);
-        debug("camera position", inv);}
-
+        debug("camera position", inv);
+    }
 
     /**
-     * this tries to do the same as above but with actual image warping.
+     * Generate an image representing the target, extract contours from it,
+     * and then use {@link Calib3d#solvePnP()} to find the camera pose.
      */
-    // @Test
-    public void testPoseFromImage() {
+    @Test
+    public void testSolvePnPFromContours() {
 
         // these numbers are big because if they're 1 then the warped image is all
         // blurry.
@@ -440,7 +119,7 @@ public class TestCV {
                 new Point3(-20, 10, 0.0),
                 new Point3(20, 10, 0.0),
                 new Point3(20, -10, 0.0));
-        debug("objectPts3f",objectPts3f);
+        debug("objectPts3f", objectPts3f);
 
         // rotate one radian
         Mat rVec = Mat.zeros(3, 1, CvType.CV_64F);
@@ -461,7 +140,7 @@ public class TestCV {
         // project the world into the camera plane
         MatOfPoint2f imagePts2f = new MatOfPoint2f();
         Calib3d.projectPoints(objectPts3f, rVec, tVec, kMat, dMat, imagePts2f);
-        debug("imagePts2f",imagePts2f);
+        debug("imagePts2f", imagePts2f);
 
         // now find the warp transform from the pairs
         // i don't think getPerspectiveTransform understands negative numbers.
@@ -507,7 +186,7 @@ public class TestCV {
         MatOfPoint2f approxCurve = new MatOfPoint2f();
         Imgproc.approxPolyDP(curve, approxCurve, 3, true);
         // contour is pretty close.
-        debug("approx curve",approxCurve);
+        debug("approx curve", approxCurve);
         // there are four points
         assertEquals(4, approxCurve.toList().size());
 
@@ -524,7 +203,7 @@ public class TestCV {
         // clockwise for convexhull is actually counterclockwise due to reversed axes
         // so this is the order
         Imgproc.convexHull(new MatOfPoint(approxCurve.toArray()), hull, true);
-        debug("hull",hull);
+        debug("hull", hull);
         // need to find the first element (index)
         // upper left has min(x+y)
         Point upperLeftPoint = new Point(Double.MAX_VALUE, Double.MAX_VALUE);
@@ -537,7 +216,7 @@ public class TestCV {
                 idx = i;
             }
         }
-        debug("idx",idx);
+        debug("idx", idx);
 
         // put the idx'th element at zero
         Collections.rotate(approxCurveList, -idx);
@@ -546,50 +225,50 @@ public class TestCV {
         Mat newRVec = new Mat(); // rVec.clone();
         Mat newTVec = new Mat(); // tVec.clone();
         MatOfPoint2f imagePoints = new MatOfPoint2f(approxCurveList.toArray(new Point[0]));
-        debug("imagePoints",imagePoints);
+        debug("imagePoints", imagePoints);
 
         Calib3d.solvePnPRansac(objectPts3f, imagePoints, kMat, dMat,
                 newRVec, newTVec, false,
                 Calib3d.SOLVEPNP_SQPNP);
         // rotation is totally wrong, mostly pointing in z, just about pi/2.
         // maybe x and y are switched somehow.
-        debug("original rvec",rVec);
-        debug("new rvec",newRVec);
+        debug("original rvec", rVec);
+        debug("new rvec", newRVec);
         // translation is pretty good
-        debug("original tvec",tVec);
-        debug("new tvec",newTVec);
+        debug("original tvec", tVec);
+        debug("new tvec", newTVec);
 
         Mat rotM = new Mat();
         Calib3d.Rodrigues(newRVec, rotM);
-        debug("rotation matrix",rotM);
+        debug("rotation matrix", rotM);
 
         // camera rotation is just the reverse i.e. 1 radian the other way
         Mat camRot = new Mat();
         Calib3d.Rodrigues(rotM.t(), camRot);
-        debug("camera rotation in world coords",camRot);
+        debug("camera rotation in world coords", camRot);
 
         // camera origin is at roughly (6.5, 2, -8)
         Mat inv = new Mat();
         Core.gemm(rotM.t(), newTVec, -1.0, new Mat(), 0.0, inv);
-        debug("camera position in world coords",inv);
+        debug("camera position in world coords", inv);
 
     }
 
     /**
      * Start with world coordinates, generate images, then generate poses.
-     * seems like it works within ~4 in world units
+     * seems like it works within ~4 in world units.
      */
-    // @Test
+    @Test
     public void testPoseFromImageFromWorldCoords() {
         // camera is at 2,0,-4, pointing 45 degrees to the left (which means negative
         // rotation)
         Mat worldRVec = Mat.zeros(3, 1, CvType.CV_64F);
         // worldRVec.put(0, 0, 0.0, -0.785398, 0.0);
-        debug("worldRVec",worldRVec);
+        debug("worldRVec", worldRVec);
 
         Mat worldTVec = Mat.zeros(3, 1, CvType.CV_64F);
         worldTVec.put(0, 0, 20.0, 0.0, -40.0);
-        debug("worldTVec",worldTVec);
+        debug("worldTVec", worldTVec);
 
         // derive camera transformations
         Mat worldRMat = new Mat();
@@ -598,11 +277,11 @@ public class TestCV {
         // camera rotation is positive i.e. clockwise in these coords
         Mat camRVec = new Mat();
         Calib3d.Rodrigues(worldRMat.t(), camRVec);
-        debug("camRVec",camRVec);
+        debug("camRVec", camRVec);
 
         Mat camTVec = new Mat();
         Core.gemm(worldRMat.t(), worldTVec, -1.0, new Mat(), 0.0, camTVec);
-        debug("camTVec",camTVec);
+        debug("camTVec", camTVec);
 
         // now do the same thing as above
         MatOfPoint3f objectPts3f = new MatOfPoint3f(
@@ -622,7 +301,7 @@ public class TestCV {
         Calib3d.projectPoints(objectPts3f, camRVec, camTVec, kMat, dMat, imagePts2f);
 
         // maybe clipping
-        debug("imagePts2f",imagePts2f);
+        debug("imagePts2f", imagePts2f);
 
         // now find the warp transform from the pairs
         // i don't think getPerspectiveTransform understands negative numbers.
@@ -664,7 +343,7 @@ public class TestCV {
         MatOfPoint2f approxCurve = new MatOfPoint2f();
         Imgproc.approxPolyDP(curve, approxCurve, 3, true);
         // contour is pretty close.
-        debug("approx curve",approxCurve);
+        debug("approx curve", approxCurve);
         // there are four points
         assertEquals(4, approxCurve.toList().size());
 
@@ -681,7 +360,7 @@ public class TestCV {
         // clockwise for convexhull is actually counterclockwise due to reversed axes
         // so this is the order
         Imgproc.convexHull(new MatOfPoint(approxCurve.toArray()), hull, true);
-        debug("hull",hull);
+        debug("hull", hull);
         // need to find the first element (index)
         // upper left has min(x+y)
         Point upperLeftPoint = new Point(Double.MAX_VALUE, Double.MAX_VALUE);
@@ -694,7 +373,7 @@ public class TestCV {
                 idx = i;
             }
         }
-        debug("idx",idx);
+        debug("idx", idx);
 
         // put the idx'th element at zero
         Collections.rotate(approxCurveList, -idx);
@@ -703,18 +382,18 @@ public class TestCV {
         Mat newRVec = new Mat(); // rVec.clone();
         Mat newTVec = new Mat(); // tVec.clone();
         MatOfPoint2f imagePoints = new MatOfPoint2f(approxCurveList.toArray(new Point[0]));
-        debug("imagePoints",imagePoints);
+        debug("imagePoints", imagePoints);
 
         Calib3d.solvePnPRansac(objectPts3f, imagePoints, kMat, dMat,
                 newRVec, newTVec, false,
                 Calib3d.SOLVEPNP_SQPNP);
         // rotation is totally wrong, mostly pointing in z, just about pi/2.
         // maybe x and y are switched somehow.
-        debug("original rvec",camRVec);
-        debug("new rvec",newRVec);
+        debug("original rvec", camRVec);
+        debug("new rvec", newRVec);
         // translation is pretty good
-        debug("original tvec",camTVec);
-        debug("new tvec",newTVec);
+        debug("original tvec", camTVec);
+        debug("new tvec", newTVec);
 
         Mat rotM = new Mat();
         Calib3d.Rodrigues(newRVec, rotM);
@@ -722,27 +401,27 @@ public class TestCV {
         // camera rotation is just the reverse i.e. 1 radian the other way
         Mat camRot = new Mat();
         Calib3d.Rodrigues(rotM.t(), camRot);
-       debug("actual camera rotation in world coords",worldRVec);
-        debug("camera rotation in world coords",camRot);
+        debug("actual camera rotation in world coords", worldRVec);
+        debug("camera rotation in world coords", camRot);
 
         // camera origin is at roughly (6.5, 2, -8)
         Mat inv = new Mat();
         Core.gemm(rotM.t(), newTVec, -1.0, new Mat(), 0.0, inv);
-        debug("actual camera position in world coords",worldTVec);
-        debug("camera position in world coords",inv);
+        debug("actual camera position in world coords", worldTVec);
+        debug("camera position in world coords", inv);
 
         double norm = Core.norm(worldTVec, inv);
-        debug("translation norm",norm);
+        debug("translation norm", norm);
 
         norm = Core.norm(worldRVec, camRot);
-        debug("rotation norm",norm);
+        debug("rotation norm", norm);
     }
 
     /**
-     * same as above but do it many times
+     * Try many world locations; generate an image, extract pose from it.
      */
-    // @Test
-    public void testStrafing() {
+    @Test
+    public void testSolvePnPGrid() {
         Size dsize = new Size(1920, 1080);
         double f = 600.0;
         Mat kMat = VisionUtil.makeIntrinsicMatrix(f, dsize);
@@ -793,7 +472,7 @@ public class TestCV {
                 Mat cameraView = VisionUtil.makeImage(dxWorld, dyWorld, dzWorld, tilt, pan, kMat, dMat,
                         targetGeometryMeters, dsize);
                 if (cameraView == null) {
- debugmsg("no camera view");
+                    debugmsg("no camera view");
                     continue;
                 }
                 Imgcodecs.imwrite(String.format("C:\\Users\\joelt\\Desktop\\pics\\target-%d-distorted.png", idx),
@@ -806,16 +485,6 @@ public class TestCV {
                 Imgcodecs.imwrite(String.format("C:\\Users\\joelt\\Desktop\\pics\\target-%d-undistorted.png", idx),
                         undistortedCameraView);
 
-                //
-                //
-                //
-                // just look at distortion for now
-                // if (dx > 0)
-                // continue;
-                //
-                //
-                //
-                //
                 // try removing the camera tilt and using the camera y to make fake points.
 
                 // Mat homogeneousKMat = Mat.zeros(3, 4, CvType.CV_64F);
@@ -881,24 +550,23 @@ public class TestCV {
                     continue;
                 }
 
-                debug("imagePoints",imagePoints);
+                debug("imagePoints", imagePoints);
 
                 //
                 // // try homography.
                 // // ok the homography approach isn't any better
                 // // there's still no way to constrain it
-                 MatOfPoint2f targetImageGeometry =
-                 VisionUtil.makeTargetImageGeometryPixels(targetGeometryMeters, 1000);
+                MatOfPoint2f targetImageGeometry = VisionUtil.makeTargetImageGeometryPixels(targetGeometryMeters, 1000);
 
-                 Mat H = Calib3d.findHomography(targetImageGeometry, imagePoints);
-                 debug("H", H);
-                 List<Mat> rotations = new ArrayList<Mat>();
-                 List<Mat> translations = new ArrayList<Mat>();
-                 List<Mat> normals = new ArrayList<Mat>();
-                 Calib3d.decomposeHomographyMat(H, kMat, rotations, translations, normals);
-                 for (Mat m : translations) {
-                 debug("m", m);
-                 }
+                Mat H = Calib3d.findHomography(targetImageGeometry, imagePoints);
+                debug("H", H);
+                List<Mat> rotations = new ArrayList<Mat>();
+                List<Mat> translations = new ArrayList<Mat>();
+                List<Mat> normals = new ArrayList<Mat>();
+                Calib3d.decomposeHomographyMat(H, kMat, rotations, translations, normals);
+                for (Mat m : translations) {
+                    debug("m", m);
+                }
 
                 // targetGeometryMeters is four points
                 // add two more below, at the y of the camera, which is the horizon
@@ -989,10 +657,10 @@ public class TestCV {
                 pointList.add(new Point(imageRect.x + imageRect.width / 2, tallSize.height / 2));
 
                 MatOfPoint3f expandedTargetGeometryMeters = new MatOfPoint3f(point3List.toArray(new Point3[0]));
-                debug("expandedTargetGeometryMeters",expandedTargetGeometryMeters);
+                debug("expandedTargetGeometryMeters", expandedTargetGeometryMeters);
                 MatOfPoint2f expandedImagePoints = new MatOfPoint2f(pointList.toArray(new Point[0]));
 
-                debug("expandedImagePoints",expandedImagePoints);
+                debug("expandedImagePoints", expandedImagePoints);
                 //
                 // find the pose using solvepnp. this sucks because the target is small relative
                 // to the distances.
@@ -1043,14 +711,14 @@ public class TestCV {
                 // guess stdev in pixels :-)
                 final Mat dp = Mat.zeros(2, 1, CvType.CV_64F);
                 dp.put(0, 0, 3, 3);
-                debug("dp",dp);
+                debug("dp", dp);
                 for (int i = 0; i < dpdt.rows(); i += 2) {
                     Mat pointDpdt = dpdt.rowRange(i, i + 2);
-                    debug("dpdt",pointDpdt);
+                    debug("dpdt", pointDpdt);
                     Mat dtdp = new Mat();
                     Core.invert(pointDpdt, dtdp, Core.DECOMP_SVD);
 
-                    debug("dtdp",dtdp);
+                    debug("dtdp", dtdp);
                     Mat dt = new Mat();
                     Core.gemm(dtdp, dp, 1.0, new Mat(), 0.0, dt);
                     pdxCamDp += (dt.get(0, 0)[0] * dt.get(0, 0)[0]);
@@ -1062,10 +730,10 @@ public class TestCV {
                     // ... this should be a 3x3 not a 3x1, grrr
                     Mat Jworld = new Mat();
                     Core.gemm(newWorldRMat, newCamTVec, -1.0, new Mat(), 0.0, Jworld);
-                    debug("Jworld",Jworld);
+                    debug("Jworld", Jworld);
                     Mat dtWorld = new Mat();
                     Core.gemm(Jworld.t(), dt, -1.0, new Mat(), 0.0, dtWorld);
-                    debug("dtWorld",dtWorld);
+                    debug("dtWorld", dtWorld);
 
                     // pdxWorldDp += (dtWorld.get(0, 0)[0] * dtWorld.get(0, 0)[0]);
                     // pdyWorldDp += (dtWorld.get(1, 0)[0] * dtWorld.get(1, 0)[0]);
@@ -1133,7 +801,7 @@ public class TestCV {
                 Mat newWorldTVec = new Mat();
                 Core.gemm(newWorldRMat, newCamTVec, -1.0, new Mat(), 0.0, newWorldTVec);
                 // predictions in world coords
-                // NOTE: error in R becomes error in X and Y.
+                // NOTE: error in R becomes error in X and Y.pnp
                 double pdxworld = newWorldTVec.get(0, 0)[0];
                 double pdyworld = newWorldTVec.get(1, 0)[0];
                 double pdzworld = newWorldTVec.get(2, 0)[0];
@@ -1168,229 +836,23 @@ public class TestCV {
         }
     }
 
-    /**
-     * find a way to synthesize the target and also figure out units
-     */
-    // @Test
-    public void testProjection() {
-        Size dsize = new Size(960, 540); // 1/4 of 1080, just to i can see it more easily
-        Mat kMat = VisionUtil.makeIntrinsicMatrix(512.0, dsize);
-        MatOfDouble dMat = new MatOfDouble(Mat.zeros(4, 1, CvType.CV_64F));
-
-        // target is 0.4m wide, 0.1m high .
-        // MatOfPoint3f targetGeometryMeters = VisionUtil.makeTargetGeometry3f(0.4,
-        // 0.1);
-        MatOfPoint3f targetGeometryMeters = new MatOfPoint3f(new Point3(0.0, 0.01, 0));
-        debug("target geometry", targetGeometryMeters);
-
-        // in meters
-        // double xPos = -0.2;
-        // double yPos = 0.4;
-        // double zPos = -0.8;
-        double xPos = 0.0;
-        double yPos = 0.0;
-        double zPos = -10.0;
-        // in radians
-        // double tilt = 0.2;
-        // double pan = 0.2;
-        double tilt = 0.0;
-        double pan = 0.0;
-
-        Mat cameraView = VisionUtil.makeImage(xPos, yPos, zPos, tilt, pan, kMat, dMat, targetGeometryMeters, dsize);
-        Imgcodecs.imwrite("C:\\Users\\joelt\\Desktop\\pics\\skewed.jpg", cameraView);
+    public static void debugmsg(String msg) {
+        if (!DEBUG)
+            return;
+        System.out.println(msg);
     }
 
-    // project a single pixel into world space to show the shape of
-    // the projection error
-    public void projectPixel(Mat field, double scale, int fieldZ, Mat actualWorldTV, Mat camRV) {
-
-        // 1/4 of 1080, so it doesn't take up the whole screen and doesn't take forever
-        Size dsize = new Size(960, 540);
-
-        // f=512 camera matrix
-        Mat kMat = VisionUtil.makeIntrinsicMatrix(256.0, dsize);
-
-        // no distortion for now
-        MatOfDouble dMat = new MatOfDouble(Mat.zeros(4, 1, CvType.CV_64F));
-        debug("dMat", dMat);
-
-        // just one target point for now
-        // keep it away from the origin to prevent singularity
-        MatOfPoint3f targetGeometryMeters = new MatOfPoint3f(new Point3(2.0, 2.0, 0.0));
-        MatOfPoint2f targetImageGeometry = VisionUtil.makeTargetImageGeometryPixels(targetGeometryMeters, 1000);
-        debug("targetImageGeometry",targetImageGeometry);
-
-        Mat camTV = VisionUtil.world2Cam(camRV, actualWorldTV);
-
-        MatOfPoint2f skewedImagePts2f = new MatOfPoint2f();
-        Mat jacobian = new Mat();
-        Calib3d.projectPoints(targetGeometryMeters, camRV, camTV, kMat, dMat, skewedImagePts2f, jacobian);
-
-        debug("jacobian",jacobian);
-
-        // from calibration.cpp.
-        // these are many 2x3 stacked vertically if there are multiple target points
-        // but right now they are just 2x3.
-        Mat dpdrot = jacobian.colRange(0, 3);
-        Mat dpdt = jacobian.colRange(3, 6);
-
-        // Mat dpdf = jacobian.colRange(6, 8);
-        // Mat dpdc = jacobian.colRange(8, 10);
-        // Mat dpddist = jacobian.colRange(10, jacobian.cols());
-
-        // double dp = 3.0;
-        for (int i = 0; i < targetGeometryMeters.rows(); ++i) {
-            // dpixel/drot
-            Mat pointdpdrot = dpdrot.rowRange(i * 2, i * 2 + 2);
-            debug("dpdrot",   pointdpdrot);
-
-            // dpixel/dtranslation
-            Mat pointDpdt = dpdt.rowRange(i * 2, i * 2 + 2);
-            debug("dpdt", pointDpdt);
-
-            // find the inverse, so drotation/dpixel
-            // if condition number is too low, the matrix is "nearly singular"
-            Mat drotdp = new Mat(); // 3x2
-            double rotInvConditionNumber = Core.invert(pointdpdrot, drotdp, Core.DECOMP_SVD);
-            debug("rotation inverse condition number" ,rotInvConditionNumber);
-            debug("drotdp  "  ,drotdp);
-
-            // find the inverse, so dtranslation/dpixel
-            Mat dtdp = new Mat(); // 3x2
-            double tInvConditionNumber = Core.invert(pointDpdt, dtdp, Core.DECOMP_SVD);
-            debug("translation inverse condition number",tInvConditionNumber);
-            debug("dtdp",dtdp);
-
-            // make the center of the world translation estimate; in reality these would
-            // come from solvePNP.
-            // first the world rotation
-            Mat camRM = new Mat();
-            // this is the jacobian of the rodrigues transform; it yields 3x9 partials.
-            Mat rodJ = new Mat();
-            Calib3d.Rodrigues(camRV, camRM, rodJ);
-            debug("rodJ",rodJ);
-            Mat worldRM = camRM.t();
-            // jacobian of the transpose is the transpose of the jacobian
-            // which will be useful below
-            Mat rodJT = rodJ.t(); // 9x3
-            debug("rodJT",rodJT);
-
-            // then the world translation
-            Mat worldTV = new Mat();
-            Core.gemm(worldRM, camTV, -1.0, new Mat(), 0.0, worldTV);
-
-            debug("world translation"  ,worldTV);
-
-            // now the error in the translation estimate.
-            //
-            // the function is multiply(transposedrodrigues(rotation),-translation)
-            // so the chain rule says we need
-            // dmultiply/dtransposedrodrigues * dtransposedrodrigues/drot
-            // * drot/dp - dmultiply/dtranslation * dtrans/dp
-            // note the -1
-
-            // first the multiplication derivatives
-            Mat dmultdrot = new Mat(); // 3x9
-            Mat dmultdt = new Mat(); // 3x3
-            Calib3d.matMulDeriv(worldRM, camTV, dmultdrot, dmultdt);
-            debug("dmultdrot",dmultdrot);
-            debug("dmultdt",dmultdt);
-
-            // the rodrigues jacobian is above
-
-            // rotation term:
-            Mat drotTdp = new Mat(); // 9x2
-            Core.gemm(rodJT, drotdp, 1.0, new Mat(), 0.0, drotTdp);
-            Mat dworldtdpR = new Mat();
-            Core.gemm(dmultdrot, drotTdp, 1.0, new Mat(), 0.0, dworldtdpR);
-            // translation term:
-            Mat dworldtdpT = new Mat();
-            Core.gemm(dmultdt, dtdp, -1.0, new Mat(), 0.0, dworldtdpT);
-            Mat dworldtdp = new Mat();
-            Core.add(dworldtdpR, dworldtdpT, dworldtdp);
-            // resulting jacobian, (u,v) -> (xw,yw,zw):
-            debug("dworldtdp",dworldtdp);
-
-            Scalar color = new Scalar(255, 255, 255);
-            Size axes = new Size(1 + dworldtdp.get(0, 0)[0] * scale, 1 + dworldtdp.get(2, 0)[0] * scale);
-            debugmsg(axes.toString());
-            Point center = new Point(fieldZ / 2 + worldTV.get(0, 0)[0] * scale, -1 * worldTV.get(2, 0)[0] * scale);
-            debugmsg(center.toString());
-            debugmsg(field.size().toString());
-
-            Point pt1 = new Point(center.x - axes.width, center.y - axes.height);
-            Point pt2 = new Point(center.x + axes.width, center.y + axes.height);
-            debugmsg(pt1.toString());
-            debugmsg(pt2.toString());
-            Imgproc.rectangle(field, pt1, pt2, color);
-
-        }
+    public static void debug(String msg, Mat m) {
+        if (!DEBUG)
+            return;
+        System.out.println(msg);
+        System.out.println(m.dump());
     }
 
-    /**
-     * try one projection with all the jacobians hooked up.
-     */
-    // @Test
-    public void testJacobian() {
-
-        double scale = 90; // pixels per meter in the xy projection
-        int fieldX = (int) (12 * scale);
-        int fieldZ = (int) (12 * scale);
-        Mat field = Mat.zeros(fieldX, fieldZ, CvType.CV_64FC3);
-
-        // just z translation, no rotation
-        // double xPos = 0.0;
-        double yPos = 0.0;
-        // double zPos = -10.0;
-        double tilt = 0.0;
-        double pan = -0.1;
-
-        for (double zPos = -10; zPos <= -1; zPos += 0.5) {
-            for (double xPos = -4; xPos <= 4; xPos += 0.5) {
-
-                Mat actualWorldTV = Mat.zeros(3, 1, CvType.CV_64F);
-                actualWorldTV.put(0, 0, xPos, yPos, zPos);
-                // camera up/right means world down/left, so both negative
-                Mat camRV = VisionUtil.panTilt(-pan, -tilt);
-                projectPixel(field, scale, fieldZ, actualWorldTV, camRV);
-
-            }
-        }
-
-        Imgcodecs.imwrite("C:\\Users\\joelt\\Desktop\\pics\\field.jpg", field);
-
-    }
-
-    // @Test
-    public void testMatMulJacobian() {
-        Mat A = Mat.zeros(3, 3, CvType.CV_64F);
-        A.put(0, 0,
-                0.707, 0.707, 0,
-                -0.707, 0.707, 0,
-                0, 0, 1);
-        Mat B = Mat.zeros(3, 1, CvType.CV_64F);
-        B.put(0, 0, 1, -10, 100);
-        Mat dABdA = new Mat();
-        Mat dABdB = new Mat();
-
-        Calib3d.matMulDeriv(A, B, dABdA, dABdB);
-        debug("A",A);
-        debug("B",B);
-        debug("dABdA",dABdA);
-        debug("dABdB",dABdB);
-
-    }
-
-    // @Test
-    public void testRodriguesJacobian() {
-        Mat RV = Mat.zeros(3, 1, CvType.CV_64F);
-        RV.put(0, 0, 0, 0.0001, 0.0);
-        Mat RM = new Mat();
-        Mat J = new Mat();
-        Calib3d.Rodrigues(RV, RM, J);
-        debug("RV",RV);
-        debug("RM",RM);
-        debug("J",J);
-
+    public static void debug(String msg, double d) {
+        if (!DEBUG)
+            return;
+        System.out.println(msg);
+        System.out.println(d);
     }
 }

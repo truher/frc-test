@@ -1,9 +1,11 @@
+
 import static org.junit.Assert.assertEquals;
 
 import java.util.Random;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 
+import org.junit.Test;
 import org.opencv.calib3d.Calib3d;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
@@ -17,9 +19,11 @@ import org.opencv.core.Size;
 import vision.VisionUtil;
 
 /**
- * try a different approach to pose estimation
+ * This combines binocular vision and IMU to improve pose estimation for distant
+ * visual references.
  */
-public class TestReproject {
+public class TestBinocularIMU {
+
     static {
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
     }
@@ -27,7 +31,7 @@ public class TestReproject {
     static final int LEVEL = 1;
     static final double DELTA = 0.001;
 
-    // @Test
+     @Test
     public void testHomogeneous() {
         MatOfPoint3f targetGeometryMeters = VisionUtil.makeTarget(-0.2, -0.1, 0.2, 0.0);
         debug(1, "target", targetGeometryMeters);
@@ -36,7 +40,7 @@ public class TestReproject {
         System.out.println(XMat.size());
     }
 
-    // @Test
+    @Test
     public void testReproject() {
         Random rand = new Random(42);
         final double f = 985; // 2.8mm lens
@@ -51,11 +55,23 @@ public class TestReproject {
         // MatOfPoint3f targetGeometryMeters = VisionUtil.makeTarget(-0.2, -0.1, 0.2,
         // 0.0);
         MatOfPoint3f targetGeometryMeters = VisionUtil.makeTarget(-0.25, 0, 0.25, -0.5);
-        int pointMultiplier = 1;
-        double noisePixels = 1;
+        // camera frame rate is 50fps. aim for 10hz update rate, so 5-fold averaging
+        final int pointMultiplier = 5;
+        // TODO: contour should average the sides of the target so this pixel estimate
+        // should be an **overestimate.**
+        // TODO: quantify blur and strobe requirements.
+        // TODO: explore deblurring and/or contour thresholding etc.
+        final double noisePixels = 1;
+        // pigeon/navx claim 1.5 degrees for fused output
+        // final double gyroNoise = 0.025;
+        // LIS3MDL claims about 1% thermal noise at 80hz
+        // average 8 samples = 1/sqrt(8)
+        final double gyroNoise = 0.0035;
+
         MatOfPoint3f targetPointsMultiplied = VisionUtil.duplicatePoints(targetGeometryMeters, pointMultiplier);
 
-        final double b = 0.4; // camera width meters
+        // TODO: parameter study of b vs errors
+        final double b = 0.5; // camera width meters
         // double pan = 0;
         // double xPos = 0;
         // double pan = Math.PI / 4;
@@ -81,6 +97,9 @@ public class TestReproject {
                 // field is 8m wide, so +/- 4m
 
                 for (double xPos = -5; xPos <= 5; xPos += 1.0) {
+                    // so now we have a GYRO which is a noisy copy of the pan (absolute heading)
+                    // signal.
+                    double gyro = pan + (gyroNoise * rand.nextGaussian());
 
                     double navBearing = Math.atan2(xPos, -zPos);
                     double relativeBearing = navBearing + pan;
@@ -196,14 +215,18 @@ public class TestReproject {
                     debug(1, "reproj without rotation", reproj.t());
                     debug(1, "to centered", to_centered);
 
-                    double averageAngleDiff = averageAngularError(to_centered, reproj.t());
+                    // double averageAngleDiff = averageAngularError(to_centered, reproj.t());
 
-                    debug(1, "averageAngleDiff", averageAngleDiff);
+                    // debug(1, "averageAngleDiff", averageAngleDiff);
 
-                    // fix the transform
+                    // fix the transform ...
+                    // this time "fix" it by just making the rotation
+                    // exactly equal to the gyro observation.
 
-                    double c = Math.cos(averageAngleDiff);
-                    double s = Math.sin(averageAngleDiff);
+                    // double c = Math.cos(averageAngleDiff);
+                    // double s = Math.sin(averageAngleDiff);
+                    double c = Math.cos(gyro);
+                    double s = Math.sin(gyro);
                     Mat newR = Mat.zeros(3, 3, CvType.CV_64F);
                     newR.put(0, 0,
                             c, 0, -s,

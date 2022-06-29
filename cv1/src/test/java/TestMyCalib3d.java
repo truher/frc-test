@@ -1,6 +1,7 @@
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import org.junit.Test;
 //import org.junit.Test;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
@@ -8,6 +9,9 @@ import org.opencv.core.Mat;
 
 import vision.MyCalib3d;
 
+/**
+ * Verify {@MyCalib3d#estimateAffine3D()} which is the Umeyama method.
+ */
 public class TestMyCalib3d {
 
     public TestMyCalib3d() {
@@ -15,9 +19,10 @@ public class TestMyCalib3d {
     }
 
     /**
-     * This is a translation of the C++ test calib3d/test/test_affine3d_estimator.cpp
+     * This is a translation of the C++ test
+     * calib3d/test/test_affine3d_estimator.cpp
      */
-   // @Test
+    @Test
     public void testCalib3d_EstimateAffine3D() { // umeyama_3_pt
 
         // columns = points, like, for the multiplication below

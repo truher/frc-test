@@ -4,6 +4,7 @@ import java.util.Random;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 
+import org.junit.Test;
 import org.opencv.calib3d.Calib3d;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
@@ -23,7 +24,7 @@ import vision.VisionUtil;
  * axes.
  */
 
-public class TestSVD {
+public class TestBinocularSVD {
     static {
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
     }
@@ -47,7 +48,7 @@ public class TestSVD {
     MatOfPoint3f targetPointsMultiplied;
     // Mat homogeneousTarget;
 
-    public TestSVD() {
+    public TestBinocularSVD() {
         debug(0, "kMat", kMat);
         debug(0, "dMat", dMat);
 
@@ -65,14 +66,10 @@ public class TestSVD {
         debug(0, "TinvMinvBmat (scaled)", TinvMinvBmat);
     }
 
-    // @Test
-    public void testNothing() {
-    }
-
     /**
      * this is for the arducam OV9281 default M12 lens
      */
-    //@Test
+    @Test
     public void testFOV() {
         // 2.1mm lens 81 degree HFOV f=750
         // 2.8mm lens 66 degree HFOV f=985 (default)
@@ -101,7 +98,7 @@ public class TestSVD {
 
     }
 
-    // @Test
+    @Test
     public void testSolve() {
         Random rand = new Random(42);
         targetGeometryMeters = VisionUtil.makeTarget(-0.2, -0.1, 0.2, 0.0);
@@ -245,7 +242,7 @@ public class TestSVD {
 
     }
 
-    // @Test
+    @Test
     public void testUmeyama() {
         Random rand = new Random(42);
         targetGeometryMeters = VisionUtil.makeTarget(-0.2, -0.1, 0.2, 0.0);
