@@ -218,6 +218,18 @@ public abstract class VisionUtil {
         return worldToCamera;
     }
 
+    public static MatOfPoint3f duplicatePoints(MatOfPoint3f targetGeometryMeters, int pointMultiplier) {
+        MatOfPoint3f targetPointsMultiplied = new MatOfPoint3f();
+        List<Point3> targetpointlist = new ArrayList<Point3>();
+        for (int reps = 0; reps < pointMultiplier; reps++) {
+            for (Point3 p : targetGeometryMeters.toList()) {
+                targetpointlist.add(p);
+            }
+        }
+        targetPointsMultiplied = new MatOfPoint3f(targetpointlist.toArray(new Point3[0]));
+        return targetPointsMultiplied;
+    }
+
     public static Mat makeWorldToCameraHomogeneous(double pan, double xPos, double yPos, double zPos) {
         // these are camera-to-world transforms
         Mat cameraToWorldTVec = Mat.zeros(3, 1, CvType.CV_32F);
@@ -402,8 +414,7 @@ public abstract class VisionUtil {
     }
 
     public static MatOfPoint2f imagePoints(Mat kMat, MatOfDouble dMat, MatOfPoint3f geometry, Mat worldToCamera,
-            int pointMultiplier, double noisePixels) {
-        Random rand = new Random();
+            int pointMultiplier, double noisePixels, Random rand) {
         Mat Rvec = Mat.zeros(3, 1, CvType.CV_32F);
         Calib3d.Rodrigues(worldToCamera.rowRange(0, 3).colRange(0, 3), Rvec);
         debug(0, "Rvec", Rvec);

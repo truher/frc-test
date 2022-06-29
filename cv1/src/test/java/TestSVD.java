@@ -4,7 +4,6 @@ import java.util.Random;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 
-import org.junit.Test;
 import org.opencv.calib3d.Calib3d;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
@@ -54,7 +53,7 @@ public class TestSVD {
 
     }
 
-    static void normalize(Mat TinvMinvBmat) {
+    static void normalize2d(Mat TinvMinvBmat) {
         for (int col = 0; col < TinvMinvBmat.cols(); ++col) {
             double xval = TinvMinvBmat.get(0, col)[0];
             double zval = TinvMinvBmat.get(1, col)[0];
@@ -73,9 +72,15 @@ public class TestSVD {
     /**
      * this is for the arducam OV9281 default M12 lens
      */
-    // @Test
+    //@Test
     public void testFOV() {
-        final double myF = 914;
+        // 2.1mm lens 81 degree HFOV f=750
+        // 2.8mm lens 66 degree HFOV f=985 (default)
+        // 3.6mm lens 53 degree HFOV f=1282
+        // 4mm lens 49 degree HFOV f=1400
+        // 6mm lens 33 degree HFOV f=2150
+        // 8mm lens 25 degree HFOV f=2650
+        final double myF = 1282;
         final int myHeight = 800;
         final int myWidth = 1280;
         final Size mySize = new Size(myWidth, myHeight);
@@ -98,8 +103,9 @@ public class TestSVD {
 
     // @Test
     public void testSolve() {
+        Random rand = new Random(42);
         targetGeometryMeters = VisionUtil.makeTarget(-0.2, -0.1, 0.2, 0.0);
-        targetPointsMultiplied = duplicatePoints(targetGeometryMeters, pointMultiplier);
+        targetPointsMultiplied = VisionUtil.duplicatePoints(targetGeometryMeters, pointMultiplier);
         // homogeneousTarget = homogenize(targetPointsMultiplied);
         // A "big" robot is ~0.8m wide, cameras can't be wider than that
         // Later: test sensitivity of width
@@ -146,9 +152,9 @@ public class TestSVD {
 
                     // make images based on target points and transforms
                     MatOfPoint2f leftPts = VisionUtil.imagePoints(kMat, dMat, targetGeometryMeters, worldToLeftEye,
-                            pointMultiplier, noisePixels);
+                            pointMultiplier, noisePixels, rand);
                     MatOfPoint2f rightPts = VisionUtil.imagePoints(kMat, dMat, targetGeometryMeters, worldToRightEye,
-                            pointMultiplier, noisePixels);
+                            pointMultiplier, noisePixels, rand);
                     if (!VisionUtil.inViewport(leftPts, viewport) || !VisionUtil.inViewport(rightPts, viewport))
                         continue;
 
@@ -159,10 +165,10 @@ public class TestSVD {
                             String.format("C:\\Users\\joelt\\Desktop\\pics\\svd-%d-right.png", idx));
 
                     // To solve Ax=b triangulation, first make b:
-                    Mat bMat = makeBMat(leftPts, rightPts, b);
+                    Mat bMat = makeBMat2d(leftPts, rightPts, b);
 
                     // ... and x: (X, Z, 1):
-                    Mat XMat = makeXMat();
+                    Mat XMat = makeXMat2d();
                     debug(0, "XMat (x data)", XMat);
 
                     // so now Ax=b where X is the world geometry and b is as prepared.
@@ -239,10 +245,11 @@ public class TestSVD {
 
     }
 
-    @Test
+    // @Test
     public void testUmeyama() {
+        Random rand = new Random(42);
         targetGeometryMeters = VisionUtil.makeTarget(-0.2, -0.1, 0.2, 0.0);
-        targetPointsMultiplied = duplicatePoints(targetGeometryMeters, pointMultiplier);
+        targetPointsMultiplied = VisionUtil.duplicatePoints(targetGeometryMeters, pointMultiplier);
         // homogeneousTarget = homogenize(targetPointsMultiplied);
         // A "big" robot is ~0.8m wide, cameras can't be wider than that
         // Later: test sensitivity of width
@@ -258,7 +265,6 @@ public class TestSVD {
         double relativeBearingErrSquareSum = 0.0;
         double rangeErrSquareSum = 0.0;
 
-        // System.out.println("idx, pan, xpos, ypos, zpos, ppan, pxpos, pypos, pzpos");
         System.out.println(
                 "idx, pan, xpos, ypos, zpos, rbear, range, ppan, pxpos, pypos, pzpos, prbear, prange, panErr, xErr, zErr, relativeBearingErr, rangeErr");
 
@@ -288,9 +294,9 @@ public class TestSVD {
 
                     // make images based on target points and transforms
                     MatOfPoint2f leftPts = VisionUtil.imagePoints(kMat, dMat, targetGeometryMeters, worldToLeftEye,
-                            pointMultiplier, noisePixels);
+                            pointMultiplier, noisePixels, rand);
                     MatOfPoint2f rightPts = VisionUtil.imagePoints(kMat, dMat, targetGeometryMeters, worldToRightEye,
-                            pointMultiplier, noisePixels);
+                            pointMultiplier, noisePixels, rand);
                     if (!VisionUtil.inViewport(leftPts, viewport) || !VisionUtil.inViewport(rightPts, viewport))
                         continue;
 
@@ -301,25 +307,15 @@ public class TestSVD {
                             String.format("C:\\Users\\joelt\\Desktop\\pics\\svd-%d-right.png", idx));
 
                     // To solve Ax=b triangulation, first make b:
-                    Mat bMat = makeBMat(leftPts, rightPts, b);
+                    Mat bMat = makeBMat2d(leftPts, rightPts, b);
 
                     // ... and x: (X, Z, 1):
-                    Mat XMat = makeXMat();
+                    Mat XMat = makeXMat2d();
                     debug(0, "XMat (x data)", XMat);
 
                     //
                     //
                     //
-                    //
-                    //
-                    // alternatively i could do this:
-                    //
-                    // A = Tinv * Minv * b * xinv
-                    //
-                    // and then decompose A.
-
-                    // so with noise this produces non-rigid transforms.
-                    // instead try the Omeyama way, adapted to 2d.
 
                     Mat from = Mat.zeros(2, XMat.cols(), CvType.CV_64F);
                     for (int col = 0; col < XMat.cols(); ++col) {
@@ -434,8 +430,6 @@ public class TestSVD {
                     // ah this is the reverse transform so to get the world coords
                     // i need to transform back.
 
-                    // Mat worldRvec = new Mat();
-                    // Calib3d.Rodrigues(rmat, worldRvec);
                     Mat cameraTVec = Mat.zeros(2, 1, CvType.CV_64F);
                     cameraTVec.put(0, 0, transform.get(0, 2)[0], transform.get(1, 2)[0]);
                     debug(0, "cameraTVec", cameraTVec);
@@ -490,18 +484,6 @@ public class TestSVD {
         System.out.println(endTime - startTime);
     }
 
-    static MatOfPoint3f duplicatePoints(MatOfPoint3f targetGeometryMeters, int pointMultiplier) {
-        MatOfPoint3f targetPointsMultiplied = new MatOfPoint3f();
-        List<Point3> targetpointlist = new ArrayList<Point3>();
-        for (int reps = 0; reps < pointMultiplier; reps++) {
-            for (Point3 p : targetGeometryMeters.toList()) {
-                targetpointlist.add(p);
-            }
-        }
-        targetPointsMultiplied = new MatOfPoint3f(targetpointlist.toArray(new Point3[0]));
-        return targetPointsMultiplied;
-    }
-
     static Mat homogenize(Mat targetPointsMultiplied) {
         Mat homogeneousTarget = new Mat();
         Calib3d.convertPointsToHomogeneous(targetPointsMultiplied, homogeneousTarget);
@@ -511,7 +493,10 @@ public class TestSVD {
         return homogeneousTarget;
     }
 
-    static Mat makeUMat(MatOfPoint2f leftPts, MatOfPoint2f rightPts) {
+    /**
+     * for the solution that ignores the Y/v dimension, use (u, u', 1)
+     */
+    static Mat makeUMat2d(MatOfPoint2f leftPts, MatOfPoint2f rightPts) {
         Mat uMat = Mat.zeros(leftPts.toList().size(), 3, CvType.CV_64F);
         for (int i = 0; i < leftPts.toList().size(); ++i) {
             uMat.put(i, 0, leftPts.get(i, 0)[0], rightPts.get(i, 0)[0], 1.0);
@@ -520,7 +505,7 @@ public class TestSVD {
         return uMat;
     }
 
-    Mat makeXMat() {
+    Mat makeXMat2d() {
         List<Point3> targetPointsMultipliedList = targetPointsMultiplied.toList();
 
         List<Point3> listOfXZ = new ArrayList<Point3>();
@@ -537,7 +522,7 @@ public class TestSVD {
         return targetPointsMultipliedXZHomogeneousMat;
     }
 
-    static Mat makeMInv() {
+    static Mat makeMInv2d() {
         Mat M = Mat.zeros(3, 3, CvType.CV_64F);
         M.put(0, 0,
                 f, 0, cx,
@@ -549,7 +534,7 @@ public class TestSVD {
         return Minv;
     }
 
-    static Mat makeTInv(double b) {
+    static Mat makeTInv2d(double b) {
         Mat T = Mat.zeros(3, 3, CvType.CV_64F);
         T.put(0, 0,
                 1, 0, b / 2,
@@ -561,13 +546,13 @@ public class TestSVD {
         return Tinv;
     }
 
-    static Mat makeBMat(MatOfPoint2f leftPts, MatOfPoint2f rightPts, double b) {
+    static Mat makeBMat2d(MatOfPoint2f leftPts, MatOfPoint2f rightPts, double b) {
         // To solve Ax=b triangulation (Ax=M-1T-1u), first make u: (u,u',1):
-        Mat uMat = makeUMat(leftPts, rightPts);
+        Mat uMat = makeUMat2d(leftPts, rightPts);
 
         // and the inverse transforms we're going to apply:
-        Mat Minv = makeMInv();
-        Mat Tinv = makeTInv(b);
+        Mat Minv = makeMInv2d();
+        Mat Tinv = makeTInv2d(b);
 
         // apply the inverses to the observations (the "u") in the correct order:
         Mat MinvUmat = new Mat();
@@ -579,7 +564,7 @@ public class TestSVD {
         debug(0, "bMat", bMat);
 
         // Make the result look homogeneous
-        normalize(bMat);
+        normalize2d(bMat);
         debug(0, "bMat normalized", bMat);
         return bMat;
     }
