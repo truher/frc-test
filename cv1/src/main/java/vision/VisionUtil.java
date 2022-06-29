@@ -584,6 +584,71 @@ public abstract class VisionUtil {
         Imgcodecs.imwrite(filename, img);
     }
 
+    /**
+     * project target geometry into the image plane. this method also looks at the
+     * jacobian of the projection transformed to world coordinates but it isn't
+     * returned.
+     */
+    public static MatOfPoint2f makeSkewedImagePts2f(MatOfPoint3f expandedTargetGeometryMeters, Mat newCamRVec, Mat newCamTVec,
+            Mat tallKMat, Mat newWorldRMat) {
+        MatOfPoint2f skewedImagePts2f = new MatOfPoint2f();
+        Mat jacobian = new Mat();
+        Calib3d.projectPoints(expandedTargetGeometryMeters, newCamRVec,
+                newCamTVec, tallKMat, new MatOfDouble(), skewedImagePts2f, jacobian);
+        // Mat dpdrot = jacobian.colRange(0, 3); // someday: deal with dpdrot.
+        Mat dpdt = jacobian.colRange(3, 6);
+        // calculate the stdev dtdp for each dimension:
+        double pdxCamDp = 0;
+        double pdyCamDp = 0;
+        double pdzCamDp = 0;
+        double pdxWorldDp = 0;
+        double pdyWorldDp = 0;
+        double pdzWorldDp = 0;
+        // guess stdev in pixels :-)
+        final Mat dp = Mat.zeros(2, 1, CvType.CV_64F);
+        dp.put(0, 0, 3, 3);
+        debug(0, "dp", dp);
+        for (int i = 0; i < dpdt.rows(); i += 2) {
+            Mat pointDpdt = dpdt.rowRange(i, i + 2);
+            debug(0, "dpdt", pointDpdt);
+            Mat dtdp = new Mat();
+            Core.invert(pointDpdt, dtdp, Core.DECOMP_SVD);
+
+            debug(0, "dtdp", dtdp);
+            Mat dt = new Mat();
+            Core.gemm(dtdp, dp, 1.0, new Mat(), 0.0, dt);
+            pdxCamDp += (dt.get(0, 0)[0] * dt.get(0, 0)[0]);
+            pdyCamDp += (dt.get(1, 0)[0] * dt.get(1, 0)[0]);
+            pdzCamDp += (dt.get(2, 0)[0] * dt.get(2, 0)[0]);
+            // ok now find the world-transformed dt.
+            // this is the jacobian of the transform (which is just the
+            // transform itself), evaluated at the predicted camt.
+            // ... this should be a 3x3 not a 3x1, grrr
+            Mat Jworld = new Mat();
+            Core.gemm(newWorldRMat, newCamTVec, -1.0, new Mat(), 0.0, Jworld);
+            debug(0, "Jworld", Jworld);
+            Mat dtWorld = new Mat();
+            Core.gemm(Jworld.t(), dt, -1.0, new Mat(), 0.0, dtWorld);
+            debug(0, "dtWorld", dtWorld);
+        }
+        pdxCamDp /= dpdt.rows() / 2;
+        pdyCamDp /= dpdt.rows() / 2;
+        pdzCamDp /= dpdt.rows() / 2;
+        pdxCamDp = Math.sqrt(pdxCamDp);
+        pdyCamDp = Math.sqrt(pdyCamDp);
+        pdzCamDp = Math.sqrt(pdzCamDp);
+        pdxWorldDp /= dpdt.rows() / 2;
+        pdyWorldDp /= dpdt.rows() / 2;
+        pdzWorldDp /= dpdt.rows() / 2;
+        pdxWorldDp = Math.sqrt(pdxWorldDp);
+        pdyWorldDp = Math.sqrt(pdyWorldDp);
+        pdzWorldDp = Math.sqrt(pdzWorldDp);
+
+        // System.out.printf(" %f, %f, %f, %f, %f, %f\n",
+        // pdxCamDp, pdyCamDp, pdzCamDp, pdxWorldDp, pdyWorldDp, pdzWorldDp);
+        return skewedImagePts2f;
+    }
+
     public static void debug(int level, String msg, Mat m) {
         if (!DEBUG)
             return;

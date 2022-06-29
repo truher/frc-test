@@ -222,8 +222,8 @@ public class TestPnP {
         Collections.rotate(approxCurveList, -idx);
 
         // ... aaand what's our position?
-        Mat newRVec = new Mat(); // rVec.clone();
-        Mat newTVec = new Mat(); // tVec.clone();
+        Mat newRVec = new Mat();
+        Mat newTVec = new Mat();
         MatOfPoint2f imagePoints = new MatOfPoint2f(approxCurveList.toArray(new Point[0]));
         debug("imagePoints", imagePoints);
 
@@ -458,16 +458,12 @@ public class TestPnP {
                 "idx, dxWorld, dyWorld, dzWorld, dxCam, "
                         + "dyCam, dzCam, pan, tilt, 0.0, "
                         + "pdxworld, pdyworld, pdzworld, ppanCam, ptiltCam, "
-                        + "pscrewCam, pdxCam, pdyCam, pdzCam, pdxCamDp, "
-                        + "pdyCamDp, pdzCamDp, pdxWorldDp, pdyWorldDp, pdzWorldDp, "
+                        + "pscrewCam, pdxCam, pdyCam, pdzCam, "
                         + "ppanWorld, ptiltWorld, pscrewWorld");
         // FRC field is 8x16m, let's try for half-length and full-width i.e. 8x8
         for (double dzWorld = -10; dzWorld <= -1; dzWorld += 1.0) { // meters, start far, move closer
             for (double dxWorld = -5; dxWorld <= 5; dxWorld += 1.0) { // meters, start left, move right
 
-                // for (double dz = -1; dz <= -1; dz += 1.0) {
-                // for (double dx = 1; dx <= 1; dx += 1.0) {
-                // right
                 idx += 1;
                 Mat cameraView = VisionUtil.makeImage(dxWorld, dyWorld, dzWorld, tilt, pan, kMat, dMat,
                         targetGeometryMeters, dsize);
@@ -487,24 +483,6 @@ public class TestPnP {
 
                 // try removing the camera tilt and using the camera y to make fake points.
 
-                // Mat homogeneousKMat = Mat.zeros(3, 4, CvType.CV_64F);
-                // homogeneousKMat.put(0, 0,
-                // 512.0, 0.0, dsize.width / 2,
-                // 0.0, 512.0, dsize.height / 2, 0,
-                // 0.0, 0.0, 1.0, 0.0);
-                // Mat homogenousInvKMat = Mat.zeros(4, 3, CvType.CV_64F);
-                // homogenousInvKMat.put(0, 0,
-                // 1.0 / 512.0, 0.0, -dsize.width / (2 * 512.0),
-                // 0.0, 1.0 / 512.0, -dsize.height / (2 * 512.0),
-                // 0.0, 0.0, 0.0,
-                // 0.0, 0.0, 1.0);
-                // Mat homogeneousUntilt = Mat.zeros(4, 4, CvType.CV_64F);
-                // homogeneousUntilt.put(0, 0,
-                // 1.0, 0.0, 0.0, 0.0,
-                // 0.0, Math.cos(-tilt), -Math.sin(-tilt), 0.0,
-                // 0.0, Math.sin(-tilt), Math.cos(-tilt), 0.0,
-                // 0.0, 0.0, 0.0, 1.0);
-
                 Mat invKMat = kMat.inv();
                 Mat unTiltV = Mat.zeros(3, 1, CvType.CV_64F);
                 unTiltV.put(0, 0, tilt, 0.0, 0.0);
@@ -512,33 +490,17 @@ public class TestPnP {
                 Calib3d.Rodrigues(unTiltV, unTiltM);
 
                 Mat result = new Mat();
-                // Core.gemm(homogeneousUntilt, homogenousInvKMat, 1.0, new Mat(), 0.0, result);
-                // Core.gemm(homogeneousKMat, result, 1.0, new Mat(), 0.0, result);
+
                 Core.gemm(unTiltM, invKMat, 1.0, new Mat(), 0.0, result);
-                // this doesn't work because translation is range-dependent
-                // Mat translation = Mat.zeros(3, 3, CvType.CV_64F);
-                // translation.put(0, 0,
-                // 1.0, 0.0, 0.0,
-                // 0.0, 1.0, dy,
-                // 0.0, 0.0, 1.0);
-                // Core.gemm(translation, result, 1.0, new Mat(), 0.0, result);
 
                 // make a tall camera
-                //
                 Size tallSize = new Size(1920, 2160);
                 Mat tallKMat = VisionUtil.makeIntrinsicMatrix(f, tallSize);
-                //
-                //
 
-                // Core.gemm(kMat, result, 1.0, new Mat(), 0.0, result);
                 Core.gemm(tallKMat, result, 1.0, new Mat(), 0.0, result);
                 debug("result", result);
 
-                // Mat untiltedCameraView = Mat.zeros(dsize, CvType.CV_8UC3);
                 Mat untiltedCameraView = Mat.zeros(tallSize, CvType.CV_8UC3);
-
-                // Imgproc.warpPerspective(undistortedCameraView, untiltedCameraView, result,
-                // dsize);
                 Imgproc.warpPerspective(undistortedCameraView, untiltedCameraView, result, tallSize);
 
                 Imgcodecs.imwrite(String.format("C:\\Users\\joelt\\Desktop\\pics\\target-%d-raw.png", idx),
@@ -551,22 +513,6 @@ public class TestPnP {
                 }
 
                 debug("imagePoints", imagePoints);
-
-                //
-                // // try homography.
-                // // ok the homography approach isn't any better
-                // // there's still no way to constrain it
-                MatOfPoint2f targetImageGeometry = VisionUtil.makeTargetImageGeometryPixels(targetGeometryMeters, 1000);
-
-                Mat H = Calib3d.findHomography(targetImageGeometry, imagePoints);
-                debug("H", H);
-                List<Mat> rotations = new ArrayList<Mat>();
-                List<Mat> translations = new ArrayList<Mat>();
-                List<Mat> normals = new ArrayList<Mat>();
-                Calib3d.decomposeHomographyMat(H, kMat, rotations, translations, normals);
-                for (Mat m : translations) {
-                    debug("m", m);
-                }
 
                 // targetGeometryMeters is four points
                 // add two more below, at the y of the camera, which is the horizon
@@ -671,19 +617,6 @@ public class TestPnP {
                 Calib3d.solvePnP(expandedTargetGeometryMeters, expandedImagePoints, tallKMat,
                         new MatOfDouble(), newCamRVec, newCamTVec, false,
                         Calib3d.SOLVEPNP_ITERATIVE);
-                // large reprojection error == there are no outliers
-                // Calib3d.solvePnPRansac(expandedTargetGeometryMeters, expandedImagePoints,
-                // tallKMat,
-                // new MatOfDouble(), newCamRVec, newCamTVec, false, 2000, 100);
-
-                // Calib3d.solvePnPRefineLM(expandedTargetGeometryMeters, expandedImagePoints,
-                // tallKMat, new MatOfDouble(),
-                // newCamRVec, newCamTVec, new TermCriteria(TermCriteria.EPS, 10000, 0.001));
-                // Calib3d.solvePnPRefineVVS(expandedTargetGeometryMeters, expandedImagePoints,
-                // tallKMat,
-                // new MatOfDouble(), newCamRVec, newCamTVec, new TermCriteria(TermCriteria.EPS,
-                // 1000, 0.001),
-                // 1);
 
                 // now derive world coords
                 // for distant orthogonal targets the R is quite uncertain.
@@ -695,63 +628,8 @@ public class TestPnP {
                 // draw the target points on the camera view to see where we think they are
                 //
 
-                MatOfPoint2f skewedImagePts2f = new MatOfPoint2f();
-                Mat jacobian = new Mat();
-                Calib3d.projectPoints(expandedTargetGeometryMeters, newCamRVec,
-                        newCamTVec, tallKMat, new MatOfDouble(), skewedImagePts2f, jacobian);
-                // Mat dpdrot = jacobian.colRange(0, 3);
-                Mat dpdt = jacobian.colRange(3, 6);
-                // calculate the stdev dtdp for each dimension:
-                double pdxCamDp = 0;
-                double pdyCamDp = 0;
-                double pdzCamDp = 0;
-                double pdxWorldDp = 0;
-                double pdyWorldDp = 0;
-                double pdzWorldDp = 0;
-                // guess stdev in pixels :-)
-                final Mat dp = Mat.zeros(2, 1, CvType.CV_64F);
-                dp.put(0, 0, 3, 3);
-                debug("dp", dp);
-                for (int i = 0; i < dpdt.rows(); i += 2) {
-                    Mat pointDpdt = dpdt.rowRange(i, i + 2);
-                    debug("dpdt", pointDpdt);
-                    Mat dtdp = new Mat();
-                    Core.invert(pointDpdt, dtdp, Core.DECOMP_SVD);
-
-                    debug("dtdp", dtdp);
-                    Mat dt = new Mat();
-                    Core.gemm(dtdp, dp, 1.0, new Mat(), 0.0, dt);
-                    pdxCamDp += (dt.get(0, 0)[0] * dt.get(0, 0)[0]);
-                    pdyCamDp += (dt.get(1, 0)[0] * dt.get(1, 0)[0]);
-                    pdzCamDp += (dt.get(2, 0)[0] * dt.get(2, 0)[0]);
-                    // ok now find the world-transformed dt.
-                    // this is the jacobian of the transform (which is just the
-                    // transform itself), evaluated at the predicted camt.
-                    // ... this should be a 3x3 not a 3x1, grrr
-                    Mat Jworld = new Mat();
-                    Core.gemm(newWorldRMat, newCamTVec, -1.0, new Mat(), 0.0, Jworld);
-                    debug("Jworld", Jworld);
-                    Mat dtWorld = new Mat();
-                    Core.gemm(Jworld.t(), dt, -1.0, new Mat(), 0.0, dtWorld);
-                    debug("dtWorld", dtWorld);
-
-                    // pdxWorldDp += (dtWorld.get(0, 0)[0] * dtWorld.get(0, 0)[0]);
-                    // pdyWorldDp += (dtWorld.get(1, 0)[0] * dtWorld.get(1, 0)[0]);
-                    // pdzWorldDp += (dtWorld.get(2, 0)[0] * dtWorld.get(2, 0)[0]);
-                }
-                pdxCamDp /= dpdt.rows() / 2;
-                pdyCamDp /= dpdt.rows() / 2;
-                pdzCamDp /= dpdt.rows() / 2;
-                pdxCamDp = Math.sqrt(pdxCamDp);
-                pdyCamDp = Math.sqrt(pdyCamDp);
-                pdzCamDp = Math.sqrt(pdzCamDp);
-                pdxWorldDp /= dpdt.rows() / 2;
-                pdyWorldDp /= dpdt.rows() / 2;
-                pdzWorldDp /= dpdt.rows() / 2;
-                pdxWorldDp = Math.sqrt(pdxWorldDp);
-                pdyWorldDp = Math.sqrt(pdyWorldDp);
-                pdzWorldDp = Math.sqrt(pdzWorldDp);
-
+                MatOfPoint2f skewedImagePts2f = VisionUtil.makeSkewedImagePts2f(expandedTargetGeometryMeters, newCamRVec,
+                        newCamTVec, tallKMat, newWorldRMat);
                 // points projected from pnp
                 for (Point pt : skewedImagePts2f.toList()) {
                     Imgproc.circle(untiltedCameraView,
@@ -810,12 +688,6 @@ public class TestPnP {
                 double ptiltCam = eulerCam.get(0, 0)[0];
                 double ppanCam = eulerCam.get(1, 0)[0];
                 double pscrewCam = eulerCam.get(2, 0)[0];
-                // double xAbsErr = Math.abs(dxWorld - pdxworld);
-                // double yAbsErr = Math.abs(dyWorld - pdyworld);
-                // double zAbsErr = Math.abs(dzWorld - pdzworld);
-                // if (xAbsErr < maxAbsErr && yAbsErr < maxAbsErr && zAbsErr < maxAbsErr)
-                // continue;
-                // this is a bad case, so store it
 
                 Imgcodecs.imwrite(String.format("C:\\Users\\joelt\\Desktop\\pics\\target-%d-annotated.png", idx),
                         untiltedCameraView);
@@ -824,17 +696,17 @@ public class TestPnP {
                                 + " %f, %f, %f, %f, %f, "
                                 + " %f, %f, %f, %f, %f, "
                                 + " %f, %f, %f, %f, %f, "
-                                + " %f, %f, %f, %f, %f, "
-                                + " %f, %f, %f\n",
+                                + " %f, %f\n",
                         idx, dxWorld, dyWorld, dzWorld, dxCam,
                         dyCam, dzCam, pan, tilt, 0.0,
                         pdxworld, pdyworld, pdzworld, ppanCam, ptiltCam,
-                        pscrewCam, pdxCam, pdyCam, pdzCam, pdxCamDp,
-                        pdyCamDp, pdzCamDp, pdxWorldDp, pdyWorldDp, pdzWorldDp,
+                        pscrewCam, pdxCam, pdyCam, pdzCam,
                         ppanWorld, ptiltWorld, pscrewWorld);
             }
         }
     }
+
+
 
     public static void debugmsg(String msg) {
         if (!DEBUG)
