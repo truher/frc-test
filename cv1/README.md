@@ -425,16 +425,16 @@ worse X/Y accuracy, though still excellent bearing/range accuracy.
 I also tried a 2d adaptation of the Omeyama method, which yields essentially the same result as the 2d solver, above.
 
 
-# Alternative: Including Y
+# Including Y
 
 As an aside, instead of dropping Y, we could take advantage of the target geometry where Y is a constant, and we'd have this:
 
 
 $$
 s
-\begin{pmatrix}u\\
-u'\\
-1\end{pmatrix}=
+\begin{pmatrix}
+u \\\ u' \\\ v \\\ 1
+\end{pmatrix}=
 \begin{bmatrix}
 f & 0 & 0 & c_x \\
 0 & f & 0 & c_x \\
@@ -462,4 +462,142 @@ $$
 
 I'm not sure that would be better, but I could measure that.
 
-Also, a note about Github LaTeX: equals sign on a line by itself is interpreted as "make the preceding line a heading" which breaks everything.
+# Constrained 3d solver
+
+Rather than try to use an overly-general canned solver, or split up Y and XZ, we could solve the full system with constraints.
+
+The system for both eyes including Y:
+
+
+$$
+s
+\begin{pmatrix}
+u \\\ u' \\\ v \\\ 1
+\end{pmatrix}=
+\begin{bmatrix}
+f & 0 & 0 & c_x \\
+0 & f & 0 & c_x \\
+0 & 0 & f & c_y \\
+0 & 0 & 0 & 1
+\end{bmatrix}
+\times
+\begin{bmatrix}
+1 & 0 & 0 & 0 & 0 \\
+0 & 1 & 0 & 0 & 0 \\
+0 & 0 & 1 & 0 & 0 \\
+0 & 0 & 0 & 1 & 0
+\end{bmatrix}
+\times
+\begin{bmatrix}
+1 & 0 & 0 & \frac{b}{2} \\
+1 & 0 & 0 & -\frac{b}{2} \\
+0 & 1 & 0 & 0 \\
+0 & 0 & 1 & 0 \\
+0 & 0 & 0 & 1
+\end{bmatrix}
+\times
+\begin{bmatrix}
+r_{11} & r_{12} & r_{13} & t_x\\
+r_{21} & r_{22} & r_{23} & t_y\\
+r_{31} & r_{32} & r_{33} & t_z\\
+0    & 0    & 0    & 1
+\end{bmatrix}
+\times
+\begin{pmatrix}
+X \\\ Y \\\ Z \\\ 1
+\end{pmatrix}
+$$
+
+Let's make that middle thing square:
+
+
+$$
+s
+\begin{pmatrix}
+u \\\ u' \\\ v \\\ 1
+\end{pmatrix}=
+\begin{bmatrix}
+f & 0 & 0 & c_x \\
+0 & f & 0 & c_x \\
+0 & 0 & f & c_y \\
+0 & 0 & 0 & 1
+\end{bmatrix}
+\times
+\begin{bmatrix}
+1 & 0 & 0 & \frac{b}{2} \\
+1 & 0 & 0 & -\frac{b}{2} \\
+0 & 1 & 0 & 0 \\
+0 & 0 & 1 & 0
+\end{bmatrix}
+\times
+\begin{bmatrix}
+r_{11} & r_{12} & r_{13} & t_x\\
+r_{21} & r_{22} & r_{23} & t_y\\
+r_{31} & r_{32} & r_{33} & t_z\\
+0    & 0    & 0    & 1
+\end{bmatrix}
+\times
+\begin{pmatrix}
+X \\\ Y \\\ Z \\\ 1
+\end{pmatrix}
+$$
+
+Then we can invert everything and rearrange as Ax=b:
+
+
+$$
+\begin{bmatrix}
+r_{11} & r_{12} & r_{13} & t_x\\
+r_{21} & r_{22} & r_{23} & t_y\\
+r_{31} & r_{32} & r_{33} & t_z\\
+0    & 0    & 0    & 1
+\end{bmatrix}
+\times
+\begin{pmatrix}
+X \\\ Y \\\ Z \\\ 1
+\end{pmatrix}=
+s
+\begin{bmatrix}
+1 & 0 & 0 & \frac{b}{2} \\
+1 & 0 & 0 & -\frac{b}{2} \\
+0 & 1 & 0 & 0 \\
+0 & 0 & 1 & 0
+\end{bmatrix}^{-1}
+\times
+\begin{bmatrix}
+f & 0 & 0 & c_x \\
+0 & f & 0 & c_x \\
+0 & 0 & f & c_y \\
+0 & 0 & 0 & 1
+\end{bmatrix}^{-1}
+\times
+\begin{pmatrix}
+u \\\ u' \\\ v \\\ 1
+\end{pmatrix}
+$$
+
+To solve this system, find the difference in $x$ and $b$ centroids: this is the $t$ vector.
+Then measure the angle in the XZ plane of each point with respect to its centroid.
+The average difference in angle between $x$ and $b$ is the rotation $R$.
+
+This method yielded results about the same as the other methods above: unusable past a few meters,
+especially directly in front of the target, and the reason is the same: the camera view of the
+target is the cosine, which has no sensitivity around zero.
+
+# A Good Solution: Reference the IMU
+
+The cartesian accuracy is low, but the camera-centric polar accuracy is extremely good, especially
+the relative-bearing accuracy, which makes sense: relative bearing is the most direct measurement
+a camera can make.  How can we take advantage of that accuracy?
+
+Instead of deriving the heading from the camera, we can use the IMU heading.  The solution is
+literally to use the above method but replace the angle differencing with the IMU heading.  The
+difference in centroids is a good XZ estimate in camera coordinates, and the IMU heading permits
+accurate transformation into world coordinates.
+
+The common FRC IMUs claim about 1.5 degree accuracy.  The LIS3MDL sensor I've been using is
+quite a bit better, about 0.5 degrees.  Averaging down to 10 Hz yields a cartesian RMSE of 4 cm:
+
+<img src="grid2.svg"/>
+
+These results are acceptable for global navigation.
