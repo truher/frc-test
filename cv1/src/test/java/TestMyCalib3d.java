@@ -22,7 +22,7 @@ public class TestMyCalib3d {
      * This is a translation of the C++ test
      * calib3d/test/test_affine3d_estimator.cpp
      */
-    @Test
+   // @Test
     public void testCalib3d_EstimateAffine3D() { // umeyama_3_pt
 
         // columns = points, like, for the multiplication below

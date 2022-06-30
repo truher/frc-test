@@ -31,4 +31,10 @@ public class BinocularConstrainedPoseEstimator implements PoseEstimator {
         return null;
     }
 
+    @Override
+    public double[] getXOffsets() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
 }

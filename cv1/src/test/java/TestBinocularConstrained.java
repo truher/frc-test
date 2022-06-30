@@ -29,7 +29,7 @@ public class TestBinocularConstrained {
     static final int LEVEL = 1;
     static final double DELTA = 0.001;
 
-    @Test
+    //@Test
     public void testHomogeneous() {
         MatOfPoint3f targetGeometryMeters = VisionUtil.makeTarget(-0.2, -0.1, 0.2, 0.0);
         debug(1, "target", targetGeometryMeters);
@@ -38,7 +38,7 @@ public class TestBinocularConstrained {
         System.out.println(XMat.size());
     }
 
-    @Test
+    //@Test
     public void testReproject() {
         Random rand = new Random(42);
         final double f = 985; // 2.8mm lens
@@ -265,7 +265,7 @@ public class TestBinocularConstrained {
 
 
 
-                    
+
 
                     double pxPos = pworldTVec.get(0, 0)[0];
                     double pyPos = pworldTVec.get(1, 0)[0];

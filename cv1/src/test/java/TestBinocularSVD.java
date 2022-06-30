@@ -69,7 +69,7 @@ public class TestBinocularSVD {
     /**
      * this is for the arducam OV9281 default M12 lens
      */
-    @Test
+    //@Test
     public void testFOV() {
         // 2.1mm lens 81 degree HFOV f=750
         // 2.8mm lens 66 degree HFOV f=985 (default)
@@ -98,7 +98,7 @@ public class TestBinocularSVD {
 
     }
 
-    @Test
+   // @Test
     public void testSolve() {
         Random rand = new Random(42);
         targetGeometryMeters = VisionUtil.makeTarget(-0.2, -0.1, 0.2, 0.0);
@@ -242,7 +242,7 @@ public class TestBinocularSVD {
 
     }
 
-    @Test
+    //@Test
     public void testUmeyama() {
         Random rand = new Random(42);
         targetGeometryMeters = VisionUtil.makeTarget(-0.2, -0.1, 0.2, 0.0);

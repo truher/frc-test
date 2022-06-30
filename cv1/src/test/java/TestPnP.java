@@ -39,7 +39,7 @@ public class TestPnP {
      * Try using {@link Calib3d#solvePnP()}. This takes some 3d points and projects
      * them into a single camera, then reverses to get the pose of the camera.
      */
-    @Test
+   // @Test
     public void testSolvePnP() {
         // known "world" geometry
         MatOfPoint3f objectPts3f = new MatOfPoint3f(
@@ -109,7 +109,7 @@ public class TestPnP {
      * Generate an image representing the target, extract contours from it,
      * and then use {@link Calib3d#solvePnP()} to find the camera pose.
      */
-    @Test
+   // @Test
     public void testSolvePnPFromContours() {
 
         // these numbers are big because if they're 1 then the warped image is all
@@ -258,7 +258,7 @@ public class TestPnP {
      * Start with world coordinates, generate images, then generate poses.
      * seems like it works within ~4 in world units.
      */
-    @Test
+   // @Test
     public void testPoseFromImageFromWorldCoords() {
         // camera is at 2,0,-4, pointing 45 degrees to the left (which means negative
         // rotation)
@@ -420,7 +420,7 @@ public class TestPnP {
     /**
      * Try many world locations; generate an image, extract pose from it.
      */
-    @Test
+   // @Test
     public void testSolvePnPGrid() {
         Size dsize = new Size(1920, 1080);
         double f = 600.0;

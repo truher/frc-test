@@ -22,7 +22,7 @@ public class TestVisionUtil {
     /**
      * Verify one case for {@link VisionUtil#combineRotations()}.
      */
-    @Test
+    //@Test
     public void testCombineRotations() {
         Mat pan = Mat.zeros(3, 1, CvType.CV_64F);
         pan.put(0, 0, 0.0, -0.5, 0.0); // pan to right, world to left, so negative
@@ -41,7 +41,7 @@ public class TestVisionUtil {
     /**
      * Verify one case for {@link VisionUtil#rotm2euler()}.
      */
-    @Test
+   // @Test
     public void testRotm2euler() {
         Mat pan = Mat.zeros(3, 1, CvType.CV_64F);
         pan.put(0, 0, 0.0, -0.7854, 0.0); // pan 45deg to right, world to left, so

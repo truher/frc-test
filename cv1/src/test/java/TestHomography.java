@@ -32,7 +32,7 @@ public class TestHomography {
     /**
      * Try many world locations; generate an image, extract pose from it.
      */
-    @Test
+    //@Test
     public void testHomography() {
         Size dsize = new Size(1920, 1080);
         double f = 600.0;

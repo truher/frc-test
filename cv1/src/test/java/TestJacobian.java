@@ -33,7 +33,7 @@ public class TestJacobian {
     /**
      * Look at the output Jacobian for the {@link Calib3d#matMulDeriv()}.
      */
-    @Test
+   // @Test
     public void testMatMulJacobian() {
         Mat A = Mat.zeros(3, 3, CvType.CV_64F);
         A.put(0, 0,
@@ -56,7 +56,7 @@ public class TestJacobian {
     /**
      * Look at the output Jacobian for the {@link Calib3d#Rodrigues()}.
      */
-    @Test
+    //@Test
     public void testRodriguesJacobian() {
         Mat RV = Mat.zeros(3, 1, CvType.CV_64F);
         RV.put(0, 0, 0, 0.0001, 0.0);
@@ -198,7 +198,7 @@ public class TestJacobian {
     /**
      * try one projection with all the jacobians hooked up.
      */
-    @Test
+   // @Test
     public void testJacobian() {
 
         double scale = 90; // pixels per meter in the xy projection

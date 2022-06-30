@@ -2,10 +2,15 @@ package vision;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.Random;
 
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
+import org.opencv.core.MatOfDouble;
+import org.opencv.core.MatOfPoint2f;
+import org.opencv.core.MatOfPoint3f;
 
 /**
  * Evaluate a bunch of pose estimators, do parameter studies, etc.
@@ -22,8 +27,32 @@ public class PoseEstimatorHarness {
 
     public void run() {
         for (PoseEstimator e : poseEstimators) {
+            Random rand = new Random(42);
             Mat[] kMat = e.getIntrinsicMatrices();
-            Mat[] dMat = e.getDistortionMatrices();
+            MatOfDouble[] dMat = e.getDistortionMatrices();
+            double[] b = e.getXOffsets();
+            {
+                Objects.requireNonNull(kMat);
+                if (kMat.length < 1)
+                    throw new IllegalArgumentException();
+
+                Objects.requireNonNull(dMat);
+                if (dMat.length < 1)
+                    throw new IllegalArgumentException();
+                if (dMat.length != kMat.length)
+                    throw new IllegalArgumentException();
+
+                Objects.requireNonNull(b);
+                if (b.length < 1)
+                    throw new IllegalArgumentException();
+                if (b.length != dMat.length)
+                    throw new IllegalArgumentException();
+
+            }
+
+            MatOfPoint3f targetGeometryMeters = VisionUtil.makeTarget(-0.25, 0, 0.25, -0.5);
+            int pointMultiplier = 1;
+            double noisePixels = 1;
 
             long startTime = System.currentTimeMillis();
             int idx = 0;
@@ -40,12 +69,33 @@ public class PoseEstimatorHarness {
             for (double pan = -3 * Math.PI / 8; pan <= 3 * Math.PI / 8; pan += Math.PI / 8) {
                 for (double zPos = -10.0; zPos <= -1.0; zPos += 1.0) {
                     for (double xPos = -5; xPos <= 5; xPos += 1.0) {
-
                         double navBearing = Math.atan2(xPos, -zPos);
                         double relativeBearing = navBearing + pan;
                         double range = Math.sqrt(xPos * xPos + zPos * zPos);
 
-                        Mat transform = e.getPose(0, new Mat[0]);
+                        // don't bother with oblique angles, the projection is wrong for these cases.
+                        if (Math.abs(relativeBearing) > Math.PI / 2)
+                            continue;
+
+                        // make some images here
+                        Mat[] images = new Mat[kMat.length];
+                        for (int cameraIdx = 0; cameraIdx < kMat.length; ++cameraIdx) {
+                            // make transform from world origin to camera center
+                            Mat worldToCameraHomogeneous = VisionUtil.makeWorldToCameraHomogeneous(pan, xPos, yPos,
+                                    zPos);
+                            Mat worldToLeftEye = VisionUtil.translateX(worldToCameraHomogeneous, b[cameraIdx]);
+                            MatOfPoint2f leftPts = VisionUtil.imagePoints(kMat[cameraIdx], dMat[cameraIdx],
+                                    targetGeometryMeters,
+                                    worldToLeftEye,
+                                    pointMultiplier,
+                                    noisePixels, rand);
+                        }
+
+                        // if the target isn't in the viewport, skip
+
+                        ++idx;
+
+                        Mat transform = e.getPose(pan, new Mat[0]);
 
                         Mat rmat = transform.submat(0, 3, 0, 3);
 
@@ -105,7 +155,11 @@ public class PoseEstimatorHarness {
             System.out.printf("rangeRMSE %f\n", rangeRMSE);
 
             long endTime = System.currentTimeMillis();
-            System.out.println(endTime - startTime);
+            long runTimeMs = endTime - startTime;
+            System.out.printf("runtime ms %d\n", runTimeMs);
+            double runTimePerRowMs = ((double) runTimeMs) / idx;
+            System.out.printf("runtime per row %f\n", runTimePerRowMs);
+            System.out.printf("rate hz %f", 1000 / runTimePerRowMs);
         }
 
     }
