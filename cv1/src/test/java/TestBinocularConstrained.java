@@ -84,6 +84,9 @@ public class TestBinocularConstrained {
 
                 for (double xPos = -5; xPos <= 5; xPos += 1.0) {
 
+
+
+
                     double navBearing = Math.atan2(xPos, -zPos);
                     double relativeBearing = navBearing + pan;
                     double range = Math.sqrt(xPos * xPos + zPos * zPos);
@@ -259,6 +262,10 @@ public class TestBinocularConstrained {
                     debug(1, "rmat", rmat);
                     Core.gemm(rmat.t(), cameraTVec, -1.0, new Mat(), 0.0, pworldTVec);
                     debug(1, "pWorldTVec", pworldTVec);
+
+
+
+                    
 
                     double pxPos = pworldTVec.get(0, 0)[0];
                     double pyPos = pworldTVec.get(1, 0)[0];
