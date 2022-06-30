@@ -11,6 +11,8 @@ import org.opencv.core.Mat;
 import org.opencv.core.MatOfDouble;
 import org.opencv.core.MatOfPoint2f;
 import org.opencv.core.MatOfPoint3f;
+import org.opencv.core.Rect;
+import org.opencv.core.Size;
 
 /**
  * Evaluate a bunch of pose estimators, do parameter studies, etc.
@@ -23,14 +25,18 @@ public class PoseEstimatorHarness {
     public PoseEstimatorHarness() {
         poseEstimators = new ArrayList<PoseEstimator>();
         poseEstimators.add(new BadPoseEstimator());
+        poseEstimators.add(new BinocularConstrainedPoseEstimator());
     }
 
     public void run() {
         for (PoseEstimator e : poseEstimators) {
             Random rand = new Random(42);
-            Mat[] kMat = e.getIntrinsicMatrices();
-            MatOfDouble[] dMat = e.getDistortionMatrices();
-            double[] b = e.getXOffsets();
+            final String name = e.getName();
+            final String description = e.getDescription();
+            final Mat[] kMat = e.getIntrinsicMatrices();
+            final MatOfDouble[] dMat = e.getDistortionMatrices();
+            final double[] b = e.getXOffsets();
+            final Size[] sizes = e.getSizes();
             {
                 Objects.requireNonNull(kMat);
                 if (kMat.length < 1)
@@ -53,6 +59,7 @@ public class PoseEstimatorHarness {
             MatOfPoint3f targetGeometryMeters = VisionUtil.makeTarget(-0.25, 0, 0.25, -0.5);
             int pointMultiplier = 1;
             double noisePixels = 1;
+            MatOfPoint3f targetPointsMultiplied = VisionUtil.duplicatePoints(targetGeometryMeters, pointMultiplier);
 
             long startTime = System.currentTimeMillis();
             int idx = 0;
@@ -68,7 +75,7 @@ public class PoseEstimatorHarness {
                     "idx, pan, xpos, ypos, zpos, rbear, range, ppan, pxpos, pypos, pzpos, prbear, prange, panErr, xErr, zErr, relativeBearingErr, rangeErr");
             for (double pan = -3 * Math.PI / 8; pan <= 3 * Math.PI / 8; pan += Math.PI / 8) {
                 for (double zPos = -10.0; zPos <= -1.0; zPos += 1.0) {
-                    for (double xPos = -5; xPos <= 5; xPos += 1.0) {
+                    pose: for (double xPos = -5; xPos <= 5; xPos += 1.0) {
                         double navBearing = Math.atan2(xPos, -zPos);
                         double relativeBearing = navBearing + pan;
                         double range = Math.sqrt(xPos * xPos + zPos * zPos);
@@ -77,8 +84,7 @@ public class PoseEstimatorHarness {
                         if (Math.abs(relativeBearing) > Math.PI / 2)
                             continue;
 
-                        // make some images here
-                        Mat[] images = new Mat[kMat.length];
+                        MatOfPoint2f[] imagePoints = new MatOfPoint2f[kMat.length];
                         for (int cameraIdx = 0; cameraIdx < kMat.length; ++cameraIdx) {
                             // make transform from world origin to camera center
                             Mat worldToCameraHomogeneous = VisionUtil.makeWorldToCameraHomogeneous(pan, xPos, yPos,
@@ -89,13 +95,22 @@ public class PoseEstimatorHarness {
                                     worldToLeftEye,
                                     pointMultiplier,
                                     noisePixels, rand);
+                            Size size = sizes[cameraIdx];
+                            final Rect viewport = new Rect(0, 0, (int) size.width, (int) size.height);
+                            if (!VisionUtil.inViewport(leftPts, viewport))
+                                continue pose;
+                            VisionUtil.writePng(leftPts, (int) size.width, (int) size.height,
+                                    String.format("C:\\Users\\joelt\\Desktop\\pics\\img-%s-%d-%d.png", name, idx,
+                                            cameraIdx));
+                            imagePoints[cameraIdx] = leftPts;
+
                         }
 
                         // if the target isn't in the viewport, skip
 
                         ++idx;
 
-                        Mat transform = e.getPose(pan, new Mat[0]);
+                        Mat transform = e.getPose(pan, targetPointsMultiplied, imagePoints);
 
                         Mat rmat = transform.submat(0, 3, 0, 3);
 
@@ -148,6 +163,9 @@ public class PoseEstimatorHarness {
             double zRMSE = Math.sqrt(zErrSquareSum / idx);
             double relativeBearingRMSE = Math.sqrt(relativeBearingErrSquareSum / idx);
             double rangeRMSE = Math.sqrt(rangeErrSquareSum / idx);
+            System.out.println("===========================");
+            System.out.println(name);
+            System.out.println(description);
             System.out.printf("panRMSE %f\n", panRMSE);
             System.out.printf("xRMSE %f\n", xRMSE);
             System.out.printf("zRMSE %f\n", zRMSE);
@@ -159,7 +177,8 @@ public class PoseEstimatorHarness {
             System.out.printf("runtime ms %d\n", runTimeMs);
             double runTimePerRowMs = ((double) runTimeMs) / idx;
             System.out.printf("runtime per row %f\n", runTimePerRowMs);
-            System.out.printf("rate hz %f", 1000 / runTimePerRowMs);
+            System.out.printf("rate hz %f\n", 1000 / runTimePerRowMs);
+            System.out.println("===========================");
         }
 
     }

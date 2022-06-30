@@ -1,10 +1,10 @@
 import static org.junit.Assert.assertEquals;
 
-import org.junit.Test;
 import org.opencv.calib3d.Calib3d;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
+import org.opencv.core.MatOfPoint3f;
 
 import vision.VisionUtil;
 
@@ -19,10 +19,19 @@ public class TestVisionUtil {
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
     }
 
+    // @Test
+    public void testHomogeneous() {
+        MatOfPoint3f targetGeometryMeters = VisionUtil.makeTarget(-0.2, -0.1, 0.2, 0.0);
+        debug("target", targetGeometryMeters);
+        Mat XMat = VisionUtil.makeXMat3d(targetGeometryMeters);
+        debug("homogeneous target", XMat);
+        System.out.println(XMat.size());
+    }
+
     /**
      * Verify one case for {@link VisionUtil#combineRotations()}.
      */
-    //@Test
+    // @Test
     public void testCombineRotations() {
         Mat pan = Mat.zeros(3, 1, CvType.CV_64F);
         pan.put(0, 0, 0.0, -0.5, 0.0); // pan to right, world to left, so negative
@@ -41,7 +50,7 @@ public class TestVisionUtil {
     /**
      * Verify one case for {@link VisionUtil#rotm2euler()}.
      */
-   // @Test
+    // @Test
     public void testRotm2euler() {
         Mat pan = Mat.zeros(3, 1, CvType.CV_64F);
         pan.put(0, 0, 0.0, -0.7854, 0.0); // pan 45deg to right, world to left, so

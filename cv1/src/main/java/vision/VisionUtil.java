@@ -30,6 +30,164 @@ public abstract class VisionUtil {
     static final boolean DEBUG = false;
     static final int LEVEL = 1;
 
+    public static double averageAngularError(Mat a, Mat b) {
+        // a and b are centered around the origin and the same size
+        if (a.rows() != b.rows())
+            throw new IllegalArgumentException();
+        if (a.cols() != b.cols())
+            throw new IllegalArgumentException();
+        debug(1, "a", a);
+        debug(1, "b", b);
+        for (int i = 0; i < a.rows(); ++i) {
+            Mat avec = a.row(i);
+            Mat bvec = b.row(i);
+            debug(1, "avec", avec);
+            debug(1, "bvec", bvec);
+        }
+        Mat ax = a.col(0);
+        Mat az = a.col(2);
+        debug(1, "ax", ax);
+        debug(1, "az", az);
+
+        Mat amag = new Mat();
+        Mat aang = new Mat();
+        Core.cartToPolar(ax, az, amag, aang);
+        debug(1, "a magnitude", amag);
+        debug(1, "a angle", aang);
+
+        Mat bx = b.col(0);
+        Mat bz = b.col(2);
+        debug(1, "bx", bx);
+        debug(1, "bz", bz);
+
+        Mat bmag = new Mat();
+        Mat bang = new Mat();
+        Core.cartToPolar(bx, bz, bmag, bang);
+        debug(1, "b magnitude", bmag);
+        debug(1, "b angle", bang);
+
+        Mat diff = new Mat();
+        Core.subtract(aang, bang, diff);
+        debug(1, "diff", diff);
+        for (int i = 0; i < diff.rows(); ++i) {
+            double val = diff.get(i, 0)[0];
+            if (val > Math.PI) {
+                val -= 2 * Math.PI;
+            } else if (val < -Math.PI) {
+                val += 2 * Math.PI;
+            }
+            diff.put(i, 0, val);
+        }
+        debug(1, "diff", diff);
+        return Core.mean(diff).val[0];
+    }
+
+    public static Mat makeBMat3d(MatOfPoint2f leftPts, MatOfPoint2f rightPts, double f, double cx, double cy,
+            double b) {
+        // To solve Ax=b triangulation (Ax=M-1T-1u), first make u: (u,u',v,1):
+        Mat uMat = makeUMat3d(leftPts, rightPts);
+
+        // and the inverse transforms we're going to apply:
+        Mat Minv = makeMInv3d(f, cx, cy);
+        Mat Tinv = makeTInv3d(b);
+
+        // apply the inverses to the observations (the "u") in the correct order:
+        Mat MinvU = new Mat();
+        Core.gemm(Minv, uMat, 1.0, new Mat(), 0.0, MinvU);
+        Mat bMat = new Mat();
+        Core.gemm(Tinv, MinvU, 1.0, new Mat(), 0.0, bMat);
+        normalize3d(bMat);
+        debug(0, "bMat normalized", bMat);
+        return bMat;
+    }
+
+    /**
+     * this just returns a homogeneous version of the argument, note points are in
+     * rows in both input and output.
+     */
+    public static Mat makeXMat3d(MatOfPoint3f targetPointsMultiplied) {
+        Mat dst = new Mat();
+        Calib3d.convertPointsToHomogeneous(targetPointsMultiplied, dst);
+        dst = dst.reshape(1);
+        dst.convertTo(dst, CvType.CV_64F);
+        return dst;
+    }
+
+    /**
+     * for horizontal binocular, v is the same in both eyes, so use (u, u',
+     * (v+v')/2, 1).
+     * Note inputs (leftPts) have points in rows; this method returns points in
+     * columns.
+     */
+    static Mat makeUMat3d(MatOfPoint2f leftPts, MatOfPoint2f rightPts) {
+        debug(1, "left", leftPts);
+        debug(1, "right", rightPts);
+        // System.out.println(leftPts.size());
+        Mat uMat = Mat.zeros(4, leftPts.toList().size(), CvType.CV_64F);
+        for (int i = 0; i < leftPts.toList().size(); ++i) {
+            double u = leftPts.get(i, 0)[0];
+            double u1 = rightPts.get(i, 0)[0];
+            double v = leftPts.get(i, 0)[1];
+            double v1 = rightPts.get(i, 0)[1];
+
+            uMat.put(0, i, u);
+            uMat.put(1, i, u1);
+            uMat.put(2, i, (v + v1) / 2);
+            uMat.put(3, i, 1.0);
+        }
+        debug(0, "uMat", uMat);
+        return uMat;
+    }
+
+    /**
+     * inverse camera matrix with two u rows for two eyes
+     */
+    static Mat makeMInv3d(double f, double cx, double cy) {
+        Mat M = Mat.zeros(4, 4, CvType.CV_64F);
+        M.put(0, 0,
+                f, 0, 0, cx,
+                0, f, 0, cx,
+                0, 0, f, cy,
+                0, 0, 0, 1);
+        debug(0, "M", M);
+        Mat Minv = M.inv();
+        debug(0, "Minv", Minv);
+        return Minv;
+    }
+
+    /**
+     * inverse translation and projection for two eyes (horizontal)
+     */
+    public static Mat makeTInv3d(double b) {
+        Mat T = Mat.zeros(4, 4, CvType.CV_64F);
+        T.put(0, 0,
+                1, 0, 0, b / 2,
+                1, 0, 0, -b / 2,
+                0, 1, 0, 0,
+                0, 0, 1, 0);
+        debug(0, "T", T);
+        Mat Tinv = T.inv();
+        debug(0, "Tinv", Tinv);
+        return Tinv;
+    }
+
+    /**
+     * Scale so that each column looks like a homogeneous 3d vector, i.e. with 1 in
+     * the last place.
+     */
+    public static void normalize3d(Mat m) {
+        for (int col = 0; col < m.cols(); ++col) {
+            double xval = m.get(0, col)[0];
+            double yval = m.get(1, col)[0];
+            double zval = m.get(2, col)[0];
+            double scaleVal = m.get(3, col)[0];
+            m.put(0, col, xval / scaleVal);
+            m.put(1, col, yval / scaleVal);
+            m.put(2, col, zval / scaleVal);
+            m.put(3, col, 1.0);
+        }
+    }
+
     /**
      * return the Tait-Bryan (ZYX) "Euler" angles for the supplied rotation matrix.
      * 
@@ -589,7 +747,8 @@ public abstract class VisionUtil {
      * jacobian of the projection transformed to world coordinates but it isn't
      * returned.
      */
-    public static MatOfPoint2f makeSkewedImagePts2f(MatOfPoint3f expandedTargetGeometryMeters, Mat newCamRVec, Mat newCamTVec,
+    public static MatOfPoint2f makeSkewedImagePts2f(MatOfPoint3f expandedTargetGeometryMeters, Mat newCamRVec,
+            Mat newCamTVec,
             Mat tallKMat, Mat newWorldRMat) {
         MatOfPoint2f skewedImagePts2f = new MatOfPoint2f();
         Mat jacobian = new Mat();

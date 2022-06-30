@@ -3,11 +3,23 @@ package vision;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfDouble;
+import org.opencv.core.MatOfPoint2f;
+import org.opencv.core.MatOfPoint3f;
+import org.opencv.core.Size;
 
 /**
  * Always returns the origin.
  */
 public class BadPoseEstimator implements PoseEstimator {
+    @Override
+    public String getName() {
+        return "BadPoseEstimator";
+    }
+
+    @Override
+    public String getDescription() {
+        return "Always returns the origin.";
+    }
 
     @Override
     public MatOfDouble[] getDistortionMatrices() {
@@ -26,7 +38,7 @@ public class BadPoseEstimator implements PoseEstimator {
     }
 
     @Override
-    public Mat getPose(double heading, Mat[] images) {
+    public Mat getPose(double heading, MatOfPoint3f targetPoints, MatOfPoint2f[] imagePoints) {
         Mat pose = Mat.zeros(3, 4, CvType.CV_64F);
         pose.put(0, 0,
                 1, 0, 0, 0,
@@ -38,6 +50,14 @@ public class BadPoseEstimator implements PoseEstimator {
     @Override
     public double[] getXOffsets() {
         return new double[] { 0 };
+    }
+
+    @Override
+    public Size[] getSizes() {
+        return new Size[] {
+                new Size(1000, 1000),
+                new Size(1000, 1000)
+        };
     }
 
 }

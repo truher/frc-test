@@ -5,7 +5,6 @@ import java.util.Random;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 
-import org.junit.Test;
 import org.opencv.calib3d.Calib3d;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
