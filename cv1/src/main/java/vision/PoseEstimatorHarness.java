@@ -21,18 +21,56 @@ public class PoseEstimatorHarness {
     static final boolean DEBUG = false;
     static final int LEVEL = 1;
     public final List<PoseEstimator> poseEstimators;
+    final boolean showGrid = false;
 
     public PoseEstimatorHarness() {
+        // these are ranked worst to best
+
         poseEstimators = new ArrayList<PoseEstimator>();
-        poseEstimators.add(new BadPoseEstimator());
-        poseEstimators.add(new BinocularConstrainedPoseEstimator());
+
+        // does nothing
+        poseEstimators.add(new ConstantPoseEstimator());
+
+        // broken
+        // poseEstimators.add(new BinocularTriangulateUmeyamaPoseEstimator());
+
+        // broken
+        // poseEstimators.add(new BinocularTriangulateSolvePoseEstimator());
+
+        // pretty good close up, not good in x far away
+        poseEstimators.add(new MonocularPoseEstimator(false));
+
+        // works ok
+        poseEstimators.add(new BinocularConstrainedPoseEstimator(false));
+
+        // ok close up
+        poseEstimators.add(new Binocular2dSVDPoseEstimator(false));
+
+        // works pretty well within a few meters.
+        poseEstimators.add(new Binocular2dUmeyamaPoseEstimator(false));
+
+        // good, sensitive in z, unsurprisingly
+        poseEstimators.add(new MonocularPoseEstimator(true));
+
+        // pretty awesome
+        poseEstimators.add(new Binocular2dSVDPoseEstimator(true));
+
+        // awesome
+        poseEstimators.add(new Binocular2dUmeyamaPoseEstimator(true));
+
+        // awesome
+        poseEstimators.add(new BinocularConstrainedPoseEstimator(true));
     }
 
     public void run() {
+        System.out.println("stderr for each estimator...");
+        System.out.printf("%40s %10s %10s %10s %10s %10s\n",
+                "name", "heading", "X", "Z", "bearing", "range");
+
         for (PoseEstimator e : poseEstimators) {
             Random rand = new Random(42);
             final String name = e.getName();
-            final String description = e.getDescription();
+            // final String description = e.getDescription();
             final Mat[] kMat = e.getIntrinsicMatrices();
             final MatOfDouble[] dMat = e.getDistortionMatrices();
             final double[] b = e.getXOffsets();
@@ -57,11 +95,16 @@ public class PoseEstimatorHarness {
             }
 
             MatOfPoint3f targetGeometryMeters = VisionUtil.makeTarget(-0.25, 0, 0.25, -0.5);
-            int pointMultiplier = 1;
-            double noisePixels = 1;
+            // 50fps video => 10hz output = 5x averaging
+            int pointMultiplier = 5;
+            double noisePixels = 2;
+            // pigeon/navx claim 1.5 degrees for fused output
+            // final double gyroNoise = 0.025;
+            // LIS3MDL claims about 1% thermal noise at 80hz
+            // average 8 samples = 1/sqrt(8)
+            double gyroNoise = 0.0035; //
             MatOfPoint3f targetPointsMultiplied = VisionUtil.duplicatePoints(targetGeometryMeters, pointMultiplier);
 
-            long startTime = System.currentTimeMillis();
             int idx = 0;
             double yPos = 0;
 
@@ -71,11 +114,15 @@ public class PoseEstimatorHarness {
             double relativeBearingErrSquareSum = 0.0;
             double rangeErrSquareSum = 0.0;
 
-            System.out.println(
-                    "idx, pan, xpos, ypos, zpos, rbear, range, ppan, pxpos, pypos, pzpos, prbear, prange, panErr, xErr, zErr, relativeBearingErr, rangeErr");
+            if (showGrid)
+                System.out.println(
+                        "idx, pan, xpos, ypos, zpos, rbear, range, ppan, pxpos, pypos, pzpos, prbear, prange, panErr, xErr, zErr, relativeBearingErr, rangeErr");
             for (double pan = -3 * Math.PI / 8; pan <= 3 * Math.PI / 8; pan += Math.PI / 8) {
                 for (double zPos = -10.0; zPos <= -1.0; zPos += 1.0) {
                     pose: for (double xPos = -5; xPos <= 5; xPos += 1.0) {
+                        // for (double pan = 0; pan <= 0; pan += Math.PI / 8) {
+                        // for (double zPos = -5.0; zPos <= -5.0; zPos += 1.0) {
+                        // pose: for (double xPos = 0; xPos <= 0; xPos += 1.0) {
                         double navBearing = Math.atan2(xPos, -zPos);
                         double relativeBearing = navBearing + pan;
                         double range = Math.sqrt(xPos * xPos + zPos * zPos);
@@ -87,22 +134,23 @@ public class PoseEstimatorHarness {
                         MatOfPoint2f[] imagePoints = new MatOfPoint2f[kMat.length];
                         for (int cameraIdx = 0; cameraIdx < kMat.length; ++cameraIdx) {
                             // make transform from world origin to camera center
-                            Mat worldToCameraHomogeneous = VisionUtil.makeWorldToCameraHomogeneous(pan, xPos, yPos,
+                            Mat worldToCameraCenterHomogeneous = VisionUtil.makeWorldToCameraHomogeneous(pan, xPos,
+                                    yPos,
                                     zPos);
-                            Mat worldToLeftEye = VisionUtil.translateX(worldToCameraHomogeneous, b[cameraIdx]);
-                            MatOfPoint2f leftPts = VisionUtil.imagePoints(kMat[cameraIdx], dMat[cameraIdx],
+                            Mat worldToEye = VisionUtil.translateX(worldToCameraCenterHomogeneous, b[cameraIdx]);
+                            MatOfPoint2f pts = VisionUtil.imagePoints(kMat[cameraIdx], dMat[cameraIdx],
                                     targetGeometryMeters,
-                                    worldToLeftEye,
+                                    worldToEye,
                                     pointMultiplier,
                                     noisePixels, rand);
                             Size size = sizes[cameraIdx];
                             final Rect viewport = new Rect(0, 0, (int) size.width, (int) size.height);
-                            if (!VisionUtil.inViewport(leftPts, viewport))
+                            if (!VisionUtil.inViewport(pts, viewport))
                                 continue pose;
-                            VisionUtil.writePng(leftPts, (int) size.width, (int) size.height,
+                            VisionUtil.writePng(pts, (int) size.width, (int) size.height,
                                     String.format("C:\\Users\\joelt\\Desktop\\pics\\img-%s-%d-%d.png", name, idx,
                                             cameraIdx));
-                            imagePoints[cameraIdx] = leftPts;
+                            imagePoints[cameraIdx] = pts;
 
                         }
 
@@ -110,7 +158,9 @@ public class PoseEstimatorHarness {
 
                         ++idx;
 
-                        Mat transform = e.getPose(pan, targetPointsMultiplied, imagePoints);
+                        double gyro = pan + (gyroNoise * rand.nextGaussian());
+
+                        Mat transform = e.getPose(gyro, targetPointsMultiplied, imagePoints);
 
                         Mat rmat = transform.submat(0, 3, 0, 3);
 
@@ -148,11 +198,12 @@ public class PoseEstimatorHarness {
                         relativeBearingErrSquareSum += relativeBearingErr * relativeBearingErr;
                         rangeErrSquareSum += rangeErr * rangeErr;
 
-                        System.out.printf(
-                                "%d, %5.2f, %5.2f, %5.2f, %5.2f, %5.2f, %5.2f, %5.2f, %5.2f, %5.2f, %5.2f, %5.2f, %5.2f, %5.2f, %5.2f, %5.2f, %7.4f, %5.2f\n",
-                                idx, pan, xPos, yPos, zPos, relativeBearing, range, ppan, pxPos, pyPos, pzPos,
-                                pRelativeBearing, pRange,
-                                panErr, xErr, zErr, relativeBearingErr, rangeErr);
+                        if (showGrid)
+                            System.out.printf(
+                                    "%d, %5.2f, %5.2f, %5.2f, %5.2f, %5.2f, %5.2f, %5.2f, %5.2f, %5.2f, %5.2f, %5.2f, %5.2f, %5.2f, %5.2f, %5.2f, %7.4f, %5.2f\n",
+                                    idx, pan, xPos, yPos, zPos, relativeBearing, range, ppan, pxPos, pyPos, pzPos,
+                                    pRelativeBearing, pRange,
+                                    panErr, xErr, zErr, relativeBearingErr, rangeErr);
 
                     }
                 }
@@ -163,22 +214,13 @@ public class PoseEstimatorHarness {
             double zRMSE = Math.sqrt(zErrSquareSum / idx);
             double relativeBearingRMSE = Math.sqrt(relativeBearingErrSquareSum / idx);
             double rangeRMSE = Math.sqrt(rangeErrSquareSum / idx);
-            System.out.println("===========================");
-            System.out.println(name);
-            System.out.println(description);
-            System.out.printf("panRMSE %f\n", panRMSE);
-            System.out.printf("xRMSE %f\n", xRMSE);
-            System.out.printf("zRMSE %f\n", zRMSE);
-            System.out.printf("relativeBearingRMSE %f\n", relativeBearingRMSE);
-            System.out.printf("rangeRMSE %f\n", rangeRMSE);
 
-            long endTime = System.currentTimeMillis();
-            long runTimeMs = endTime - startTime;
-            System.out.printf("runtime ms %d\n", runTimeMs);
-            double runTimePerRowMs = ((double) runTimeMs) / idx;
-            System.out.printf("runtime per row %f\n", runTimePerRowMs);
-            System.out.printf("rate hz %f\n", 1000 / runTimePerRowMs);
-            System.out.println("===========================");
+            if (showGrid)
+                System.out.println("===========================");
+            System.out.printf("%40s %10.4f %10.4f %10.4f %10.4f %10.4f\n",
+                    name, panRMSE, xRMSE, zRMSE, relativeBearingRMSE, rangeRMSE);
+            if (showGrid)
+                System.out.println("===========================");
         }
 
     }

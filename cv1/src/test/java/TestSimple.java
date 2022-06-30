@@ -34,9 +34,41 @@ public class TestSimple {
     }
 
     /**
+     * Calculate field of view for various lenses usable with the Arducam OV9281.
+     */
+    // @Test
+    public void testFOV() {
+        // 2.1mm lens 81 degree HFOV f=750
+        // 2.8mm lens 66 degree HFOV f=985 (default)
+        // 3.6mm lens 53 degree HFOV f=1282
+        // 4mm lens 49 degree HFOV f=1400
+        // 6mm lens 33 degree HFOV f=2150
+        // 8mm lens 25 degree HFOV f=2650
+        final double myF = 1282;
+        final int myHeight = 800;
+        final int myWidth = 1280;
+        final Size mySize = new Size(myWidth, myHeight);
+        Mat myKMat = VisionUtil.makeIntrinsicMatrix(myF, mySize);
+        double[] fovx = new double[1];
+        double[] fovy = new double[1];
+        double[] focalLength = new double[1];
+        Point principalPoint = new Point();
+        double[] aspectRatio = new double[1];
+
+        // this is the 1/2.7" OV9281 sensor size in mm
+        double apertureWidth = 5.37;
+        double apertureHeight = 4.04;
+        Calib3d.calibrationMatrixValues(myKMat, mySize, apertureWidth, apertureHeight, fovx, fovy, focalLength,
+                principalPoint, aspectRatio);
+        System.out.printf("fovx %f, fovy %f, focalLength %f, principalPoint x %f y %f, aspectRatio %f\n",
+                fovx[0], fovy[0], focalLength[0], principalPoint.x, principalPoint.y, aspectRatio[0]);
+
+    }
+
+    /**
      * Figure out how to read a file.
      */
-   // @Test
+    // @Test
     public void testFile() throws Exception {
         String foo = new String(getClass().getClassLoader()
                 .getResourceAsStream("readme.md").readAllBytes());
@@ -46,7 +78,7 @@ public class TestSimple {
     /**
      * Figure out how to generate an image and store it.
      */
-   // @Test
+    // @Test
     public void testGeneratedImage() throws Exception {
         Mat matrix = Mat.zeros(512, 512, CvType.CV_8U);
         Imgproc.rectangle(matrix,
@@ -76,7 +108,7 @@ public class TestSimple {
     /**
      * Figure out how to read an image file and find contours in it.
      */
-   // @Test
+    // @Test
     public void testGenerateAndFindContours() throws Exception {
         // (100,100), (200,200)
         // (300,300), (400,400)
@@ -127,7 +159,7 @@ public class TestSimple {
      * Figure out how to project 3d geometry into an image, using camera parameters
      * and pose.
      */
-   // @Test
+    // @Test
     public void testProjection() {
 
         MatOfPoint3f objectPts3f = new MatOfPoint3f(
@@ -161,18 +193,18 @@ public class TestSimple {
     /**
      * Find a way to synthesize the target and also figure out units.
      */
-    //@Test
+    // @Test
     public void testProjection2() {
         Size dsize = new Size(960, 540); // 1/4 of 1080, just to i can see it more easily
         Mat kMat = VisionUtil.makeIntrinsicMatrix(512.0, dsize);
         MatOfDouble dMat = new MatOfDouble(Mat.zeros(4, 1, CvType.CV_64F));
 
         MatOfPoint3f targetGeometryMeters = new MatOfPoint3f(
-            new Point3(1.0, 0.0, 0),
-            new Point3(1.0, 1.0, 0),
-            new Point3(0.0, 1.0, 0),
-            new Point3(0.0, 0.0, 0));
-        
+                new Point3(1.0, 0.0, 0),
+                new Point3(1.0, 1.0, 0),
+                new Point3(0.0, 1.0, 0),
+                new Point3(0.0, 0.0, 0));
+
         debug("target geometry", targetGeometryMeters);
 
         // in meters
@@ -191,7 +223,7 @@ public class TestSimple {
      * Figure out how to project 3d geometry into an image and store it, so
      * I can look at it easily.
      */
-   // @Test
+    // @Test
     public void testProjectAndStore() {
         MatOfPoint3f objectPts3f = new MatOfPoint3f(
                 new Point3(0.0, 1.0, 1.0),
@@ -240,7 +272,7 @@ public class TestSimple {
     /**
      * Another attempt to learn about geometry projection.
      */
-   // @Test
+    // @Test
     public void testProjectAndStore2() {
         MatOfPoint3f objectPts3f = new MatOfPoint3f(
                 // outer

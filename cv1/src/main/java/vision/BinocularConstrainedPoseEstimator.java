@@ -14,7 +14,9 @@ import org.opencv.core.Size;
 
 /**
  * Solves the 3d binocular pose estimation problem constrained to rotation and
- * translation in the XZ plane.
+ * translation in the XZ plane.  The 2d solution is simple: find the centroid of the
+ * projected points; that's the displacement, then rotate, either using the projection
+ * angle or (better) the IMU.
  * 
  * camera/image arrays are {left, right}
  * 
@@ -28,7 +30,23 @@ public class BinocularConstrainedPoseEstimator implements PoseEstimator {
     final int cx = width / 2;
     final int cy = height / 2;
     final Size dsize = new Size(width, height);
-    final double b = 0.4; // camera width meters
+    final double b = 0.8; // camera width meters
+
+    final boolean useIMU;
+
+    public BinocularConstrainedPoseEstimator(boolean useIMU) {
+        this.useIMU = useIMU;
+    }
+
+    @Override
+    public String getName() {
+        return String.format("BinocularConstrainedPoseEstimator%s", useIMU ? "IMU" : "");
+    }
+
+    @Override
+    public String getDescription() {
+        return "2.8mm lenses";
+    }
 
     @Override
     public Mat[] getIntrinsicMatrices() {
@@ -131,14 +149,20 @@ public class BinocularConstrainedPoseEstimator implements PoseEstimator {
         debug(1, "reproj without rotation", reproj.t());
         debug(1, "to centered", to_centered);
 
-        double averageAngleDiff = VisionUtil.averageAngularError(to_centered, reproj.t());
-
-        debug(1, "averageAngleDiff", averageAngleDiff);
+        double rot = 0.0;
+        if (useIMU) {
+            rot = heading;
+        } else {
+            double averageAngleDiff = VisionUtil.averageAngularError(to_centered, reproj.t());
+            debug(1, "averageAngleDiff", averageAngleDiff);
+            rot = averageAngleDiff;
+        }
 
         // fix the transform
 
-        double c = Math.cos(averageAngleDiff);
-        double s = Math.sin(averageAngleDiff);
+        double c = Math.cos(rot);
+        double s = Math.sin(rot);
+
         Mat newR = Mat.zeros(3, 3, CvType.CV_64F);
         newR.put(0, 0,
                 c, 0, -s,
@@ -171,16 +195,6 @@ public class BinocularConstrainedPoseEstimator implements PoseEstimator {
     @Override
     public double[] getXOffsets() {
         return new double[] { b / 2, -b / 2 };
-    }
-
-    @Override
-    public String getName() {
-        return "BinocularConstrainedPoseEstimator";
-    }
-
-    @Override
-    public String getDescription() {
-        return "2.8mm lenses";
     }
 
     @Override

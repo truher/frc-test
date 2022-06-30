@@ -24,6 +24,11 @@ import vision.VisionUtil;
 
 /**
  * This uses {@link Calib3d#solvePnP()} to estimate poses using a single camera.
+ * 
+ * TODO: the remaining stuff to pull out of here is:
+ * 
+ * * un-tilting
+ * * finding contours
  */
 public class TestPnP {
     public static final double DELTA = 0.00001;
@@ -34,80 +39,10 @@ public class TestPnP {
     }
 
     /**
-     * Try using {@link Calib3d#solvePnP()}. This takes some 3d points and projects
-     * them into a single camera, then reverses to get the pose of the camera.
-     */
-   // @Test
-    public void testSolvePnP() {
-        // known "world" geometry
-        MatOfPoint3f objectPts3f = new MatOfPoint3f(
-                new Point3(-20, -10, 0.0),
-                new Point3(-20, 10, 0.0),
-                new Point3(20, 10, 0.0),
-                new Point3(20, -10, 0.0));
-
-        // rotate 1 radian
-        Mat rVec = Mat.zeros(3, 1, CvType.CV_64F);
-        rVec.put(0, 0, 0.0, 1.0, 0.0);
-
-        // translate to the right, up, far
-        Mat tVec = Mat.zeros(3, 1, CvType.CV_64F);
-        tVec.put(0, 0, 10.0, -20.0, 70.0);
-
-        Mat kMat = Mat.zeros(3, 3, CvType.CV_64F);
-        kMat.put(0, 0,
-                400.0, 0.0, 256.0,
-                0.0, 400.0, 256.0,
-                0.0, 0.0, 1.0);
-
-        MatOfDouble dMat = new MatOfDouble(Mat.zeros(4, 1, CvType.CV_64F));
-
-        // project the world into the camera plane
-        MatOfPoint2f imagePts2f = new MatOfPoint2f();
-        Calib3d.projectPoints(objectPts3f, rVec, tVec, kMat, dMat, imagePts2f);
-
-        debug("object in world coordinates", objectPts3f);
-        debug("projection in camera", imagePts2f);
-
-        Mat newRVec = new Mat();
-        Mat newTVec = new Mat();
-        // reverse the projection
-        Calib3d.solvePnP(objectPts3f, imagePts2f, kMat, dMat, newRVec, newTVec);
-
-        // show solvePnP actually reverses the projection.
-        // these describe the world from the camera point of view:
-        // first translate the world origin, then rotate the world.
-        // rotation is correct to about 1e-6
-        debug("actual camera rotation", rVec);
-        debug("derived camera rotation", newRVec);
-        // translation is correct to about 1e-6
-        debug("actual camera translation", tVec);
-        debug("derived camera translation", newTVec);
-
-        Mat rotM = new Mat();
-        Calib3d.Rodrigues(newRVec, rotM);
-        debug("rotation matrix", rotM);
-
-        // what is the camera pose from the world perspective?
-        // (this would be given to the pose estimator)
-        // world origin is at (4,-2,10) in camera coords
-        // the world coord orientation is the same as the camera, so
-        // camera rotation is (0, -1, 0) (just the opposite)
-        Mat camRot = new Mat();
-        Calib3d.Rodrigues(rotM.t(), camRot);
-        debug("camera rotation", camRot);
-
-        // camera origin is at roughly (6.5, 2, -8)
-        Mat inv = new Mat();
-        Core.gemm(rotM.t(), newTVec, -1.0, new Mat(), 0.0, inv);
-        debug("camera position", inv);
-    }
-
-    /**
      * Generate an image representing the target, extract contours from it,
      * and then use {@link Calib3d#solvePnP()} to find the camera pose.
      */
-   // @Test
+    // @Test
     public void testSolvePnPFromContours() {
 
         // these numbers are big because if they're 1 then the warped image is all
@@ -256,7 +191,7 @@ public class TestPnP {
      * Start with world coordinates, generate images, then generate poses.
      * seems like it works within ~4 in world units.
      */
-   // @Test
+    // @Test
     public void testPoseFromImageFromWorldCoords() {
         // camera is at 2,0,-4, pointing 45 degrees to the left (which means negative
         // rotation)
@@ -418,7 +353,7 @@ public class TestPnP {
     /**
      * Try many world locations; generate an image, extract pose from it.
      */
-   // @Test
+    // @Test
     public void testSolvePnPGrid() {
         Size dsize = new Size(1920, 1080);
         double f = 600.0;
@@ -626,7 +561,8 @@ public class TestPnP {
                 // draw the target points on the camera view to see where we think they are
                 //
 
-                MatOfPoint2f skewedImagePts2f = VisionUtil.makeSkewedImagePts2f(expandedTargetGeometryMeters, newCamRVec,
+                MatOfPoint2f skewedImagePts2f = VisionUtil.makeSkewedImagePts2f(expandedTargetGeometryMeters,
+                        newCamRVec,
                         newCamTVec, tallKMat, newWorldRMat);
                 // points projected from pnp
                 for (Point pt : skewedImagePts2f.toList()) {
@@ -703,8 +639,6 @@ public class TestPnP {
             }
         }
     }
-
-
 
     public static void debugmsg(String msg) {
         if (!DEBUG)

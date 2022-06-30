@@ -8,12 +8,19 @@ import org.opencv.core.MatOfPoint3f;
 import org.opencv.core.Size;
 
 /**
- * Always returns the origin.
+ * Always returns the origin; a baseline for awfulness.
  */
-public class BadPoseEstimator implements PoseEstimator {
+public class ConstantPoseEstimator implements PoseEstimator {
+    final double f = 985; // 2.8mm lens
+    final int height = 800;
+    final int width = 1280;
+    final int cx = width / 2;
+    final int cy = height / 2;
+    final Size dsize = new Size(width, height);
+
     @Override
     public String getName() {
-        return "BadPoseEstimator";
+        return "ConstantPoseEstimator";
     }
 
     @Override
@@ -29,12 +36,7 @@ public class BadPoseEstimator implements PoseEstimator {
 
     @Override
     public Mat[] getIntrinsicMatrices() {
-        Mat kMat = Mat.zeros(3, 3, CvType.CV_64F);
-        kMat.put(0, 0,
-                1, 0, 0,
-                0, 1, 0,
-                0, 0, 1);
-        return new Mat[] { kMat };
+        return new Mat[] { VisionUtil.makeIntrinsicMatrix(f, dsize) };
     }
 
     @Override
@@ -49,15 +51,12 @@ public class BadPoseEstimator implements PoseEstimator {
 
     @Override
     public double[] getXOffsets() {
-        return new double[] { 0 };
+        return new double[] { 0.0 };
     }
 
     @Override
     public Size[] getSizes() {
-        return new Size[] {
-                new Size(1000, 1000),
-                new Size(1000, 1000)
-        };
+        return new Size[] { dsize };
     }
 
 }

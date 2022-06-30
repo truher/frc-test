@@ -320,7 +320,7 @@ public abstract class VisionUtil {
      */
     public static MatOfPoint3f makeTarget(double x1, double y1, double x2, double y2) {
         return new MatOfPoint3f(
-                new Point3(x2, y1, 0.0),
+                new Point3(x2, y1, 0.01),
                 new Point3(x2, y2, 0.0),
                 new Point3(x1, y2, 0.0),
                 new Point3(x1, y1, 0.0));
@@ -806,6 +806,113 @@ public abstract class VisionUtil {
         // System.out.printf(" %f, %f, %f, %f, %f, %f\n",
         // pdxCamDp, pdyCamDp, pdzCamDp, pdxWorldDp, pdyWorldDp, pdzWorldDp);
         return skewedImagePts2f;
+    }
+
+    /**
+     * for the solution that ignores the Y/v dimension, use (u, u', 1)
+     */
+    static Mat makeUMat2d(MatOfPoint2f leftPts, MatOfPoint2f rightPts) {
+        Mat uMat = Mat.zeros(leftPts.toList().size(), 3, CvType.CV_64F);
+        for (int i = 0; i < leftPts.toList().size(); ++i) {
+            uMat.put(i, 0, leftPts.get(i, 0)[0], rightPts.get(i, 0)[0], 1.0);
+        }
+        debug(0, "uMat", uMat);
+        return uMat;
+    }
+
+    public static Mat makeXMat2d(MatOfPoint3f targetPointsMultiplied) {
+        List<Point3> targetPointsMultipliedList = targetPointsMultiplied.toList();
+
+        List<Point3> listOfXZ = new ArrayList<Point3>();
+        for (Point3 p3 : targetPointsMultipliedList) {
+            listOfXZ.add(new Point3(p3.x, p3.z, 1));
+        }
+        MatOfPoint3f targetPointsMultipliedXZHomogeneous = new MatOfPoint3f(
+                listOfXZ.toArray(new Point3[0]));
+
+        Mat targetPointsMultipliedXZHomogeneousMat = targetPointsMultipliedXZHomogeneous.reshape(1).t();
+
+        targetPointsMultipliedXZHomogeneousMat.convertTo(targetPointsMultipliedXZHomogeneousMat,
+                CvType.CV_64F);
+        return targetPointsMultipliedXZHomogeneousMat;
+    }
+
+    static Mat makeMInv2d(double f, double cx) {
+        Mat M = Mat.zeros(3, 3, CvType.CV_64F);
+        M.put(0, 0,
+                f, 0, cx,
+                0, f, cx,
+                0, 0, 1);
+        debug(0, "M", M);
+        Mat Minv = M.inv();
+        debug(0, "Minv", Minv);
+        return Minv;
+    }
+
+    static Mat makeTInv2d(double b) {
+        Mat T = Mat.zeros(3, 3, CvType.CV_64F);
+        T.put(0, 0,
+                1, 0, b / 2,
+                1, 0, -b / 2,
+                0, 1, 0);
+        debug(0, "T", T);
+        Mat Tinv = T.inv();
+        debug(0, "Tinv", Tinv);
+        return Tinv;
+    }
+
+    public static Mat makeBMat2d(MatOfPoint2f leftPts, MatOfPoint2f rightPts, double b, double f, double cx) {
+        // To solve Ax=b triangulation (Ax=M-1T-1u), first make u: (u,u',1):
+        Mat uMat = makeUMat2d(leftPts, rightPts);
+
+        // and the inverse transforms we're going to apply:
+        Mat Minv = makeMInv2d(f, cx);
+        Mat Tinv = makeTInv2d(b);
+
+        // apply the inverses to the observations (the "u") in the correct order:
+        Mat MinvUmat = new Mat();
+        Core.gemm(Minv, uMat.t(), 1.0, new Mat(), 0.0, MinvUmat);
+        debug(0, "MinvUmat", MinvUmat);
+
+        Mat bMat = new Mat();
+        Core.gemm(Tinv, MinvUmat, 1.0, new Mat(), 0.0, bMat);
+        debug(0, "bMat", bMat);
+
+        // Make the result look homogeneous
+        normalize2d(bMat);
+        debug(0, "bMat normalized", bMat);
+        return bMat;
+    }
+
+    static void normalize2d(Mat TinvMinvBmat) {
+        for (int col = 0; col < TinvMinvBmat.cols(); ++col) {
+            double xval = TinvMinvBmat.get(0, col)[0];
+            double zval = TinvMinvBmat.get(1, col)[0];
+            double scaleVal = TinvMinvBmat.get(2, col)[0];
+            TinvMinvBmat.put(0, col, xval / scaleVal);
+            TinvMinvBmat.put(1, col, zval / scaleVal);
+            TinvMinvBmat.put(2, col, 1.0);
+        }
+        debug(0, "TinvMinvBmat (scaled)", TinvMinvBmat);
+    }
+
+    /**
+     * use OpenCV Core.solve(X, b, A, DECOMP_SVD), return A.
+     */
+    public static Mat solve(Mat XMat, Mat bMat) {
+        // so now Ax=b where X is the world geometry and b is above.
+        Mat AA = new Mat();
+
+        // remember the solver likes transposes
+        Core.solve(XMat.t(), bMat.t(), AA, Core.DECOMP_SVD);
+        // ...and produces a transpose.
+        AA = AA.t();
+        debug(0, "AA", AA);
+
+        double Ascale = AA.get(2, 2)[0];
+        Core.gemm(AA, Mat.eye(3, 3, CvType.CV_64F), 1 / Ascale, new Mat(), 0.0, AA);
+        debug(1, "AA scaled", AA);
+        return AA;
     }
 
     public static void debug(int level, String msg, Mat m) {
