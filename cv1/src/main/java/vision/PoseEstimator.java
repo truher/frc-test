@@ -15,6 +15,10 @@ public interface PoseEstimator {
 
     public String getDescription();
 
+    public double[] getF();
+
+    public double[] getTilt();
+
     public Mat[] getIntrinsicMatrices();
 
     public MatOfDouble[] getDistortionMatrices();
@@ -25,10 +29,8 @@ public interface PoseEstimator {
 
     public Size[] getSizes();
 
-    // for now this operates on *points* found in images
-    // TODO: make it operate on images, supply some sort of point-finding utility?
     public Mat getPose(double heading, MatOfPoint3f targetPoints, MatOfPoint2f[] imagePoints);
 
     // idx is for filenames for debugging
-    public Mat getPose(int idx, double heading, MatOfPoint3f targetPoints, Mat[] images);
+    public Mat getPose(int idx, boolean writeFiles, double heading, MatOfPoint3f targetPoints, Mat[] images);
 }

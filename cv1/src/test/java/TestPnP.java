@@ -29,8 +29,6 @@ public class TestPnP {
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
     }
 
-
-
     /**
      * Try many world locations; generate an image, extract pose from it.
      */
@@ -49,7 +47,6 @@ public class TestPnP {
         double height = 0.1;
         double width = 0.4;
         MatOfPoint3f targetGeometryMeters = VisionUtil.makeTargetGeometry3f(width, height);
-
 
         final double dyWorld = 1.0; // say the camera is 1m below (+y) relative to the target
         final double tilt = 0.45; // camera tilts up
@@ -92,7 +89,7 @@ public class TestPnP {
                 Imgcodecs.imwrite(String.format("C:\\Users\\joelt\\Desktop\\pics\\target-%d-raw.png", idx),
                         untiltedCameraView);
 
-                MatOfPoint2f imagePoints = VisionUtil.findTargetCornersInImage(idx, untiltedCameraView);
+                MatOfPoint2f imagePoints = VisionUtil.findTargetCornersInImage(idx, true, untiltedCameraView);
                 if (imagePoints == null) {
                     debugmsg("no image points");
                     continue;

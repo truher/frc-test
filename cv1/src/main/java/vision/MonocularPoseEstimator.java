@@ -82,4 +82,14 @@ public class MonocularPoseEstimator extends BasePoseEstimator {
         return transform;
     }
 
+    @Override
+    public double[] getF() {
+        return new double[] { f };
+    }
+
+    @Override
+    public double[] getTilt() {
+        return new double[] { 0 };
+    }
+
 }

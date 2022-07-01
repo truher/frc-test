@@ -8,8 +8,7 @@ import org.opencv.core.MatOfPoint3f;
 import org.opencv.core.Size;
 
 public class Binocular2dSVDPoseEstimator extends BasePoseEstimator {
-    static final boolean DEBUG = false;
-    static final int LEVEL = 1;
+    final static Log log = new Log(3, Binocular2dSVDPoseEstimator.class.getName());
     final double f = 914;
     final int height = 800;
     final int width = 1280;
@@ -58,28 +57,30 @@ public class Binocular2dSVDPoseEstimator extends BasePoseEstimator {
     public Mat getPose(double heading, MatOfPoint3f targetPoints, MatOfPoint2f[] imagePoints) {
         MatOfPoint2f leftPts = imagePoints[0];
         MatOfPoint2f rightPts = imagePoints[1];
+        log.debug(2, "leftPts", leftPts);
+        log.debug(2, "rightPts", rightPts);
 
         // To solve Ax=b triangulation, first make b:
         Mat bMat = VisionUtil.makeBMat2d(leftPts, rightPts, b, f, cx);
-        debug(1, "bMat (b data)", bMat);
+        log.debug(2, "bMat (b data)", bMat);
 
         // ... and x: (X, Z, 1):
         Mat XMat = VisionUtil.makeXMat2d(targetPoints);
-        debug(1, "XMat (x data)", XMat);
+        log.debug(2, "XMat (x data)", XMat);
 
         // so now Ax=b where X is the world geometry and b is as prepared.
         Mat AA = VisionUtil.solve(XMat, bMat);
 
         Mat rmat = AA.submat(0, 2, 0, 2);
-        debug(1, "rmat", rmat);
+        log.debug(1, "rmat", rmat);
         double euler = VisionUtil.rotm2euler2d(rmat);
-        debug(1, "euler", euler);
+        log.debug(1, "euler", euler);
 
         // "repairing" the rotation is an essential step, which seems crazy.
         rmat.put(0, 0,
                 Math.cos(euler), -Math.sin(euler),
                 Math.sin(euler), Math.cos(euler));
-        debug(1, "rmat repaired", rmat);
+        log.debug(1, "rmat repaired", rmat);
 
         if (useIMU) {
             rmat = Mat.zeros(2, 2, CvType.CV_64F);
@@ -92,7 +93,7 @@ public class Binocular2dSVDPoseEstimator extends BasePoseEstimator {
 
         Mat cameraTVec = Mat.zeros(2, 1, CvType.CV_64F);
         cameraTVec.put(0, 0, AA.get(0, 2)[0], AA.get(1, 2)[0]);
-        debug(1, "cameraTVec", cameraTVec);
+        log.debug(1, "cameraTVec", cameraTVec);
 
         Mat transform = Mat.zeros(3, 4, CvType.CV_64F);
         transform.put(0, 0,
@@ -103,21 +104,13 @@ public class Binocular2dSVDPoseEstimator extends BasePoseEstimator {
         return transform;
     }
 
-    public static void debug(int level, String msg, Mat m) {
-        if (!DEBUG)
-            return;
-        if (level < LEVEL)
-            return;
-        System.out.println(msg);
-        System.out.println(m.dump());
+    @Override
+    public double[] getF() {
+        return new double[] { f, f };
     }
 
-    public static void debug(int level, String msg, double d) {
-        if (!DEBUG)
-            return;
-        if (level < LEVEL)
-            return;
-        System.out.println(msg);
-        System.out.println(d);
+    @Override
+    public double[] getTilt() {
+        return new double[] { 0, 0 };
     }
 }

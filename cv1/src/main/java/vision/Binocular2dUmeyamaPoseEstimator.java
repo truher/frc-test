@@ -221,6 +221,16 @@ public class Binocular2dUmeyamaPoseEstimator extends BasePoseEstimator {
         return transform;
     }
 
+    @Override
+    public double[] getF() {
+        return new double[] { f, f };
+    }
+
+    @Override
+    public double[] getTilt() {
+        return new double[] { 0, 0 };
+    }
+
     public static void debug(int level, String msg, Mat m) {
         if (!DEBUG)
             return;

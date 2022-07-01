@@ -27,8 +27,7 @@ public abstract class VisionUtil {
     static {
         System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
     }
-    static final boolean DEBUG = false;
-    static final int LEVEL = 1;
+    final static Log log = new Log(4, VisionUtil.class.getName());
 
     public static double averageAngularError(Mat a, Mat b) {
         // a and b are centered around the origin and the same size
@@ -36,39 +35,39 @@ public abstract class VisionUtil {
             throw new IllegalArgumentException();
         if (a.cols() != b.cols())
             throw new IllegalArgumentException();
-        debug(1, "a", a);
-        debug(1, "b", b);
+        log.debug(1, "a", a);
+        log.debug(1, "b", b);
         for (int i = 0; i < a.rows(); ++i) {
             Mat avec = a.row(i);
             Mat bvec = b.row(i);
-            debug(1, "avec", avec);
-            debug(1, "bvec", bvec);
+            log.debug(1, "avec", avec);
+            log.debug(1, "bvec", bvec);
         }
         Mat ax = a.col(0);
         Mat az = a.col(2);
-        debug(1, "ax", ax);
-        debug(1, "az", az);
+        log.debug(1, "ax", ax);
+        log.debug(1, "az", az);
 
         Mat amag = new Mat();
         Mat aang = new Mat();
         Core.cartToPolar(ax, az, amag, aang);
-        debug(1, "a magnitude", amag);
-        debug(1, "a angle", aang);
+        log.debug(1, "a magnitude", amag);
+        log.debug(1, "a angle", aang);
 
         Mat bx = b.col(0);
         Mat bz = b.col(2);
-        debug(1, "bx", bx);
-        debug(1, "bz", bz);
+        log.debug(1, "bx", bx);
+        log.debug(1, "bz", bz);
 
         Mat bmag = new Mat();
         Mat bang = new Mat();
         Core.cartToPolar(bx, bz, bmag, bang);
-        debug(1, "b magnitude", bmag);
-        debug(1, "b angle", bang);
+        log.debug(1, "b magnitude", bmag);
+        log.debug(1, "b angle", bang);
 
         Mat diff = new Mat();
         Core.subtract(aang, bang, diff);
-        debug(1, "diff", diff);
+        log.debug(1, "diff", diff);
         for (int i = 0; i < diff.rows(); ++i) {
             double val = diff.get(i, 0)[0];
             if (val > Math.PI) {
@@ -78,7 +77,7 @@ public abstract class VisionUtil {
             }
             diff.put(i, 0, val);
         }
-        debug(1, "diff", diff);
+        log.debug(1, "diff", diff);
         return Core.mean(diff).val[0];
     }
 
@@ -97,7 +96,7 @@ public abstract class VisionUtil {
         Mat bMat = new Mat();
         Core.gemm(Tinv, MinvU, 1.0, new Mat(), 0.0, bMat);
         normalize3d(bMat);
-        debug(0, "bMat normalized", bMat);
+        log.debug(0, "bMat normalized", bMat);
         return bMat;
     }
 
@@ -120,8 +119,8 @@ public abstract class VisionUtil {
      * columns.
      */
     static Mat makeUMat3d(MatOfPoint2f leftPts, MatOfPoint2f rightPts) {
-        debug(1, "left", leftPts);
-        debug(1, "right", rightPts);
+        log.debug(1, "left", leftPts);
+        log.debug(1, "right", rightPts);
         // System.out.println(leftPts.size());
         Mat uMat = Mat.zeros(4, leftPts.toList().size(), CvType.CV_64F);
         for (int i = 0; i < leftPts.toList().size(); ++i) {
@@ -135,7 +134,7 @@ public abstract class VisionUtil {
             uMat.put(2, i, (v + v1) / 2);
             uMat.put(3, i, 1.0);
         }
-        debug(0, "uMat", uMat);
+        log.debug(0, "uMat", uMat);
         return uMat;
     }
 
@@ -149,9 +148,9 @@ public abstract class VisionUtil {
                 0, f, 0, cx,
                 0, 0, f, cy,
                 0, 0, 0, 1);
-        debug(0, "M", M);
+        log.debug(0, "M", M);
         Mat Minv = M.inv();
-        debug(0, "Minv", Minv);
+        log.debug(0, "Minv", Minv);
         return Minv;
     }
 
@@ -165,9 +164,9 @@ public abstract class VisionUtil {
                 1, 0, 0, -b / 2,
                 0, 1, 0, 0,
                 0, 0, 1, 0);
-        debug(0, "T", T);
+        log.debug(0, "T", T);
         Mat Tinv = T.inv();
-        debug(0, "Tinv", Tinv);
+        log.debug(0, "Tinv", Tinv);
         return Tinv;
     }
 
@@ -248,7 +247,7 @@ public abstract class VisionUtil {
         Core.gemm(unTiltM, invKMat, 1.0, new Mat(), 0.0, transform);
         Mat tallKMat = VisionUtil.makeIntrinsicMatrix(f, newSize);
         Core.gemm(tallKMat, transform, 1.0, new Mat(), 0.0, transform);
-        debug(0, "result", transform);
+        log.debug(0, "result", transform);
 
         Mat untiltedCameraView = Mat.zeros(newSize, CvType.CV_8UC3);
         Imgproc.warpPerspective(undistortedCameraView, untiltedCameraView, transform, newSize);
@@ -381,17 +380,17 @@ public abstract class VisionUtil {
         // these are camera-to-world transforms
         Mat cameraToWorldTVec = Mat.zeros(3, 1, CvType.CV_32F);
         cameraToWorldTVec.put(0, 0, xPos, yPos, zPos);
-        debug(0, "worldTVec", cameraToWorldTVec);
+        log.debug(0, "worldTVec", cameraToWorldTVec);
 
         Mat cameraToWorldRV = Mat.zeros(3, 1, CvType.CV_32F);
         cameraToWorldRV.put(0, 0, 0.0, pan, 0.0);
-        debug(0, "worldRV", cameraToWorldRV);
+        log.debug(0, "worldRV", cameraToWorldRV);
 
         Mat cameraToWorldRMat = new Mat();
         Calib3d.Rodrigues(cameraToWorldRV, cameraToWorldRMat);
 
         Mat cameraToWorldHomogeneous = homogeneousRigidTransform(cameraToWorldRMat, cameraToWorldTVec);
-        debug(0, "cameraToWorld (just to see)", cameraToWorldHomogeneous);
+        log.debug(0, "cameraToWorld (just to see)", cameraToWorldHomogeneous);
 
         // this is inverse(worldT*worldR)
         // inverse of multiplication is order-reversed multipication of inverses, so
@@ -399,11 +398,17 @@ public abstract class VisionUtil {
         Mat worldToCameraRMat = cameraToWorldRMat.t();
         Mat worldToCameraTVec = new Mat();
         Core.gemm(worldToCameraRMat, cameraToWorldTVec, -1.0, new Mat(), 0, worldToCameraTVec);
-        debug(0, "camTVec", worldToCameraTVec);
+        log.debug(0, "camTVec", worldToCameraTVec);
 
         Mat worldToCameraHomogeneous = homogeneousRigidTransform(worldToCameraRMat, worldToCameraTVec);
-        debug(0, "worldToCamera", worldToCameraHomogeneous);
+        log.debug(0, "worldToCamera", worldToCameraHomogeneous);
         return worldToCameraHomogeneous;
+    }
+
+    public static void removeSaltAndPepperInPlace(Mat src) {
+        Mat kernel = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(3, 3));
+        Imgproc.morphologyEx(src, src, Imgproc.MORPH_OPEN, kernel);
+        Imgproc.morphologyEx(src, src, Imgproc.MORPH_CLOSE, kernel);
     }
 
     /**
@@ -415,19 +420,25 @@ public abstract class VisionUtil {
      * @param rawCameraView unprocessed image
      * @return 2d geometry of the corners, in the image
      */
-    public static MatOfPoint2f findTargetCornersInImage(int picIdx, Mat rawCameraView) {
+    public static MatOfPoint2f findTargetCornersInImage(int picIdx, boolean writeFiles, Mat rawCameraView) {
 
         // first "binarize" to remove blur
         Mat cameraView = new Mat();
         Imgproc.threshold(rawCameraView, cameraView, 250, 255, Imgproc.THRESH_BINARY);
-        Imgcodecs.imwrite(String.format("C:\\Users\\joelt\\Desktop\\pics\\target-%d-thresholded.png", picIdx),
-                cameraView);
+        if (writeFiles)
+            Imgcodecs.imwrite(String.format("C:\\Users\\joelt\\Desktop\\pics\\target-%d-thresholded.png", picIdx),
+                    cameraView);
 
         Mat singleChannelCameraView = new Mat();
-        Imgproc.cvtColor(cameraView, singleChannelCameraView, Imgproc.COLOR_BGR2GRAY);
-        Imgcodecs.imwrite(String.format("C:\\Users\\joelt\\Desktop\\pics\\target-%d-bw.png", picIdx),
-                singleChannelCameraView);
+        if (rawCameraView.channels() == 1)
+            singleChannelCameraView = cameraView;
+        else {
+            Imgproc.cvtColor(cameraView, singleChannelCameraView, Imgproc.COLOR_BGR2GRAY);
 
+        }
+        if (writeFiles)
+            Imgcodecs.imwrite(String.format("C:\\Users\\joelt\\Desktop\\pics\\target-%d-bw.png", picIdx),
+                    singleChannelCameraView);
         /*
          * Mat edges = new Mat();
          * Imgproc.Canny(singleChannelCameraView, edges, 250, 255);
@@ -442,15 +453,32 @@ public abstract class VisionUtil {
         Imgproc.findContours(singleChannelCameraView,
                 contours,
                 hierarchy,
-                Imgproc.RETR_LIST,
-                Imgproc.CHAIN_APPROX_NONE);
+                Imgproc.RETR_EXTERNAL,
+                Imgproc.CHAIN_APPROX_SIMPLE);
 
+        log.debug(2, "hierarchy", hierarchy);
+        log.debug(2, "contours size", contours.size());
+
+        List<MatOfPoint> bigContours = new ArrayList<>();
+        for (MatOfPoint c : contours) {
+            if (Imgproc.contourArea(c) > 10) {
+                bigContours.add(c);
+            }
+        }
+        log.debug(2, "big contours size", bigContours.size());
+
+        contours = bigContours;
+        for (MatOfPoint c : contours) {
+            log.debug(2, "contour", c);
+        }
         if (contours.size() != 1) {
-            // System.out.println("no contours!");
+            log.debugmsg(2, "no contours!");
+            log.debug(2, "contours size", contours.size());
+
             return null;
         }
 
-        {
+        if (writeFiles) {
             Mat contourView2 = Mat.zeros(cameraView.size(), CvType.CV_8U);
             Imgproc.drawContours(contourView2, contours, 0, new Scalar(255, 0, 0));
             Imgcodecs.imwrite(String.format("C:\\Users\\joelt\\Desktop\\pics\\target-%d-contours.png", picIdx),
@@ -465,7 +493,7 @@ public abstract class VisionUtil {
         // System.out.println("points");
         // System.out.println(points.dump());
 
-        {
+        if (writeFiles) {
             Mat contourView = Mat.zeros(cameraView.size(), CvType.CV_8U);
             Imgproc.drawContours(contourView, List.of(points), 0, new Scalar(255, 0, 0));
             Imgcodecs.imwrite(String.format("C:\\Users\\joelt\\Desktop\\pics\\target-%d-poly.png", picIdx),
@@ -473,11 +501,9 @@ public abstract class VisionUtil {
         }
         // System.out.println("approxcurve");
         // System.out.println(approxCurve.dump());
-        if (approxCurve.toList().size() != 4)
-
-        {
-            // System.out.println("wrong size");
-            // System.out.println(approxCurve.dump());
+        if (approxCurve.toList().size() != 4) {
+            log.debugmsg(2, "wrong size");
+            log.debug(2, "approxcurve", approxCurve);
             return null;
         }
 
@@ -508,8 +534,9 @@ public abstract class VisionUtil {
                     new Scalar(0, 255, 0),
                     Imgproc.FILLED);
         }
-        Imgcodecs.imwrite(String.format("C:\\Users\\joelt\\Desktop\\pics\\target-%d-points.png", picIdx),
-                pointView);
+        if (writeFiles)
+            Imgcodecs.imwrite(String.format("C:\\Users\\joelt\\Desktop\\pics\\target-%d-points.png", picIdx),
+                    pointView);
         return imagePoints;
     }
 
@@ -545,10 +572,10 @@ public abstract class VisionUtil {
                 0, 1, 0, 0,
                 0, 0, 1, 0,
                 0, 0, 0, 1);
-        debug(0, "translation", translation);
+        log.debug(0, "translation", translation);
         Mat result = new Mat();
         Core.gemm(translation, worldToCamera, 1.0, new Mat(), 0.0, result);
-        debug(0, "result", result);
+        log.debug(0, "result", result);
         return result;
     }
 
@@ -560,19 +587,27 @@ public abstract class VisionUtil {
         return true;
     }
 
-    public static MatOfPoint2f imagePoints(Mat kMat, MatOfDouble dMat, MatOfPoint3f geometry, Mat worldToCamera,
-            int pointMultiplier, double noisePixels, Random rand) {
+    /**
+     * project target geometry into the camera
+     */
+    public static MatOfPoint2f imagePoints(Mat kMat, MatOfDouble dMat, MatOfPoint3f geometry, Mat worldToCamera) {
         Mat Rvec = Mat.zeros(3, 1, CvType.CV_32F);
         Calib3d.Rodrigues(worldToCamera.rowRange(0, 3).colRange(0, 3), Rvec);
-        debug(0, "Rvec", Rvec);
+        log.debug(0, "Rvec", Rvec);
         Mat t = worldToCamera.colRange(3, 4).rowRange(0, 3);
-        debug(0, "t", t);
+        log.debug(0, "t", t);
 
         MatOfPoint2f pts = new MatOfPoint2f();
         Mat jacobian = new Mat();
         Calib3d.projectPoints(geometry, Rvec, t, kMat, dMat, pts, jacobian);
-        debug(0, "pts", pts);
-        // add image noise in image coords
+        log.debug(0, "pts", pts);
+        return pts;
+    }
+
+    /**
+     * Add noise.
+     */
+    public static MatOfPoint2f perturbPoints(MatOfPoint2f pts, int pointMultiplier, double noisePixels, Random rand) {
         List<Point> ptsList = new ArrayList<Point>();
         for (int reps = 0; reps < pointMultiplier; reps++) {
             for (Point p : pts.toList()) {
@@ -727,12 +762,42 @@ public abstract class VisionUtil {
         Mat transformMat = Imgproc.getPerspectiveTransform(targetImageGeometry, skewedImagePts2f);
 
         // make an image corresponding to the pixel geometry, for warping
-        Mat visionTarget = new Mat(VisionUtil.boundingBox(targetImageGeometry), CvType.CV_8UC3,
-                new Scalar(255, 255, 255));
-        Mat cameraView = Mat.zeros(dsize, CvType.CV_8UC3);
+        Mat visionTarget = new Mat(VisionUtil.boundingBox(targetImageGeometry), CvType.CV_8UC1,
+                new Scalar(255));
+        Mat cameraView = Mat.zeros(dsize, CvType.CV_8UC1);
         Imgproc.warpPerspective(visionTarget, cameraView, transformMat, dsize);
-
+        visionTarget.release();
+        System.gc();
         return cameraView;
+    }
+
+    /**
+     * Add speckle in place
+     */
+    public static void addSaltAndPepper(Mat img) {
+        Mat noise = img.clone();
+        Core.randu(noise, 0, 255);
+        Mat black = noise.clone();
+        Imgproc.threshold(noise, black, 30, 255, Imgproc.THRESH_BINARY_INV);
+        Mat white = noise.clone();
+        Imgproc.threshold(noise, white, 225, 255, Imgproc.THRESH_BINARY);
+        img.setTo(new Scalar(255), white);
+        img.setTo(new Scalar(0), black);
+        noise.release();
+        black.release();
+        white.release();
+        System.gc();
+    }
+
+    /**
+     * Add noise in place
+     */
+    public static void addGaussianNoise(Mat img) {
+        Mat noise = img.clone();
+        Core.randn(noise, 128, 30);
+        Core.add(img, noise, img);
+        noise.release();
+        System.gc();
     }
 
     public static void writePng(MatOfPoint2f pts, int width, int height, String filename) {
@@ -768,14 +833,14 @@ public abstract class VisionUtil {
         // guess stdev in pixels :-)
         final Mat dp = Mat.zeros(2, 1, CvType.CV_64F);
         dp.put(0, 0, 3, 3);
-        debug(0, "dp", dp);
+        log.debug(0, "dp", dp);
         for (int i = 0; i < dpdt.rows(); i += 2) {
             Mat pointDpdt = dpdt.rowRange(i, i + 2);
-            debug(0, "dpdt", pointDpdt);
+            log.debug(0, "dpdt", pointDpdt);
             Mat dtdp = new Mat();
             Core.invert(pointDpdt, dtdp, Core.DECOMP_SVD);
 
-            debug(0, "dtdp", dtdp);
+            log.debug(0, "dtdp", dtdp);
             Mat dt = new Mat();
             Core.gemm(dtdp, dp, 1.0, new Mat(), 0.0, dt);
             pdxCamDp += (dt.get(0, 0)[0] * dt.get(0, 0)[0]);
@@ -787,10 +852,10 @@ public abstract class VisionUtil {
             // ... this should be a 3x3 not a 3x1, grrr
             Mat Jworld = new Mat();
             Core.gemm(newWorldRMat, newCamTVec, -1.0, new Mat(), 0.0, Jworld);
-            debug(0, "Jworld", Jworld);
+            log.debug(0, "Jworld", Jworld);
             Mat dtWorld = new Mat();
             Core.gemm(Jworld.t(), dt, -1.0, new Mat(), 0.0, dtWorld);
-            debug(0, "dtWorld", dtWorld);
+            log.debug(0, "dtWorld", dtWorld);
         }
         pdxCamDp /= dpdt.rows() / 2;
         pdyCamDp /= dpdt.rows() / 2;
@@ -818,7 +883,7 @@ public abstract class VisionUtil {
         for (int i = 0; i < leftPts.toList().size(); ++i) {
             uMat.put(i, 0, leftPts.get(i, 0)[0], rightPts.get(i, 0)[0], 1.0);
         }
-        debug(0, "uMat", uMat);
+        log.debug(0, "uMat", uMat);
         return uMat;
     }
 
@@ -845,9 +910,9 @@ public abstract class VisionUtil {
                 f, 0, cx,
                 0, f, cx,
                 0, 0, 1);
-        debug(0, "M", M);
+        log.debug(0, "M", M);
         Mat Minv = M.inv();
-        debug(0, "Minv", Minv);
+        log.debug(0, "Minv", Minv);
         return Minv;
     }
 
@@ -857,9 +922,9 @@ public abstract class VisionUtil {
                 1, 0, b / 2,
                 1, 0, -b / 2,
                 0, 1, 0);
-        debug(0, "T", T);
+        log.debug(0, "T", T);
         Mat Tinv = T.inv();
-        debug(0, "Tinv", Tinv);
+        log.debug(0, "Tinv", Tinv);
         return Tinv;
     }
 
@@ -874,15 +939,15 @@ public abstract class VisionUtil {
         // apply the inverses to the observations (the "u") in the correct order:
         Mat MinvUmat = new Mat();
         Core.gemm(Minv, uMat.t(), 1.0, new Mat(), 0.0, MinvUmat);
-        debug(0, "MinvUmat", MinvUmat);
+        log.debug(0, "MinvUmat", MinvUmat);
 
         Mat bMat = new Mat();
         Core.gemm(Tinv, MinvUmat, 1.0, new Mat(), 0.0, bMat);
-        debug(0, "bMat", bMat);
+        log.debug(0, "bMat", bMat);
 
         // Make the result look homogeneous
         normalize2d(bMat);
-        debug(0, "bMat normalized", bMat);
+        log.debug(0, "bMat normalized", bMat);
         return bMat;
     }
 
@@ -895,7 +960,7 @@ public abstract class VisionUtil {
             TinvMinvBmat.put(1, col, zval / scaleVal);
             TinvMinvBmat.put(2, col, 1.0);
         }
-        debug(0, "TinvMinvBmat (scaled)", TinvMinvBmat);
+        log.debug(0, "TinvMinvBmat (scaled)", TinvMinvBmat);
     }
 
     /**
@@ -909,30 +974,12 @@ public abstract class VisionUtil {
         Core.solve(XMat.t(), bMat.t(), AA, Core.DECOMP_SVD);
         // ...and produces a transpose.
         AA = AA.t();
-        debug(0, "AA", AA);
+        log.debug(0, "AA", AA);
 
         double Ascale = AA.get(2, 2)[0];
         Core.gemm(AA, Mat.eye(3, 3, CvType.CV_64F), 1 / Ascale, new Mat(), 0.0, AA);
-        debug(1, "AA scaled", AA);
+        log.debug(1, "AA scaled", AA);
         return AA;
-    }
-
-    public static void debug(int level, String msg, Mat m) {
-        if (!DEBUG)
-            return;
-        if (level < LEVEL)
-            return;
-        System.out.println(msg);
-        System.out.println(m.dump());
-    }
-
-    public static void debug(int level, String msg, double d) {
-        if (!DEBUG)
-            return;
-        if (level < LEVEL)
-            return;
-        System.out.println(msg);
-        System.out.println(d);
     }
 
 }

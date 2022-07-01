@@ -19,24 +19,40 @@ import org.opencv.imgcodecs.Imgcodecs;
  * Evaluate a bunch of pose estimators, do parameter studies, etc.
  */
 public class PoseEstimatorHarness {
-    static final boolean DEBUG = false;
-    static final int LEVEL = 1;
+    final static Log log = new Log(3, PoseEstimatorHarness.class.getName());
+
     public final List<PoseEstimator> poseEstimators;
-    final boolean showGrid = false;
+
+    // true = show accuracy for each point in 10x10m grid
+    final boolean showGrid = true;
+
+    // true = add noise to points; false = leave points alone
+    // if estimating from points this should be true
+    // but if using images this should be false.
+    final boolean perturbPoints = false;
+
+    // the physical gyro involves thermal noise so this should be true
+    final boolean perturbGyro = true;
+
+    // true = use image; false = use ideal points
+    final boolean poseFromImage = true;
+
+    // add (a lot of) gaussian and shot noise.
+    final boolean addImageNoise = true;
+
+    // write various image files for debugging.
+    final boolean writeFiles = false;
 
     public PoseEstimatorHarness() {
         // these are ranked worst to best
 
         poseEstimators = new ArrayList<PoseEstimator>();
 
-        // does nothing
-        // poseEstimators.add(new ConstantPoseEstimator());
+        // baseline, constant output
+         poseEstimators.add(new ConstantPoseEstimator());
 
         // pretty good close up, not good in x far away
-        // poseEstimators.add(new MonocularPoseEstimator(false));
-
-        // works ok
-        poseEstimators.add(new BinocularConstrainedPoseEstimator(false));
+         poseEstimators.add(new MonocularPoseEstimator(false));
 
         // ok close up
         poseEstimators.add(new Binocular2dSVDPoseEstimator(false));
@@ -44,7 +60,10 @@ public class PoseEstimatorHarness {
         // works pretty well within a few meters.
         poseEstimators.add(new Binocular2dUmeyamaPoseEstimator(false));
 
-        // good, sensitive in z, unsurprisingly
+        // ok within a few meters, much worse than IMU options
+        poseEstimators.add(new BinocularConstrainedPoseEstimator(false));
+
+        // good, 4x the error, 2X the speed vs binocular ones
         poseEstimators.add(new MonocularPoseEstimator(true));
 
         // pretty awesome
@@ -90,16 +109,16 @@ public class PoseEstimatorHarness {
             }
 
             MatOfPoint3f targetGeometryMeters = VisionUtil.makeTargetGeometry3f(0.5, 0.5);
-            // 50fps video => 10hz output = 5x averaging
-            int pointMultiplier = 1;
-            double noisePixels = 2;
+
             // pigeon/navx claim 1.5 degrees for fused output
             // final double gyroNoise = 0.025;
             // LIS3MDL claims about 1% thermal noise at 80hz
             // average 8 samples = 1/sqrt(8)
             double gyroNoise = 0.0035; //
-            // MatOfPoint3f targetPointsMultiplied =
-            // VisionUtil.duplicatePoints(targetGeometryMeters, pointMultiplier);
+            // 50fps video => 10hz output = 5x averaging
+            int pointMultiplier = 1;
+            double noisePixels = 2;
+            MatOfPoint3f targetPointsMultiplied = VisionUtil.duplicatePoints(targetGeometryMeters, pointMultiplier);
 
             int idx = 0;
             double yPos = 0;
@@ -126,11 +145,13 @@ public class PoseEstimatorHarness {
                         double range = Math.sqrt(xPos * xPos + zPos * zPos);
 
                         // don't bother with oblique angles, the projection is wrong for these cases.
-                        if (Math.abs(relativeBearing) > Math.PI / 2)
+                        if (Math.abs(relativeBearing) > Math.PI / 2) {
+                            log.debugmsg(2, "oblique");
                             continue;
+                        }
 
                         // these are the calculated points
-                        // MatOfPoint2f[] idealImagePoints = new MatOfPoint2f[kMat.length];
+                        MatOfPoint2f[] idealImagePoints = new MatOfPoint2f[kMat.length];
                         Mat[] images = new Mat[kMat.length];
                         for (int cameraIdx = 0; cameraIdx < kMat.length; ++cameraIdx) {
                             // make transform from world origin to camera center
@@ -141,19 +162,22 @@ public class PoseEstimatorHarness {
 
                             // make the points the camera sees
                             MatOfPoint2f pts = VisionUtil.imagePoints(kMat[cameraIdx], dMat[cameraIdx],
-                                    targetGeometryMeters,
-                                    worldToEye,
-                                    pointMultiplier,
-                                    noisePixels, rand);
+                                    targetGeometryMeters, worldToEye);
+
+                            if (perturbPoints)
+                                pts = VisionUtil.perturbPoints(pts, pointMultiplier, noisePixels, rand);
+
                             Size size = sizes[cameraIdx];
                             final Rect viewport = new Rect(0, 0, (int) size.width, (int) size.height);
                             if (!VisionUtil.inViewport(pts, viewport)) {
+                                log.debugmsg(2, "not in view");
                                 continue pose;
                             }
-                            VisionUtil.writePng(pts, (int) size.width, (int) size.height,
-                                    String.format("C:\\Users\\joelt\\Desktop\\pics\\img-%s-%d-%d.png", name, idx,
-                                            cameraIdx));
-                            // idealImagePoints[cameraIdx] = pts;
+                            if (writeFiles)
+                                VisionUtil.writePng(pts, (int) size.width, (int) size.height,
+                                        String.format("C:\\Users\\joelt\\Desktop\\pics\\img-%s-%d-%d.png", name, idx,
+                                                cameraIdx));
+                            idealImagePoints[cameraIdx] = pts;
 
                             // also make an image
                             // Mat cameraView = VisionUtil.makeImage(xPos, yPos, zPos, tilt, pan,
@@ -163,12 +187,19 @@ public class PoseEstimatorHarness {
                             Mat cameraView = VisionUtil.renderImage(size, targetGeometryMeters, pts);
 
                             if (cameraView == null) {
+                                log.debugmsg(2, "no image");
                                 continue pose;
                             }
-                            Imgcodecs.imwrite(
-                                    String.format("C:\\Users\\joelt\\Desktop\\pics\\target-%s-%d-%d-distorted.png",
-                                            name, idx, cameraIdx),
-                                    cameraView);
+
+                            if (addImageNoise) {
+                                VisionUtil.addSaltAndPepper(cameraView);
+                                VisionUtil.addGaussianNoise(cameraView);
+                            }
+                            if (writeFiles)
+                                Imgcodecs.imwrite(
+                                        String.format("C:\\Users\\joelt\\Desktop\\pics\\target-%s-%d-%d-distorted.png",
+                                                name, idx, cameraIdx),
+                                        cameraView);
                             images[cameraIdx] = cameraView;
 
                         }
@@ -177,30 +208,42 @@ public class PoseEstimatorHarness {
 
                         ++idx;
 
-                        double gyro = pan + (gyroNoise * rand.nextGaussian());
+                        double gyro = pan;
+
+                        if (perturbGyro)
+                            gyro += (gyroNoise * rand.nextGaussian());
 
                         long startTime = System.currentTimeMillis();
-                        // Mat transform = e.getPose(gyro, targetPointsMultiplied, idealImagePoints);
-                        Mat transform = e.getPose(idx, gyro, targetGeometryMeters, images);
+                        Mat transform;
+                        if (poseFromImage)
+                            transform = e.getPose(idx, writeFiles, gyro, targetGeometryMeters, images);
+                        else
+                            transform = e.getPose(gyro, targetPointsMultiplied, idealImagePoints);
 
                         workTime += (System.currentTimeMillis() - startTime);
+                        for (int cameraIdx = 0; cameraIdx < kMat.length; ++cameraIdx) {
+                            images[cameraIdx].release();
+                        }
+                        System.gc();
                         if (transform == null) {
+                            log.debugmsg(2, "no transform");
                             continue pose;
                         }
+                        log.debug(2, "transform", transform);
                         Mat rmat = transform.submat(0, 3, 0, 3);
 
                         double euler = Math.atan2(rmat.get(2, 0)[0], rmat.get(0, 0)[0]);
-                        debug(1, "euler", euler);
+                        log.debug(1, "euler", euler);
                         Mat cameraTVec = Mat.zeros(3, 1, CvType.CV_64F);
                         cameraTVec.put(0, 0,
                                 transform.get(0, 3)[0],
                                 transform.get(1, 3)[0],
                                 transform.get(2, 3)[0]);
-                        debug(1, "cameraTVec", cameraTVec);
+                        log.debug(1, "cameraTVec", cameraTVec);
                         Mat pworldTVec = new Mat();
-                        debug(1, "rmat", rmat);
+                        log.debug(1, "rmat", rmat);
                         Core.gemm(rmat.t(), cameraTVec, -1.0, new Mat(), 0.0, pworldTVec);
-                        debug(1, "pWorldTVec", pworldTVec);
+                        log.debug(1, "pWorldTVec", pworldTVec);
 
                         double pxPos = pworldTVec.get(0, 0)[0];
                         double pyPos = pworldTVec.get(1, 0)[0];
@@ -248,23 +291,5 @@ public class PoseEstimatorHarness {
                 System.out.println("===========================");
         }
 
-    }
-
-    public static void debug(int level, String msg, Mat m) {
-        if (!DEBUG)
-            return;
-        if (level < LEVEL)
-            return;
-        System.out.println(msg);
-        System.out.println(m.dump());
-    }
-
-    public static void debug(int level, String msg, double d) {
-        if (!DEBUG)
-            return;
-        if (level < LEVEL)
-            return;
-        System.out.println(msg);
-        System.out.println(d);
     }
 }

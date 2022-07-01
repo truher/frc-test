@@ -58,4 +58,14 @@ public class ConstantPoseEstimator extends BasePoseEstimator {
     public Size[] getSizes() {
         return new Size[] { dsize };
     }
+
+    @Override
+    public double[] getF() {
+        return new double[] { f };
+    }
+
+    @Override
+    public double[] getTilt() {
+        return new double[] { 0 };
+    }
 }

@@ -204,6 +204,16 @@ public class BinocularConstrainedPoseEstimator extends BasePoseEstimator {
         return new Size[] { dsize, dsize };
     }
 
+    @Override
+    public double[] getF() {
+        return new double[] { f,f };
+    }
+
+    @Override
+    public double[] getTilt() {
+        return new double[] { 0,0 };
+    }
+
     public static void debug(int level, String msg, Mat m) {
         if (!DEBUG)
             return;
