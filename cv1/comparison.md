@@ -15,7 +15,7 @@ I compared various pose estimation methods and obtained the following, in increa
 
 I also plotted the accuracy as a function of range:
 
-<img src="range.svg"/>
+<img src="range.png"/>
 
 The main highlights from this study are:
 
