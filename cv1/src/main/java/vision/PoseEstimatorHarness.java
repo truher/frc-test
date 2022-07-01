@@ -31,12 +31,6 @@ public class PoseEstimatorHarness {
         // does nothing
         poseEstimators.add(new ConstantPoseEstimator());
 
-        // broken
-        // poseEstimators.add(new BinocularTriangulateUmeyamaPoseEstimator());
-
-        // broken
-        // poseEstimators.add(new BinocularTriangulateSolvePoseEstimator());
-
         // pretty good close up, not good in x far away
         poseEstimators.add(new MonocularPoseEstimator(false));
 
