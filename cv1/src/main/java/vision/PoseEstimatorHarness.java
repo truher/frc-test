@@ -13,6 +13,7 @@ import org.opencv.core.MatOfPoint2f;
 import org.opencv.core.MatOfPoint3f;
 import org.opencv.core.Rect;
 import org.opencv.core.Size;
+import org.opencv.imgcodecs.Imgcodecs;
 
 /**
  * Evaluate a bunch of pose estimators, do parameter studies, etc.
@@ -21,7 +22,7 @@ public class PoseEstimatorHarness {
     static final boolean DEBUG = false;
     static final int LEVEL = 1;
     public final List<PoseEstimator> poseEstimators;
-    final boolean showGrid = false;
+    final boolean showGrid = true;
 
     public PoseEstimatorHarness() {
         // these are ranked worst to best
@@ -88,9 +89,9 @@ public class PoseEstimatorHarness {
 
             }
 
-            MatOfPoint3f targetGeometryMeters = VisionUtil.makeTarget(-0.25, 0, 0.25, -0.5);
+            MatOfPoint3f targetGeometryMeters = VisionUtil.makeTargetGeometry3f(0.5, 0.5);
             // 50fps video => 10hz output = 5x averaging
-            int pointMultiplier = 5;
+            int pointMultiplier = 1; 
             double noisePixels = 2;
             // pigeon/navx claim 1.5 degrees for fused output
             // final double gyroNoise = 0.025;
@@ -101,6 +102,7 @@ public class PoseEstimatorHarness {
 
             int idx = 0;
             double yPos = 0;
+            double tilt = 0;
 
             double panErrSquareSum = 0.0;
             double xErrSquareSum = 0.0;
@@ -125,13 +127,17 @@ public class PoseEstimatorHarness {
                         if (Math.abs(relativeBearing) > Math.PI / 2)
                             continue;
 
-                        MatOfPoint2f[] imagePoints = new MatOfPoint2f[kMat.length];
+                        // these are the calculated points
+                        // MatOfPoint2f[] idealImagePoints = new MatOfPoint2f[kMat.length];
+                        Mat[] images = new Mat[kMat.length];
                         for (int cameraIdx = 0; cameraIdx < kMat.length; ++cameraIdx) {
                             // make transform from world origin to camera center
                             Mat worldToCameraCenterHomogeneous = VisionUtil.makeWorldToCameraHomogeneous(pan, xPos,
                                     yPos,
                                     zPos);
                             Mat worldToEye = VisionUtil.translateX(worldToCameraCenterHomogeneous, b[cameraIdx]);
+
+                            // make the points the camera sees
                             MatOfPoint2f pts = VisionUtil.imagePoints(kMat[cameraIdx], dMat[cameraIdx],
                                     targetGeometryMeters,
                                     worldToEye,
@@ -144,7 +150,20 @@ public class PoseEstimatorHarness {
                             VisionUtil.writePng(pts, (int) size.width, (int) size.height,
                                     String.format("C:\\Users\\joelt\\Desktop\\pics\\img-%s-%d-%d.png", name, idx,
                                             cameraIdx));
-                            imagePoints[cameraIdx] = pts;
+                            // idealImagePoints[cameraIdx] = pts;
+
+                            // also make an image
+                            Mat cameraView = VisionUtil.makeImage(xPos, yPos, zPos, tilt, pan, kMat[cameraIdx],
+                                    dMat[cameraIdx], targetGeometryMeters, size);
+                            if (cameraView == null) {
+                                //System.out.println("no image");
+                                continue pose;
+                            }
+                            Imgcodecs.imwrite(
+                                    String.format("C:\\Users\\joelt\\Desktop\\pics\\target-%s-%d-%d-distorted.png",
+                                            name, idx, cameraIdx),
+                                    cameraView);
+                            images[cameraIdx] = cameraView;
 
                         }
 
@@ -154,7 +173,8 @@ public class PoseEstimatorHarness {
 
                         double gyro = pan + (gyroNoise * rand.nextGaussian());
 
-                        Mat transform = e.getPose(gyro, targetPointsMultiplied, imagePoints);
+                        // Mat transform = e.getPose(gyro, targetPointsMultiplied, idealImagePoints);
+                        Mat transform = e.getPose(idx, gyro, targetGeometryMeters, images);
 
                         Mat rmat = transform.submat(0, 3, 0, 3);
 

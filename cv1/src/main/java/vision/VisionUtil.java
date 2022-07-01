@@ -237,6 +237,24 @@ public abstract class VisionUtil {
         return productV;
     }
 
+    public static Mat removeTilt(Mat undistortedCameraView, double tilt, double f, Mat kMat, Size newSize) {
+        Mat invKMat = kMat.inv();
+        Mat unTiltV = Mat.zeros(3, 1, CvType.CV_64F);
+        unTiltV.put(0, 0, tilt, 0.0, 0.0);
+        Mat unTiltM = new Mat();
+        Calib3d.Rodrigues(unTiltV, unTiltM);
+
+        Mat transform = new Mat();
+        Core.gemm(unTiltM, invKMat, 1.0, new Mat(), 0.0, transform);
+        Mat tallKMat = VisionUtil.makeIntrinsicMatrix(f, newSize);
+        Core.gemm(tallKMat, transform, 1.0, new Mat(), 0.0, transform);
+        debug(0, "result", transform);
+
+        Mat untiltedCameraView = Mat.zeros(newSize, CvType.CV_8UC3);
+        Imgproc.warpPerspective(undistortedCameraView, untiltedCameraView, transform, newSize);
+        return untiltedCameraView;
+    }
+
     /**
      * first pan (about y) and then tilt (about x), return resulting rotation vector
      * 
@@ -313,35 +331,6 @@ public abstract class VisionUtil {
                 new Point3(-width / 2, height / 2, 0.0),
                 new Point3(width / 2, height / 2, 0.0),
                 new Point3(width / 2, -height / 2, 0.0));
-    }
-
-    /**
-     * specify corner points (x1,y1) and (x2,y2), return rectangle at z=0.
-     */
-    public static MatOfPoint3f makeTarget(double x1, double y1, double x2, double y2) {
-        return new MatOfPoint3f(
-                new Point3(x2, y1, 0.01),
-                new Point3(x2, y2, 0.0),
-                new Point3(x1, y2, 0.0),
-                new Point3(x1, y1, 0.0));
-    }
-
-    /**
-     * more points
-     */
-    public static MatOfPoint3f makeTargetGeometry3f2(double width, double height) {
-        // precisely planar target makes the solver freak out.
-        // i added a tiny bit of z to "fix" it
-        return new MatOfPoint3f(
-                new Point3(0.0, 0.0, 0.001),
-                new Point3(-width / 2, -height / 2, 0.0),
-                new Point3(-width / 2, height / 2, 0.0),
-                new Point3(width / 2, height / 2, 0.0),
-                new Point3(width / 2, -height / 2, 0.0),
-                new Point3(-width / 4, -height / 4, 0.0),
-                new Point3(-width / 4, height / 4, 0.0),
-                new Point3(width / 4, height / 4, 0.0),
-                new Point3(width / 4, -height / 4, 0.0));
     }
 
     /**
@@ -426,7 +415,7 @@ public abstract class VisionUtil {
      * @param rawCameraView unprocessed image
      * @return 2d geometry of the corners, in the image
      */
-    public static MatOfPoint2f getImagePoints(int picIdx, Mat rawCameraView) {
+    public static MatOfPoint2f findTargetCornersInImage(int picIdx, Mat rawCameraView) {
 
         // first "binarize" to remove blur
         Mat cameraView = new Mat();
@@ -595,7 +584,7 @@ public abstract class VisionUtil {
         return new MatOfPoint2f(ptsList.toArray(new Point[0]));
     }
 
-    public static MatOfPoint2f getImagePoints(
+    public static MatOfPoint2f projectGeometryToImagePoints(
             double xPos,
             double yPos,
             double zPos,
@@ -687,7 +676,7 @@ public abstract class VisionUtil {
                 new Scalar(255, 255, 255));
         // Imgcodecs.imwrite("C:\\Users\\joelt\\Desktop\\projection.jpg", visionTarget);
 
-        MatOfPoint2f skewedImagePts2f = getImagePoints(xPos,
+        MatOfPoint2f skewedImagePts2f = projectGeometryToImagePoints(xPos,
                 yPos,
                 zPos,
                 tilt,
@@ -719,7 +708,9 @@ public abstract class VisionUtil {
         Rect r = new Rect(border, border, (int) (dsize.width - border), (int) (dsize.height - border));
         for (Point p : skewedImagePts2f.toList()) {
             if (!r.contains(p)) {
-                // System.out.println("out of frame");
+                //System.out.println("out of frame");
+                //System.out.println(r.toString());
+                //System.out.println(skewedImagePts2f.dump());
                 return null;
             }
         }

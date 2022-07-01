@@ -11,7 +11,7 @@ import org.opencv.core.Size;
 /**
  * Uses {@link Calib3d#solvePnP()}
  */
-public class MonocularPoseEstimator implements PoseEstimator {
+public class MonocularPoseEstimator extends BasePoseEstimator {
     final double f = 985; // 2.8mm lens
     final int height = 800;
     final int width = 1280;
@@ -59,9 +59,13 @@ public class MonocularPoseEstimator implements PoseEstimator {
     @Override
     public Mat getPose(double heading, MatOfPoint3f targetPoints, MatOfPoint2f[] imagePoints) {
 
+        // ok the problem here is that the imagePoints are not repeated like the
+        // targetPoints are.
+
         Mat newCamRVec = new Mat();
         Mat newCamTVec = new Mat();
-
+        // System.out.println(targetPoints.dump());
+        // System.out.println(imagePoints[0].dump());
         Calib3d.solvePnP(targetPoints, imagePoints[0], kMat,
                 new MatOfDouble(), newCamRVec, newCamTVec, false,
                 Calib3d.SOLVEPNP_ITERATIVE);

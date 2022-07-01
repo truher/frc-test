@@ -28,4 +28,7 @@ public interface PoseEstimator {
     // for now this operates on *points* found in images
     // TODO: make it operate on images, supply some sort of point-finding utility?
     public Mat getPose(double heading, MatOfPoint3f targetPoints, MatOfPoint2f[] imagePoints);
+
+    // idx is for filenames for debugging
+    public Mat getPose(int idx, double heading, MatOfPoint3f targetPoints, Mat[] images);
 }

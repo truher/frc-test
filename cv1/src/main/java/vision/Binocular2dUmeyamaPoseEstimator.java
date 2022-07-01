@@ -14,7 +14,7 @@ import org.opencv.core.Size;
 /**
  * use the umeyama method in 2d. works pretty well within a few meters.
  */
-public class Binocular2dUmeyamaPoseEstimator implements PoseEstimator {
+public class Binocular2dUmeyamaPoseEstimator extends BasePoseEstimator {
     static final boolean DEBUG = false;
     static final int LEVEL = 1;
     final double f = 914;

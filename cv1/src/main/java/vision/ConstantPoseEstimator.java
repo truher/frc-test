@@ -10,7 +10,7 @@ import org.opencv.core.Size;
 /**
  * Always returns the origin; a baseline for awfulness.
  */
-public class ConstantPoseEstimator implements PoseEstimator {
+public class ConstantPoseEstimator extends BasePoseEstimator {
     final double f = 985; // 2.8mm lens
     final int height = 800;
     final int width = 1280;
@@ -58,5 +58,4 @@ public class ConstantPoseEstimator implements PoseEstimator {
     public Size[] getSizes() {
         return new Size[] { dsize };
     }
-
 }

@@ -21,7 +21,7 @@ public class TestVisionUtil {
 
     // @Test
     public void testHomogeneous() {
-        MatOfPoint3f targetGeometryMeters = VisionUtil.makeTarget(-0.2, -0.1, 0.2, 0.0);
+        MatOfPoint3f targetGeometryMeters = VisionUtil.makeTargetGeometry3f(0.5, 0.5);
         debug("target", targetGeometryMeters);
         Mat XMat = VisionUtil.makeXMat3d(targetGeometryMeters);
         debug("homogeneous target", XMat);

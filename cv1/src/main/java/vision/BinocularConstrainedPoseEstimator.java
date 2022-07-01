@@ -21,7 +21,7 @@ import org.opencv.core.Size;
  * camera/image arrays are {left, right}
  * 
  */
-public class BinocularConstrainedPoseEstimator implements PoseEstimator {
+public class BinocularConstrainedPoseEstimator extends BasePoseEstimator {
     static final boolean DEBUG = false;
     static final int LEVEL = 1;
     final double f = 985; // 2.8mm lens

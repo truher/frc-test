@@ -7,7 +7,7 @@ import org.opencv.core.MatOfPoint2f;
 import org.opencv.core.MatOfPoint3f;
 import org.opencv.core.Size;
 
-public class Binocular2dSVDPoseEstimator implements PoseEstimator {
+public class Binocular2dSVDPoseEstimator extends BasePoseEstimator {
     static final boolean DEBUG = false;
     static final int LEVEL = 1;
     final double f = 914;
