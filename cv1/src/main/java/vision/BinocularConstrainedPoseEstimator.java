@@ -66,6 +66,8 @@ public class BinocularConstrainedPoseEstimator extends BasePoseEstimator {
             throw new IllegalArgumentException();
         MatOfPoint2f leftPts = imagePoints[0];
         MatOfPoint2f rightPts = imagePoints[1];
+        debug(1, "leftPts", leftPts);
+        debug(1, "rightPts", rightPts);
         //
         // To solve Ax=b triangulation, first make b (the points in each eye,
         // transformed back into XYZ):

@@ -22,7 +22,7 @@ public class PoseEstimatorHarness {
     static final boolean DEBUG = false;
     static final int LEVEL = 1;
     public final List<PoseEstimator> poseEstimators;
-    final boolean showGrid = true;
+    final boolean showGrid = false;
 
     public PoseEstimatorHarness() {
         // these are ranked worst to best
@@ -30,10 +30,10 @@ public class PoseEstimatorHarness {
         poseEstimators = new ArrayList<PoseEstimator>();
 
         // does nothing
-        poseEstimators.add(new ConstantPoseEstimator());
+        // poseEstimators.add(new ConstantPoseEstimator());
 
         // pretty good close up, not good in x far away
-        poseEstimators.add(new MonocularPoseEstimator(false));
+        // poseEstimators.add(new MonocularPoseEstimator(false));
 
         // works ok
         poseEstimators.add(new BinocularConstrainedPoseEstimator(false));
@@ -59,8 +59,8 @@ public class PoseEstimatorHarness {
 
     public void run() {
         System.out.println("stderr for each estimator...");
-        System.out.printf("%40s %10s %10s %10s %10s %10s\n",
-                "name", "heading", "X", "Z", "bearing", "range");
+        System.out.printf("%40s %10s %10s %10s %10s %10s %10s\n",
+                "name", "heading", "X", "Z", "bearing", "range", "rate");
 
         for (PoseEstimator e : poseEstimators) {
             Random rand = new Random(42);
@@ -91,24 +91,26 @@ public class PoseEstimatorHarness {
 
             MatOfPoint3f targetGeometryMeters = VisionUtil.makeTargetGeometry3f(0.5, 0.5);
             // 50fps video => 10hz output = 5x averaging
-            int pointMultiplier = 1; 
+            int pointMultiplier = 1;
             double noisePixels = 2;
             // pigeon/navx claim 1.5 degrees for fused output
             // final double gyroNoise = 0.025;
             // LIS3MDL claims about 1% thermal noise at 80hz
             // average 8 samples = 1/sqrt(8)
             double gyroNoise = 0.0035; //
-            MatOfPoint3f targetPointsMultiplied = VisionUtil.duplicatePoints(targetGeometryMeters, pointMultiplier);
+            // MatOfPoint3f targetPointsMultiplied =
+            // VisionUtil.duplicatePoints(targetGeometryMeters, pointMultiplier);
 
             int idx = 0;
             double yPos = 0;
-            double tilt = 0;
+            // double tilt = 0;
 
             double panErrSquareSum = 0.0;
             double xErrSquareSum = 0.0;
             double zErrSquareSum = 0.0;
             double relativeBearingErrSquareSum = 0.0;
             double rangeErrSquareSum = 0.0;
+            long workTime = 0;
 
             if (showGrid)
                 System.out.println(
@@ -145,18 +147,22 @@ public class PoseEstimatorHarness {
                                     noisePixels, rand);
                             Size size = sizes[cameraIdx];
                             final Rect viewport = new Rect(0, 0, (int) size.width, (int) size.height);
-                            if (!VisionUtil.inViewport(pts, viewport))
+                            if (!VisionUtil.inViewport(pts, viewport)) {
                                 continue pose;
+                            }
                             VisionUtil.writePng(pts, (int) size.width, (int) size.height,
                                     String.format("C:\\Users\\joelt\\Desktop\\pics\\img-%s-%d-%d.png", name, idx,
                                             cameraIdx));
                             // idealImagePoints[cameraIdx] = pts;
 
                             // also make an image
-                            Mat cameraView = VisionUtil.makeImage(xPos, yPos, zPos, tilt, pan, kMat[cameraIdx],
-                                    dMat[cameraIdx], targetGeometryMeters, size);
+                            // Mat cameraView = VisionUtil.makeImage(xPos, yPos, zPos, tilt, pan,
+                            // kMat[cameraIdx],
+                            // dMat[cameraIdx], targetGeometryMeters, size);
+
+                            Mat cameraView = VisionUtil.renderImage(size, targetGeometryMeters, pts);
+
                             if (cameraView == null) {
-                                //System.out.println("no image");
                                 continue pose;
                             }
                             Imgcodecs.imwrite(
@@ -173,9 +179,14 @@ public class PoseEstimatorHarness {
 
                         double gyro = pan + (gyroNoise * rand.nextGaussian());
 
+                        long startTime = System.currentTimeMillis();
                         // Mat transform = e.getPose(gyro, targetPointsMultiplied, idealImagePoints);
                         Mat transform = e.getPose(idx, gyro, targetGeometryMeters, images);
 
+                        workTime += (System.currentTimeMillis() - startTime);
+                        if (transform == null) {
+                            continue pose;
+                        }
                         Mat rmat = transform.submat(0, 3, 0, 3);
 
                         double euler = Math.atan2(rmat.get(2, 0)[0], rmat.get(0, 0)[0]);
@@ -231,8 +242,8 @@ public class PoseEstimatorHarness {
 
             if (showGrid)
                 System.out.println("===========================");
-            System.out.printf("%40s %10.4f %10.4f %10.4f %10.4f %10.4f\n",
-                    name, panRMSE, xRMSE, zRMSE, relativeBearingRMSE, rangeRMSE);
+            System.out.printf("%40s %10.4f %10.4f %10.4f %10.4f %10.4f %10.4f\n",
+                    name, panRMSE, xRMSE, zRMSE, relativeBearingRMSE, rangeRMSE, 1000.0 * idx / workTime);
             if (showGrid)
                 System.out.println("===========================");
         }

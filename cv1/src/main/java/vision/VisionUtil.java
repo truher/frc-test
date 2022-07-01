@@ -671,11 +671,6 @@ public abstract class VisionUtil {
         MatOfPoint2f targetImageGeometry = VisionUtil.makeTargetImageGeometryPixels(targetGeometryMeters, 1000);
         // System.out.println(targetImageGeometry.dump());
 
-        // make an image corresponding to the pixel geometry, for warping
-        Mat visionTarget = new Mat(VisionUtil.boundingBox(targetImageGeometry), CvType.CV_8UC3,
-                new Scalar(255, 255, 255));
-        // Imgcodecs.imwrite("C:\\Users\\joelt\\Desktop\\projection.jpg", visionTarget);
-
         MatOfPoint2f skewedImagePts2f = projectGeometryToImagePoints(xPos,
                 yPos,
                 zPos,
@@ -708,17 +703,33 @@ public abstract class VisionUtil {
         Rect r = new Rect(border, border, (int) (dsize.width - border), (int) (dsize.height - border));
         for (Point p : skewedImagePts2f.toList()) {
             if (!r.contains(p)) {
-                //System.out.println("out of frame");
-                //System.out.println(r.toString());
-                //System.out.println(skewedImagePts2f.dump());
+                // System.out.println("out of frame");
+                // System.out.println(r.toString());
+                // System.out.println(skewedImagePts2f.dump());
                 return null;
             }
         }
 
         Mat transformMat = Imgproc.getPerspectiveTransform(targetImageGeometry, skewedImagePts2f);
 
+        // make an image corresponding to the pixel geometry, for warping
+        Mat visionTarget = new Mat(VisionUtil.boundingBox(targetImageGeometry), CvType.CV_8UC3,
+                new Scalar(255, 255, 255));
         Mat cameraView = Mat.zeros(dsize, CvType.CV_8UC3);
+        Imgproc.warpPerspective(visionTarget, cameraView, transformMat, dsize);
 
+        return cameraView;
+    }
+
+    public static Mat renderImage(Size dsize, MatOfPoint3f targetGeometryMeters, MatOfPoint2f skewedImagePts2f) {
+        MatOfPoint2f targetImageGeometry = VisionUtil.makeTargetImageGeometryPixels(targetGeometryMeters, 1000);
+
+        Mat transformMat = Imgproc.getPerspectiveTransform(targetImageGeometry, skewedImagePts2f);
+
+        // make an image corresponding to the pixel geometry, for warping
+        Mat visionTarget = new Mat(VisionUtil.boundingBox(targetImageGeometry), CvType.CV_8UC3,
+                new Scalar(255, 255, 255));
+        Mat cameraView = Mat.zeros(dsize, CvType.CV_8UC3);
         Imgproc.warpPerspective(visionTarget, cameraView, transformMat, dsize);
 
         return cameraView;
