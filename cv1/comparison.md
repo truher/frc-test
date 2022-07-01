@@ -1,6 +1,6 @@
 I compared various pose estimation methods and obtained the following, in increasing order of accuracy:
 
-    stderr for each estimator...
+    stderr for each estimator (in meters and radians), and framerate in Hz:
     
                                         name    heading          X          Z   position    bearing      range       rate
                        ConstantPoseEstimator     0.6066     2.9705     6.0295     6.7216     3.0249     6.7216    79.9118
@@ -20,5 +20,5 @@ I also plotted the accuracy as a function of range:
 The main highlights from this study are:
 
 * IMU fusion is required for reasonable accuracy at a distance
-* the binocular approach yields about a quarter of the error, at a cost of double the computation time, compared to monocular.
-* none of the binocular solver differences make any difference.
+* The binocular approach yields about a quarter of the error, at a cost of double the computation time, compared to monocular.
+* None of the differences in binocular solver methods actually make any difference.
