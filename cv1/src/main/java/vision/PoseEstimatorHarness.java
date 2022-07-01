@@ -24,7 +24,10 @@ public class PoseEstimatorHarness {
     public final List<PoseEstimator> poseEstimators;
 
     // true = show accuracy for each point in 10x10m grid
-    final boolean showGrid = true;
+    final boolean showGrid = false;
+
+    // true = show stderr for each estimator over all samples
+    final boolean showSummary = true;
 
     // true = add noise to points; false = leave points alone
     // if estimating from points this should be true
@@ -41,7 +44,7 @@ public class PoseEstimatorHarness {
     final boolean addImageNoise = true;
 
     // write various image files for debugging.
-    final boolean writeFiles = false;
+    final boolean writeFiles = true;
 
     public PoseEstimatorHarness() {
         // these are ranked worst to best
@@ -49,10 +52,10 @@ public class PoseEstimatorHarness {
         poseEstimators = new ArrayList<PoseEstimator>();
 
         // baseline, constant output
-         poseEstimators.add(new ConstantPoseEstimator());
+        poseEstimators.add(new ConstantPoseEstimator());
 
         // pretty good close up, not good in x far away
-         poseEstimators.add(new MonocularPoseEstimator(false));
+        poseEstimators.add(new MonocularPoseEstimator(false));
 
         // ok close up
         poseEstimators.add(new Binocular2dSVDPoseEstimator(false));
@@ -77,10 +80,11 @@ public class PoseEstimatorHarness {
     }
 
     public void run() {
-        System.out.println("stderr for each estimator...");
-        System.out.printf("%40s %10s %10s %10s %10s %10s %10s\n",
-                "name", "heading", "X", "Z", "bearing", "range", "rate");
-
+        if (showSummary) {
+            System.out.println("stderr for each estimator...");
+            System.out.printf("%40s %10s %10s %10s %10s %10s %10s %10s\n",
+                    "name", "heading", "X", "Z", "position", "bearing", "range", "rate");
+        }
         for (PoseEstimator e : poseEstimators) {
             Random rand = new Random(42);
             final String name = e.getName();
@@ -127,13 +131,14 @@ public class PoseEstimatorHarness {
             double panErrSquareSum = 0.0;
             double xErrSquareSum = 0.0;
             double zErrSquareSum = 0.0;
+            double positionErrSquareSum = 0.0;
             double relativeBearingErrSquareSum = 0.0;
             double rangeErrSquareSum = 0.0;
             long workTime = 0;
 
             if (showGrid)
                 System.out.println(
-                        "idx, pan, xpos, ypos, zpos, rbear, range, ppan, pxpos, pypos, pzpos, prbear, prange, panErr, xErr, zErr, relativeBearingErr, rangeErr");
+                        "               name, idx,  pan,  xpos,  ypos,  zpos, rbear, range,  ppan, pxpos, pypos, pzpos, prbear, prange, panErr, xErr, zErr, posErr, relativeBearingErr, rangeErr");
             for (double pan = -3 * Math.PI / 8; pan <= 3 * Math.PI / 8; pan += Math.PI / 8) {
                 for (double zPos = -10.0; zPos <= -1.0; zPos += 1.0) {
                     pose: for (double xPos = -5; xPos <= 5; xPos += 1.0) {
@@ -259,19 +264,21 @@ public class PoseEstimatorHarness {
                         double zErr = zPos - pzPos;
                         double relativeBearingErr = relativeBearing - pRelativeBearing;
                         double rangeErr = range - pRange;
+                        double posErr = Math.sqrt(xErr * xErr + zErr * zErr);
 
                         panErrSquareSum += panErr * panErr;
                         xErrSquareSum += xErr * xErr;
                         zErrSquareSum += zErr * zErr;
+                        positionErrSquareSum += posErr * posErr;
                         relativeBearingErrSquareSum += relativeBearingErr * relativeBearingErr;
                         rangeErrSquareSum += rangeErr * rangeErr;
 
                         if (showGrid)
                             System.out.printf(
-                                    "%d, %5.2f, %5.2f, %5.2f, %5.2f, %5.2f, %5.2f, %5.2f, %5.2f, %5.2f, %5.2f, %5.2f, %5.2f, %5.2f, %5.2f, %5.2f, %7.4f, %5.2f\n",
-                                    idx, pan, xPos, yPos, zPos, relativeBearing, range, ppan, pxPos, pyPos, pzPos,
+                                    "%40s, %3d, %6.2f, %6.2f, %6.2f, %6.2f, %6.2f, %6.2f, %6.2f, %6.2f, %6.2f, %6.2f, %6.2f, %6.2f, %6.2f, %6.2f, %6.2f, %6.2f, %7.4f, %6.2f\n",
+                                    name, idx, pan, xPos, yPos, zPos, relativeBearing, range, ppan, pxPos, pyPos, pzPos,
                                     pRelativeBearing, pRange,
-                                    panErr, xErr, zErr, relativeBearingErr, rangeErr);
+                                    panErr, xErr, zErr, posErr, relativeBearingErr, rangeErr);
 
                     }
                 }
@@ -280,15 +287,18 @@ public class PoseEstimatorHarness {
             double panRMSE = Math.sqrt(panErrSquareSum / idx);
             double xRMSE = Math.sqrt(xErrSquareSum / idx);
             double zRMSE = Math.sqrt(zErrSquareSum / idx);
+            double posRMSE = Math.sqrt(positionErrSquareSum/idx);
             double relativeBearingRMSE = Math.sqrt(relativeBearingErrSquareSum / idx);
             double rangeRMSE = Math.sqrt(rangeErrSquareSum / idx);
 
-            if (showGrid)
-                System.out.println("===========================");
-            System.out.printf("%40s %10.4f %10.4f %10.4f %10.4f %10.4f %10.4f\n",
-                    name, panRMSE, xRMSE, zRMSE, relativeBearingRMSE, rangeRMSE, 1000.0 * idx / workTime);
-            if (showGrid)
-                System.out.println("===========================");
+            if (showSummary) {
+                if (showGrid)
+                    System.out.println("===========================");
+                System.out.printf("%40s %10.4f %10.4f %10.4f %10.4f %10.4f %10.4f %10.4f\n",
+                        name, panRMSE, xRMSE, zRMSE, posRMSE, relativeBearingRMSE, rangeRMSE, 1000.0 * idx / workTime);
+                if (showGrid)
+                    System.out.println("===========================");
+            }
         }
 
     }
