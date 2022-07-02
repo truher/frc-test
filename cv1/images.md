@@ -12,7 +12,7 @@ The "salt and pepper" noise is removed with a median filter using `Imgproc.media
 
 <img src="target-208-nosalt.png" width=480/>
 
-The entire image is softened with a small Gaussian filter using `Imgproc.GaussianBlur()`'
+The entire image is softened with a small Gaussian filter using `Imgproc.GaussianBlur()`.
 
 <img src="target-208-degauss.png" width=480/>
 
@@ -25,11 +25,13 @@ Using `Imgproc.findContours()` results in a single squiggly box.
 <img src="target-208-contours.png" width=480/>
 
 Any too-small contours are discarded and the remaining one is cleaned up with `Imgproc.approxPolyDP()`, which tries to fit a polygon with as few
-vertices as possible:
+vertices as possible.
 
 <img src="target-208-poly.png" width=480/>
 
 To match the points in the image with the known points of the target, the points need to be sorted.  In this case, the path starts
-in the upper left, and follows clockwise.  This path is produced with `Imgproc.convexHull()`.  The little black dots illustrate is where the points ended up:
+in the upper left, and follows clockwise.  This path is produced with `Imgproc.convexHull()`.  The little black dots illustrate is where the points ended up.
 
 <img src="target-208-points.png" width=480/>
+
+The rest of the algorithm extracts a camera pose from those points, or two sets of similar points in the binocular case.
