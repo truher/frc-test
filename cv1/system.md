@@ -29,14 +29,18 @@ which is also one of the most efficient LED emitters available.
 2. __Cameras.__  To start with, we'll use [stereoscopic binocular cameras](camera.md)__.  A binocular approach provides about 4x
 the accuracy of estimated target distance, compared with a monocular approach.  To avoid artifacts, choose a global-shutter camera.
 If the game includes multiple targets, a multi-camera non-stereoscopic approach might work as well.
-4. __Code.__ Image analysis uses [OpenCV processing on Raspberry Pi](code.md), because it's simple.  It avoids special hardware and magic
-neural nets nobody understands, just use the OpenCV stuff that WPILib comes with, and use the most straightforward
-"network tables" style interface between the RIO and the Pi.  The RIO performs a couple of further processing steps:
-    1. __IMU Fusion.__  Because both the target size and the binocular interpupillary distance are known, the distance to the target
-    is relatively easy to measure, and the __relative__ bearing (angle from camera to target) can be measured very precisely (easily to a tenth
-    of a degree) but much farder to measure the absolute bearing (from target to camera).  In other words, if you're directly
-    in front of the target, it will look almost exactly the same if you're a five or ten degrees to the left or to the right.
-    To resolve this issue, use the IMU bearing instead of the vision-derived bearing.
-    2. __Kalman Filter Pose Estimator.__  The RIO maintains a Kalman Filter (probably the EKF or UKF in WPILib) representing
+4. __Code.__  There are two phases of computation:
+    1. Image analysis uses [OpenCV processing on Raspberry Pi](code.md), because it's simple.  It avoids special hardware and magic
+    neural nets nobody understands, just use the OpenCV stuff that WPILib comes with, and use the most straightforward
+    "network tables" style interface between the RIO and the Pi.  For comparison, the
+    Limelight [appears to use](https://www.chiefdelphi.com/t/ever-wondered-what-makes-a-limelight-2-tick/380418) a Raspberry Pi 
+    compute module.
+    2. The RoboRIO performs a couple of further processing steps:
+        1. __IMU Fusion.__  Because both the target size and the binocular interpupillary distance are known, the distance to the target
+        is relatively easy to measure, and the __relative__ bearing (angle from camera to target) can be measured very precisely (easily to a tenth
+        of a degree) but much farder to measure the absolute bearing (from target to camera).  In other words, if you're directly
+        in front of the target, it will look almost exactly the same if you're a five or ten degrees to the left or to the right.
+        To resolve this issue, use the IMU bearing instead of the vision-derived bearing.
+        2. __Kalman Filter Pose Estimator.__  The RIO maintains a Kalman Filter (probably the EKF or UKF in WPILib) representing
     the robot pose, and corrects the filter periodically with vision- and IMU-derived data, as well as other sources, e.g. wheel odometry.
     
