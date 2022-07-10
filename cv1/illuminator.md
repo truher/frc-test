@@ -36,7 +36,13 @@ TK 10%
 
 TK 50%
 
-There are certainly many possible alternatives designs for the illuminator -- the Limelight illuminator, for example,
+# Alternatives
+
+There are certainly many possible alternatives designs for the illuminator:
+
+1. The Limelight illuminator
 [appears to use](https://www.chiefdelphi.com/t/ever-wondered-what-makes-a-limelight-2-tick/380418) 
 one [AL8860 driver](https://www.diodes.com/part/view/AL8860/) for each pair of LEDs, using a custom printed circuit board.  The design above
-is much simpler, and avoids all fabrication of any kind. 
+is much simpler, and avoids fabrication of any kind. 
+2. Something like a [Neopixel ring](https://www.adafruit.com/product/1643) would not be a good choice; neopixels are not particularly bright, and their
+output spectrum doesn't match any convenient filter.
