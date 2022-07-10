@@ -1,5 +1,7 @@
 # Camera
 
+## Criteria
+
 There are several criteria involved in the camera choice.
 
 1. __Number of views and eyes.__  I simulated single-view monocular and binocular options (see [comparison](comparison.md)), and found the binocular option
@@ -26,16 +28,24 @@ are many [differences](https://www.optowiki.info/blog/comparison-c-mount-lenses-
 difference is cost, S-mount tend to be much less expensive.
 5. __Strobe output.__  Not all camera modules expose the shutter signal, so the strobe can be synchronized with it.
 
-ArduCam provides several [monocular, binocular, and quadocular kits](https://www.arducam.com/raspberry-pi-multiple-cameras/) that seem
-appropriate, specifically the [kit](https://www.arducam.com/product/arducam-1mp2-stereoscopic-camera-bundle-kit-for-raspberry-pi-nvidia-jetson-nano-xavier-nx-two-ov9281-global-shutter-monochrome-camera-modules-and-camarray-stereo-camera-hat/)
-that includes two separate OV9281 modules and a multiplexer board, which works by capturing two frames at the same (hardware-synchronized)
+## Selection
+
+[ArduCam](https://www.arducam.com/) provides several [monocular, binocular, and quadocular kits](https://www.arducam.com/raspberry-pi-multiple-cameras/) that seem
+appropriate, specifically this [kit](https://www.arducam.com/product/arducam-1mp2-stereoscopic-camera-bundle-kit-for-raspberry-pi-nvidia-jetson-nano-xavier-nx-two-ov9281-global-shutter-monochrome-camera-modules-and-camarray-stereo-camera-hat/):
+
+
+<img src="https://www.uctronics.com/media/catalog/product/cache/f16269e76514986618cdfcfa729ea40d/a/r/arducam-1mp-0v9281-mipi-stereoscopic_camerabundle_kit-b0266_3_.jpg" height=300/><img src="https://www.arducam.com/wp-content/uploads/2020/10/B0266-2-600x600.jpg" height=300/>
+
+It includes two separate OV9281 modules and a multiplexer board, which works by capturing two frames at the same (hardware-synchronized)
 time, and stitching them together into one very wide image for the Raspberry Pi.  Separate modules are better than a single two-camera board
 because they can be placed further apart, increasing accuracy.  The same module is also available in a
 [four-way configuration.](https://www.arducam.com/product/arducam-1mp4-quadrascopic-camera-bundle-kit-for-raspberry-pi-nvidia-jetson-nano-xavier-nx-four-ov9281-global-shutter-monochrome-camera-modules-and-camarray-camera-hat/)
 
-# Alternatives
 
-1. The old Raspberry Pi sensor, OV5647, [might be](https://www.chiefdelphi.com/t/ever-wondered-what-makes-a-limelight-2-tick/380418/29)
+
+## Alternatives
+
+1. __The old Raspberry Pi sensor, OV5647,__ [might be](https://www.chiefdelphi.com/t/ever-wondered-what-makes-a-limelight-2-tick/380418/29)
 used by the Limelight device, and it provides a global shutter, though, strangely, not in the
 [Arducam package.](https://www.arducam.com/docs/cameras-for-raspberry-pi/native-raspberry-pi-cameras/5mp-ov5647-standard-camera-modules/)
-2. USB cameras.  It's common to use simple color USB cameras, but these don't satisfy any of the above requirements.
+2. __USB cameras.__  It's common to use simple color USB cameras, but these don't satisfy any of the above requirements.
