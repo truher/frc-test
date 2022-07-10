@@ -1,8 +1,9 @@
-# System Design for Simultaneous Localization and Mapping ("SLAM")
+# Simultaneous Localization and Mapping ("SLAM")
 
-The overall goal is to produce estimates for pose and target location accurate enough for semi-automated driving.
+The overall goal is to __produce estimates for pose and target location accurate enough for semi-automated driving.__
 Instead of the usual "remote-controlled car" approach to FRC movement, the approach can be based on higher-level
-commands, for example "go to target" or "return to base".
+commands, for example "go to target" or "return to base".  There are lots of other things we could do with cameras,
+but those ideas are not addressed here; see "non-goals" below.
 
 There are several virtues, vices, and constraints, that affect the design:
 
@@ -42,5 +43,25 @@ If the game includes multiple targets, a multi-camera non-stereoscopic approach 
         in front of the target, it will look almost exactly the same if you're a five or ten degrees to the left or to the right.
         To resolve this issue, use the IMU bearing instead of the vision-derived bearing.
         2. __Kalman Filter Pose Estimator.__  The RIO maintains a Kalman Filter (probably the EKF or UKF in WPILib) representing
-    the robot pose, and corrects the filter periodically with vision- and IMU-derived data, as well as other sources, e.g. wheel odometry.
-    
+        the robot pose, and corrects the filter periodically with vision- and IMU-derived data, as well as other sources, e.g. wheel odometry.
+
+# Non-goals
+
+There are other things we could do with the same, or a different, camera setup, and we could pursue some of these ideas too, separately:
+
+1. __Depth mapping.__  With a normal, color binocular camera, a scene can be converted into a [depth map](https://en.wikipedia.org/wiki/Depth_map)
+showing near and far regions, or a [point cloud](https://en.wikipedia.org/wiki/Point_cloud) describing the 3d geometry of nearby objects.  This
+would be useful for obstacle avoidance and path finding.  The driving characteristic in this arrangement is finding many matching details in each
+eye, and measuring the "disparity" (horizontal difference between right and left views) between each detail, so it's important to see a lot
+at high resolution, and illumination is only important to find details.  By comparison, goal above is to produce images with as little detail
+as possible: blazing white targets on a black background.  It would be possible to combine these two goals into one hardware solution,
+using an illuminator matching one of the Bayer filter colors (e.g. the common green illuminator), and using the other two colors for depth mapping.
+Keeping the depth mapping and SLAM systems separate for now makes the software simpler; we can combine these projects later if we decide
+to get into the sort of path-finding that would benefit from point clouds.  (Note: I haven't found a suitable full-color binocular
+global-shutter camera, but maybe I haven't looked hard enough.)
+2. __Object detection.__  In order to generate paths towards or around objects, it would be useful to 
+identify game pieces, teammates, opponents, etc, using a normal color
+monocular camera and fancy software.  Other than the use of a camera, there's not much overlap in the hardware or software relevant to
+this problem, so we could do both, separately.
+It would even be possible to ignore the retroreflective targets entirely and design a SLAM system around detection of other objects,
+but IMHO the software challenge there is inappropriate.
