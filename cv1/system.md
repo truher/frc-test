@@ -26,7 +26,7 @@ The system comprises four parts:
 To maximize the contrast of the vision targets, and to minimize motion blur, use a bright flash in a wavelength
 outside the range of background lighting.  Because the background covers the visible spectrum, I chose a near-IR wavelength of 730nm,
 which is also one of the most efficient LED emitters available.
-2. __Cameras.__  To start with, we'll use [stereoscopic binocular cameras](camera.md)__.  A binocular approach provides about 4x
+2. __Cameras.__  To start with, we'll use [stereoscopic binocular cameras](camera.md).  A binocular approach provides about 4x
 the accuracy of estimated target distance, compared with a monocular approach.  To avoid artifacts, choose a global-shutter camera.
 If the game includes multiple targets, a multi-camera non-stereoscopic approach might work as well.
 4. __Code.__  There are two phases of computation:
