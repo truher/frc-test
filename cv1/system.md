@@ -1,8 +1,10 @@
 # Simultaneous Localization and Mapping ("SLAM")
 
-The overall goal is to __produce estimates for pose and target location accurate enough for semi-automated driving.__
+The overall goal is to __produce estimates for robot pose and target location accurate enough for semi-automated driving.__
 Instead of the usual "remote-controlled car" approach to FRC movement, the approach can be based on higher-level
-commands, for example "go to target" or "return to base".  There are lots of other things we could do with cameras,
+commands, for example "go to target" or "return to base," and most important, automated targeting for game piece placement or launching.
+
+There are lots of other things we could do with cameras,
 but those ideas are not addressed here; see "non-goals" below.
 
 There are several virtues, vices, and constraints, that affect the design:
@@ -12,8 +14,10 @@ There are several virtues, vices, and constraints, that affect the design:
 * __Minimize complexity.__  FRC is for high school students; the whole thing should be easy to grasp without advanced knowledge.
 * __Minimize cost.__  FRC rules stipulate a $600 limit for any single COTS element, but the system should simply be as simple and cheap as possible,
 so we can have several of them to play with.
-* __Solve a simple problem.__  Rather than solving an modern vision problem, make use of the available retroreflective targets, which have known
-locations.  Using this system doesn't preclude __also__ using other vision systems, e.g. "chase the red ball" kinds of things.
+* __Solve a simple problem.__  Rather than solving a complex modern vision problem, make use of the simple
+available __retroreflective targets,__ which have known, useful (i.e. game-piece-receiving) locations.
+Focusing on the targets doesn't preclude __also__ doing other things with vision,
+e.g. "chase the red ball" kinds of things, see "non-goals" below.
 * __Maximize the use of COTS parts.__  FRC rules stipulate that unmodified COTS parts may be freely reused, so a complete system can be assembled and refined
 in the off-season, and then trivially re-assembled during the build season.  Avoid custom printed circuits, etc.
 * __Maximize accuracy.__ To depend on vision-derived position __all the time,__ it needs to be accurate to within a few centimeters, over the entire
