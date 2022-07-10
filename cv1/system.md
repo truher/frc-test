@@ -34,7 +34,7 @@ If the game includes multiple targets, a multi-camera non-stereoscopic approach 
     neural nets nobody understands, just use the OpenCV stuff that WPILib comes with, and use the most straightforward
     "network tables" style interface between the RIO and the Pi.  For comparison, the
     Limelight [appears to use](https://www.chiefdelphi.com/t/ever-wondered-what-makes-a-limelight-2-tick/380418) a Raspberry Pi 
-    compute module.
+    compute module, coupled with a microcontroller (on its own printed circuit board) and a separate board for the illuminator.
     2. The RoboRIO performs a couple of further processing steps:
         1. __IMU Fusion.__  Because both the target size and the binocular interpupillary distance are known, the distance to the target
         is relatively easy to measure, and the __relative__ bearing (angle from camera to target) can be measured very precisely (easily to a tenth
