@@ -26,7 +26,8 @@ power to a safe level, we use two components:
     with screw terminals, which simplifies the wiring a bit; they're surprisingly expensive, around $20.
 3. __Control.__  The cameras provide a signal, FSTROBE, which matches the shutter.  The illuminator should shine during this signal,
 and not at other times.  A good motion-stopping shutter/strobe duration might be something around 1ms, and since the entire system only
-needs to feed the robot at 50hz at the absolute maximum (less would be fine), the duty cycle is something below 10%.
+needs to feed the robot at 50hz at the absolute maximum (less would be fine), the duty cycle is something below 10%.  For switching, we use
+a simple NFET, available as a breakout board from Sparkfun.
 
 The schematic above (available [here](https://truher.autodesk360.com/g/shares/SH35dfcQT936092f0e43a2d78fdfb23024ee)
 for download) is really aimed at simulation, not exactly the correct components.  Simulation results are below:
