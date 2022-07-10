@@ -15,8 +15,9 @@ gym-lighting spectrum, and a filter to match, in front of a monochrome camera.  
 which means we need an IR-sensitive camera.  There's a fuller discussion of [radiometry issues here](radiometry.md).
 3. __Shutter type.__  Most cameras use a [rolling shutter](https://en.wikipedia.org/wiki/Rolling_shutter) which means that a single frame
 is not captured all at once but rather one pixel-row at a time, slicing horizontally.  They work this way to simplify in-camera data
-processing and to increase sensitivity, at the expense of blur, jello, and other artifacts.  We want to maximize sharpness, in order to
-accurately extract the target geometry from the image, so we use the less-common "global shutter."
+processing and to increase sensitivity, at the expense of blur, jello, and other artifacts.  A rolling shutter is also much harder to
+synchronize with a strobe: the strobe needs to illuminate the entire capture event, from top to bottom, with the same intensity.
+To maximize sharpness without artifacts, in order to accurately extract the target geometry from the image, we use the less-common "global shutter."
 4. __Lenses.__  Lens choice is a tradeoff between accuracy at distance (more magnification = more accuracy) and field of view: you can't
 localize if you can't see the target.  The best tradeoff depends on the specifics of the targets and the game, so we should choose
 interchangeable lenses. The relevant standards for interchangeable lenses are
