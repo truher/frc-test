@@ -7,8 +7,10 @@ The illuminator consists of TK main components:
 1. __Emitters.__ There are many emitters available (see below for some of the options I discovered), but the best option seems to be
 The [Cree XP-E2 Far Red emitter](https://cree-led.com/products/xlamp-leds-discrete/xlamp-xp-e2), which is available as 
 a [three-emitter board for $12.](https://www.ledsupply.com/leds/cree-xlamp-xpe-high-power-led-star).  We'd use two per eye, 
-four altogether. (This board actually includes the previous version, XP-E, which is slightly less bright; I've asked the supplier
-about the new version, announced in January.)
+four altogether. (This board actually includes the previous,
+[discontinued](https://cree-led.com/media/documents/CREE-PCN-0731.pdf) version, XP-E,
+which is slightly less bright; I've asked the supplier
+about the new version, [announced](https://www.ledinside.com/node/32530) in January.)
 2. __Power.__ The emitters are good for 1 amp continuous, but they can be driven harder at duty cycles less than 100%.  Cree provides
 [detailed guidance on the topic of overdriving](https://cree-led.com/media/documents/XLampPulsedCurrent.pdf), which says that 3X current
 is acceptable under 10% duty cycle, and 2X current is acceptable under 50%.  To provide enough power for 3X pulses, but limit the steady-state
@@ -35,6 +37,12 @@ for download) is really aimed at simulation, not exactly the correct components.
 TK 10%
 
 TK 50%
+
+# Emitter Choices
+
+There are several options within the [Cree XP-E2](https://cree-led.com/media/documents/XLampXPE2.pdf) line
+
+
 
 # Alternatives
 
