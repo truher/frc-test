@@ -34,24 +34,30 @@ The spectrum for metal halide varies by manufacturer and with the age of the bul
 
 <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/67/Metal_Halide_Rainbow.png/640px-Metal_Halide_Rainbow.png" width=500/>
 
-Note the peaks in yellow and green, and the broad background that extends into infrared and near ultraviolet.
+Note the peaks in yellow and green, and the broad but low background that extends into infrared and near ultraviolet.
 
 A white LED is a blue LED coated with one or more [phosphors](https://en.wikipedia.org/wiki/Phosphor) that absorb much of the blue light and radiate
 a yellowish color.  A typical white LED spectrum looks like this:
 
 <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/48/White_LED.png/640px-White_LED.png" width=500/>
 
-Note the large, narrow blue peak, the much broader yellow peak, and the absence of infrared.
+Note the large, narrow blue peak, the much broader yellow peak, and the near-total absence of infrared.
 
 The spectrum of diffuse sky radiation looks like this:
 
 <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b5/Spectrum_of_blue_sky.svg/640px-Spectrum_of_blue_sky.svg.png" width=500/>
 
+Note the broad blue peak, and the absence of red and infrared.
+
 And finally, direct sunlight, less common, looks like this:
 
 <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e7/Solar_spectrum_en.svg/640px-Solar_spectrum_en.svg.png" width=500 />
 
+Note the scale is different for this picture.  There's a huge amount of infrared, by comparison to all the other spectra above.
+
 ## Emitter efficiency
+
+Using the [Cree XP-E2](https://cree-led.com/media/documents/XLampXPE2.pdf) as a guide, there is a range of emitter efficiencies to choose from:
 
 ## Filter selectivity
 
