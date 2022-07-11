@@ -1,24 +1,49 @@
 # Radiometry
 
-The goal is to maximize the contrast of the target compared to the rest of the scene: ideally the target would be white, and the
+The goal is to maximize the contrast of the target compared to the rest of the scene, so that the targets are easy to pick out
+precisely.  Ideally the target would be white, and the
 rest of the scene would be black.  To do that, we'll illuminate the target with a narrow spectrum, and then filter the reflected light
 to select just that illumination prior to the camera.
 So what wavelength is best?  How bright should the light be?  What will the image look like in the camera?
 
 We should pick a wavelength with these characteristics:
 
-1. low ambient intensity, to maximize contrast
-2. high emission efficiency, so that the emitter can be bright without getting hot or requiring too many parts
-3. high filter selectivity, to minimize off-spectrum input
-4. high camera sensitivity, to minimize noise
-5. no possibility of injury to skin or eyes
-6. avoids reduction of resolution caused by diffraction
+1. Low background intensity, to maximize contrast; this is the part we want to be black.
+2. High emission efficiency, so that the emitter can be bright without getting hot or requiring too many parts
+3. High filter selectivity, to minimize off-spectrum input
+4. High camera sensitivity, to minimize noise
+5. No possibility of injury to skin or eyes
+6. Avoids reduction of resolution caused by diffraction
 
 There is some option value in choosing a wavelength that matches one of the colors in the typical Bayer mosaic; see below for details.
 
 To quantify the goal of "maximizing contrast" we can quantify the foreground and background brightnesses.
 
-## Ambient spectrum
+## Spectra in general
+
+To understand lighting spectra we first need to review what a spectrum represents.  Visible light is wave-like radiation
+whose wavelength varies between about 400 and 700 nanometers (nm, billionth of a meter).  For comparison, 500 nm is about
+the diameter of a bacterium: it's small, but it's not __that__ small.  The variation in wavelength corresponds to the colors
+of the rainbow, from deep blue (400 nm) to deep red (700 nm), and most light sources contain a range of wavelengths.  If you
+plot wavelength on the x axis and intensity on the y axis, you get a spectrum, for example the visible part of 
+[sunlight](https://en.wikipedia.org/wiki/Sunlight) at the Earth's surface looks something like this:
+
+<p align=center><img src="https://www.lumigrow.com/wp-content/uploads/2020/04/solar-spectrum-graph-714x406.jpg" width=640/></p>
+
+The jaggedness in the spectrum is caused by absorption of specific wavelengths by molecules in the atmosphere, mostly ozone and water.
+
+Another familiar spectrum is the old-fashioned [incandescent light bulb](https://en.wikipedia.org/wiki/Incandescent_light_bulb):
+
+<p align=center><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/be/Spectral_power_distribution_of_a_25_W_incandescent_light_bulb.png/640px-Spectral_power_distribution_of_a_25_W_incandescent_light_bulb.png" width=640/></p>
+
+I'm sure you remember that incandescent light bulbs are inefficient, and from the spectrum you can see why: most of the watts
+are in the invisible region beyond 700 nm ("infrared"), useless to our eyes.
+It's actually worse than this picture shows, the spectrum is cut off here, there's
+even more radiation in even longer waves, which we perceive as heat.
+
+
+
+## Background spectrum
 
 FRC events are held in indoor basketball arenas and venues like the [Houston convention center](https://www.grbhouston.com/).  All these
 locations are illuminated using overhead lighting, and some are also lit at an angle from the side, and/or (less commonly)
@@ -26,7 +51,7 @@ via windows to indirect sunlight.  It is not unheard of for gyms to allow __dire
 
 You can see the overhead fixtures below, circled in red, and the side-facing lights hanging from a truss, in green.
 
-<img src="path904.png" width=500/>
+<p align=center><img src="path904.png" width=500/></p>
 
 The picture shows that the overhead lights are "cool white" whereas the side-facing lights are "warm white" -- either or both might be
 used in any specific venue.
@@ -38,20 +63,20 @@ common.
 A metal halide lamp is a type of arc lamp that works by exciting metal ions, which then radiate in specific wavelengths.
 The spectrum for metal halide varies by manufacturer and with the age of the bulb, but tends to look something like this:
 
-<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/67/Metal_Halide_Rainbow.png/640px-Metal_Halide_Rainbow.png" width=500/>
+<p align=center><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/67/Metal_Halide_Rainbow.png/640px-Metal_Halide_Rainbow.png" width=500/></p>
 
 Note the peaks in yellow and green, and the broad but low background that extends into infrared and near ultraviolet.
 
 A white LED is a blue LED coated with one or more [phosphors](https://en.wikipedia.org/wiki/Phosphor) that absorb much of the blue light and radiate
 a yellowish color.  A typical white LED spectrum looks like this:
 
-<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/48/White_LED.png/640px-White_LED.png" width=500/>
+<p align=center><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/48/White_LED.png/640px-White_LED.png" width=500/></p>
 
 Note the large, narrow blue peak, the much broader yellow peak, and the near-total absence of infrared.
 
 The spectrum of solar radiation looks like this:
 
-<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/27/Spectrum_of_Sunlight_en.svg/640px-Spectrum_of_Sunlight_en.svg.png" width=640/>
+<p align=center><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/27/Spectrum_of_Sunlight_en.svg/640px-Spectrum_of_Sunlight_en.svg.png" width=640/></p>
 
 The indirect spectrum is primarily blue, like the blue sky, and the direct spectrum contains an enormous amount of infrared: you can feel it
 as heat.  Perhaps the gyms with windows also use infrared-blocking film, to reduce the energy used for air conditioning.  Let's assume
@@ -65,11 +90,28 @@ dip is still half the yellow intensity, not near zero.
 * Something short, like 420nm.  the problem with this choice is safety: bright blue and UV sources are hazardous, see below for details.
 * Over 650nm.  all illuminators (except the sun) aim to minimize this, and all longer wavelengths.  This is the best choice.
 
-## Ambient intensity
+## Background intensity
 
 There are two cases of background intensity to quantify.
 
-The first case of background intensity is caused by __reflection__ from objects illuminated with the
+The first case of background intensity is caused by __reflection__ from objects illuminated with the overhead and side lighting.
+To understand reflection we should first review the key concepts from photometry and radiometry.  First, what's the difference
+between radiometry and photometry?  Radiometry is concerned with the flow of __energy,__ e.g. measured in watts, whereas
+photometry is concerned with __perception__: apparent brightness varies by wavelength, as described by the
+[photopic model](https://en.wikipedia.org/wiki/Photopic_vision):
+
+<p align=center><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/CIE_1931_Luminosity.png/640px-CIE_1931_Luminosity.png" width=640/></p>
+
+The eye is most sensitive around 555 nm, bright green, and doesn't perceive anything shorter than 400 or longer than 700.
+
+For monochromatic light at 555 nm, one watt of radiation is defined to be exactly 683 lumens; that's the definition of a lumen.  for
+wavelengths different from 555 nm, 
+
+The relationship between the radiation (watts) and perception (lu
+
+* __Illuminance (https://en.wikipedia.org/wiki/Illuminance)__ is the amount of light that hits a surface, measured in
+[lux](https://en.wikipedia.org/wiki/Lux)
+* 
 intended [illuminance](https://en.wikipedia.org/wiki/Illuminance) level from the overhead and side lighting
 depicted above.  [Common advice](https://tachyonlight.com/what-is-the-lighting-standard-of-basketball-court/)
 and [the NCAA](https://www.ncaa.com/news/ncaa/article/2013-11-21/ncaa-best-lighting-practices) recommend lighting levels of 200-800 lux
@@ -80,7 +122,8 @@ I'm sure that FRC events don't use broadcast-level of vertical lighting, but som
 For non-shiny surfaces, it's common to model [diffuse reflection](https://en.wikipedia.org/wiki/Diffuse_reflection)
 as [Lambertian](https://en.wikipedia.org/wiki/Lambertian_reflectance), meaning
 the luminance of the surface is the same no matter the angle of observation.  No real surface is Lambertian, but matte surfaces
-are approximately so.  For this kind of surface, the [luminance](https://en.wikipedia.org/wiki/Luminance) (luminous intensity of a light source
+are approximately so.  For this kind of surface, the
+[luminance](https://en.wikipedia.org/wiki/Luminance) (luminous intensity of a light source
 per unit area of the source per unit angle, casually "brightness") is simply the product of the
 [illuminance](https://en.wikipedia.org/wiki/Illuminance) (total flux hitting the surface)
 and [reflectance](https://en.wikipedia.org/wiki/Reflectance), divided by $\pi$:
