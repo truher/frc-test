@@ -57,7 +57,8 @@ The indirect spectrum is primarily blue, like the blue sky, and the direct spect
 as heat.  Perhaps the gyms with windows also use infrared-blocking film, to reduce the energy used for air conditioning.  Let's assume
 that's true.  See below for mitigations in case we're wrong.
 
-To maximize contrast, we should choose a source wavelength that matches the minimum of the spectra above. The reasonable choices might be:
+To maximize contrast, we should choose a source wavelength that matches the minimum of the spectra above, in particular
+the white LED spectrum, because it's the most likely.  The reasonable choices might be:
 
 * About 500nm, corresponding to the dip between the blue and yellow peaks in the white LED spectrum -- this isn't the best choice, because the
 dip is still half the yellow intensity, not near zero.
@@ -69,15 +70,28 @@ dip is still half the yellow intensity, not near zero.
 There are two cases of background intensity to quantify.
 
 The first case of background intensity is caused by __reflection__ from objects illuminated with the
-intended illumination level from the overhead and side lighting
+intended [illuminance](https://en.wikipedia.org/wiki/Illuminance) level from the overhead and side lighting
 depicted above.  [Common advice](https://tachyonlight.com/what-is-the-lighting-standard-of-basketball-court/)
 and [the NCAA](https://www.ncaa.com/news/ncaa/article/2013-11-21/ncaa-best-lighting-practices) recommend lighting levels of 200-800 lux
 on a horizontal plane, and, for televised events, 1000-2000 lux on a vertical plane.  I suspect that FRC events use a horizontal lighting
 level near the low end of the recommended range, since it's just what the gym has permanently installed.
 I'm sure that FRC events don't use broadcast-level of vertical lighting, but some events do use some, maybe also 200 lux?
 
-For non-shiny surfaces, it's common to model reflection as [Lambertian](https://en.wikipedia.org/wiki/Lambertian_reflectance), meaning
-the luminance of the surface is the same no matter the angle of observation.
+For non-shiny surfaces, it's common to model [diffuse reflection](https://en.wikipedia.org/wiki/Diffuse_reflection)
+as [Lambertian](https://en.wikipedia.org/wiki/Lambertian_reflectance), meaning
+the luminance of the surface is the same no matter the angle of observation.  No real surface is Lambertian, but matte surfaces
+are approximately so.  For this kind of surface, the [luminance](https://en.wikipedia.org/wiki/Luminance) (luminous intensity of a light source
+per unit area of the source per unit angle, casually "brightness") is simply the product of the
+[illuminance](https://en.wikipedia.org/wiki/Illuminance) (total flux hitting the surface)
+and [reflectance](https://en.wikipedia.org/wiki/Reflectance), divided by $\pi$:
+
+$$
+L_v = \frac{E_v R}{\pi}
+$$
+
+For a matte white surface, reflectance is 
+[about 80%](https://www.engineeringtoolbox.com/light-material-reflecting-factor-d_1842.html), 
+so that surface illuminated with 200 lux will reflect with a luminance of something like 50 lm/sr&middot;m<sup>2</sup>.
 
 __more here about reflection__
 
