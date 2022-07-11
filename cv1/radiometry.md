@@ -52,7 +52,15 @@ The spectrum of solar radiation looks like this:
 <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/27/Spectrum_of_Sunlight_en.svg/640px-Spectrum_of_Sunlight_en.svg.png" width=640/>
 
 The indirect spectrum is primarily blue, like the blue sky, and the direct spectrum contains an enormous amount of infrared: you can feel it
-as heat.  Perhaps the gyms with windows also use infrared-blocking film, to reduce the energy used for air conditioning.
+as heat.  Perhaps the gyms with windows also use infrared-blocking film, to reduce the energy used for air conditioning.  Let's assume
+that's true.  See below for mitigations in case we're wrong.
+
+To maximize contrast, we should choose a source wavelength that matches the minimum of the spectra above. The reasonable choices might be:
+
+* About 500nm, corresponding to the dip between the blue and yellow peaks in the white LED spectrum -- this isn't the best choice, because the
+dip is still half the yellow intensity, not near zero.
+* Something short, like 420nm.  the problem with this choice is safety: bright blue and UV sources are hazardous, see below for details.
+* Over 650nm.  all illuminators (except the sun) aim to minimize this, and all longer wavelengths.  This is the best choice.
 
 ## Emitter efficiency
 
@@ -87,3 +95,7 @@ the normal result of [demosaicing](https://en.wikipedia.org/wiki/Demosaicing), a
 and the usual demosaicing artifacts.  Alternatively, we could illuminate with 570nm, where green is sensitive but neither red nor blue is, and
 use the raw signal from the green channel.  We could also use the demosaiced signal for other purposes (e.g. object detection),
 perhaps excluding the band around 570nm if it proves to be a distraction.
+
+## Mitigating sunlight
+
+
