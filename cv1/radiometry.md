@@ -24,7 +24,13 @@ To quantify the goal of "maximizing contrast" we can quantify the foreground and
 To understand lighting spectra we first need to review what a spectrum represents.  Visible light is wave-like radiation
 whose wavelength varies between about 400 and 700 nanometers (nm, billionth of a meter).  For comparison, 500 nm is about
 the diameter of a bacterium: it's small, but it's not __that__ small.  The variation in wavelength corresponds to the colors
-of the rainbow, from deep blue (400 nm) to deep red (700 nm), and most light sources contain a range of wavelengths.  If you
+of the rainbow, from deep blue (400 nm) to deep red (700 nm).  These colors also indicate another aspect of light, which is
+its particle-like nature: it is a stream of point-like particles that carry tiny amounts of energy.  Deep blue (400 nm) photons
+have about 3 [electron volts](https://en.wikipedia.org/wiki/Electronvolt) (eV) of energy, deep red (700 nm) photons have about
+1.7 eV.  An electron-volt is a truly tiny amount of energy, on the same scale as molecular bond energies.  There will be more
+about photon energy below.
+
+Most light sources contain a range of wavelengths.  If you
 plot wavelength on the x axis and intensity on the y axis, you get a spectrum, for example the visible part of 
 [sunlight](https://en.wikipedia.org/wiki/Sunlight) at the Earth's surface looks something like this:
 
@@ -41,7 +47,7 @@ are in the invisible region beyond 700 nm ("infrared"), useless to our eyes.
 It's actually worse than this picture shows, the spectrum is cut off here, there's
 even more radiation in even longer waves, which we perceive as heat.
 
-
+With this background in spectra, we can review the spectra of various sources at an FRC event.
 
 ## Background spectrum
 
@@ -74,11 +80,11 @@ a yellowish color.  A typical white LED spectrum looks like this:
 
 Note the large, narrow blue peak, the much broader yellow peak, and the near-total absence of infrared.
 
-The spectrum of solar radiation looks like this:
+This shows both the direct (sunshine) and indirect (blue sky) spectra of solar radiation:
 
 <p align=center><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/27/Spectrum_of_Sunlight_en.svg/640px-Spectrum_of_Sunlight_en.svg.png" width=640/></p>
 
-The indirect spectrum is primarily blue, like the blue sky, and the direct spectrum contains an enormous amount of infrared: you can feel it
+The indirect spectrum is primarily blue, of course, and the direct spectrum contains an enormous amount of infrared: you can feel it
 as heat.  Perhaps the gyms with windows also use infrared-blocking film, to reduce the energy used for air conditioning.  Let's assume
 that's true.  See below for mitigations in case we're wrong.
 
@@ -95,19 +101,46 @@ dip is still half the yellow intensity, not near zero.
 There are two cases of background intensity to quantify.
 
 The first case of background intensity is caused by __reflection__ from objects illuminated with the overhead and side lighting.
+
 To understand reflection we should first review the key concepts from photometry and radiometry.  First, what's the difference
-between radiometry and photometry?  Radiometry is concerned with the flow of __energy,__ e.g. measured in watts, whereas
+between radiometry and photometry?  Radiometry is concerned with the flow of __energy,__ whereas
 photometry is concerned with __perception__: apparent brightness varies by wavelength, as described by the
-[photopic model](https://en.wikipedia.org/wiki/Photopic_vision):
+[luminous efficiency function](https://en.wikipedia.org/wiki/Luminous_efficiency_function).  For bright light, the eye's response
+is called [photopic](https://en.wikipedia.org/wiki/Photopic_vision), with this response curve:
 
 <p align=center><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/CIE_1931_Luminosity.png/640px-CIE_1931_Luminosity.png" width=640/></p>
 
-The eye is most sensitive around 555 nm, bright green, and doesn't perceive anything shorter than 400 or longer than 700.
+The human eye is most sensitive around 555 nm, bright green, and doesn't perceive anything shorter than 400 or longer than 700.
 
+The flow of light __energy__ is described using the term [radiant flux](https://en.wikipedia.org/wiki/Radiant_flux)
+and measured in [watts](https://en.wikipedia.org/wiki/Watt).  The parallel concepts that involve __perception__ are
+[luminous flux](https://en.wikipedia.org/wiki/Luminous_flux) and [lumens](https://en.wikipedia.org/wiki/Lumen_(unit)).  
 For monochromatic light at 555 nm, one watt of radiation is defined to be exactly 683 lumens; that's the definition of a lumen.  for
-wavelengths different from 555 nm, 
+wavelengths different from 555 nm, the lumens per watt is proportional to the photopic model, so that, for example, radiation at
+620 nm (orange) only yields half as many lumens per watt, something like 300.
 
-The relationship between the radiation (watts) and perception (lu
+The reason we care about the distinction between watts and lumens is that visible light emitters are generally characterized
+in lumens, because the common use case involves human perception.  But that's not our use case!  Our use case is __camera
+perception__, which has a different luminous efficacy function than the human eye.  The camera response involves another
+distinction we should review: the difference between [spectral sensitivity](https://en.wikipedia.org/wiki/Spectral_sensitivity)
+and [quantum efficiency](https://en.wikipedia.org/wiki/Quantum_efficiency).  Spectral sensitivity measures the response
+per unit __energy__, whereas quantum efficiency measures the response per __photon__.  (Recall from above that a photon is the
+particle-like carrier of light energy.)  Camera
+[image sensors](https://en.wikipedia.org/wiki/Image_sensor) work by counting photons, not by measuring photon energy.  Roughly, if an
+inbound photon is above the minimum energy (about 1.1 eV, about 1100 nm), it gets counted: any extra energy is "wasted."
+The simple implication here is that, because blue light requires twice as much energy
+to produce than red light, but the camera sensitivity to each is about the same, it's more efficient to use red light.  :-)
+
+There are other factors that make typical CMOS detector quantum efficiency vary with wavelength:
+
+<p align=center><img src="https://www.e-consystems.com/images/See3CAM/See3CAM_20CUG/quantum-efficiency-graph-large.jpg" width=640/></p>
+
+The main reason for the decline at longer wavelengths is that a photon travels some distance in the detector before being
+absorbed.  Longer wavelengths require longer distances to be absorbed.  
+
+Cameras are typically characterized using quantum efficiency, but illuminators are characterized using lumens, so we need
+to translate between them.
+
 
 * __Illuminance (https://en.wikipedia.org/wiki/Illuminance)__ is the amount of light that hits a surface, measured in
 [lux](https://en.wikipedia.org/wiki/Lux)
