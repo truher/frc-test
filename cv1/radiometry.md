@@ -8,7 +8,7 @@ So what wavelength is best?  How bright should the light be?  What will the imag
 We should pick a wavelength with these characteristics:
 
 1. low ambient intensity, to maximize contrast
-2. high emission efficiency, so that the emitter can be bright without getting hot
+2. high emission efficiency, so that the emitter can be bright without getting hot or requiring too many parts
 3. high filter selectivity, to minimize off-spectrum input
 4. high camera sensitivity, to minimize noise
 5. no possibility of injury to skin or eyes
@@ -16,7 +16,9 @@ We should pick a wavelength with these characteristics:
 
 There is some option value in choosing a wavelength that matches one of the colors in the typical Bayer mosaic; see below for details.
 
-## Ambient intensity
+To quantify the goal of "maximizing contrast" we can quantify the foreground and background brightnesses.
+
+## Ambient spectrum
 
 FRC events are held in indoor basketball arenas and venues like the [Houston convention center](https://www.grbhouston.com/).  All these
 locations are illuminated using overhead lighting, and some are also lit at an angle from the side, and/or (less commonly)
@@ -62,9 +64,36 @@ dip is still half the yellow intensity, not near zero.
 * Something short, like 420nm.  the problem with this choice is safety: bright blue and UV sources are hazardous, see below for details.
 * Over 650nm.  all illuminators (except the sun) aim to minimize this, and all longer wavelengths.  This is the best choice.
 
+## Ambient intensity
+
+There are two cases of background intensity to quantify.
+
+The first case of background intensity is caused by __reflection__ from objects illuminated with the
+intended illumination level from the overhead and side lighting
+depicted above.  [Common advice](https://tachyonlight.com/what-is-the-lighting-standard-of-basketball-court/)
+and [the NCAA](https://www.ncaa.com/news/ncaa/article/2013-11-21/ncaa-best-lighting-practices) recommend lighting levels of 200-800 lux
+on a horizontal plane, and, for televised events, 1000-2000 lux on a vertical plane.  I suspect that FRC events use a horizontal lighting
+level near the low end of the recommended range, since it's just what the gym has permanently installed.
+I'm sure that FRC events don't use broadcast-level of vertical lighting, but some events do use some, maybe also 200 lux?
+
+For non-shiny surfaces, it's common to model reflection as [Lambertian](https://en.wikipedia.org/wiki/Lambertian_reflectance), meaning
+the luminance of the surface is the same no matter the angle of observation.
+
+__more here about reflection__
+
+The second case of background intensity is caused by __direct radiation from a light fixture in the camera frame.__  It's common
+for FRC cameras to have an upward tilt, because targets are almost always high.  For example, in the 2022 game
+the target was ~2.5 meters above the floor, and it was common to need to view it from 2.5 meters away or less,
+so the camera was certainly looking at the ceiling.
+
+__more here about direct radiation__
+
 ## Emitter efficiency
 
-Using the [Cree XP-E2](https://cree-led.com/media/documents/XLampXPE2.pdf) as a guide, there is a range of emitter efficiencies to choose from:
+Emitter
+Using the [Cree XP-E2](https://cree-led.com/media/documents/XLampXPE2.pdf) as a guide, there is a range of emitter efficiencies to choose from.
+
+
 
 ## Filter selectivity
 
@@ -74,6 +103,9 @@ Using the [Cree XP-E2](https://cree-led.com/media/documents/XLampXPE2.pdf) as a 
 
 
 ## Safety
+
+
+## Diffraction
 
 
 ## Bayer mosaic
