@@ -102,7 +102,54 @@ There are two cases of background intensity to quantify.
 
 The first case of background intensity is caused by __reflection__ from objects illuminated with the overhead and side lighting.
 
-To understand reflection we should first review the key concepts from photometry and radiometry.  First, what's the difference
+To talk about reflection, we should first review the key photometric concepts with similar names:
+
+* __[Illuminance](https://en.wikipedia.org/wiki/Illuminance)__ is the total amount of light that hits a surface, measured in
+[lux](https://en.wikipedia.org/wiki/Lux).
+* __[Luminance](https://en.wikipedia.org/wiki/Luminance)__ is the intensity of light produced per unit area per unit angle, measured
+in lumens per steradian per square meter.  You can think of it as "brightness": if the same amount of light (lumens) comes from a smaller area,
+that area seems brighter.  If the same amount of light is concentrated in a narrower cone, then it seems brighter.
+
+For non-shiny surfaces, it's common to model [diffuse reflection](https://en.wikipedia.org/wiki/Diffuse_reflection)
+as [Lambertian](https://en.wikipedia.org/wiki/Lambertian_reflectance), meaning
+the luminance of the surface is the same no matter the angle of observation.  No real surface is Lambertian, but matte surfaces
+are approximately so.  For this kind of surface, the
+luminance is simply the product of the illuminance and [reflectance](https://en.wikipedia.org/wiki/Reflectance), divided by $\pi$:
+
+$$
+L_v = \frac{E_v R}{\pi}
+$$
+
+Back to FRC event lighting.  How much light is there?  [Common advice](https://tachyonlight.com/what-is-the-lighting-standard-of-basketball-court/)
+and [the NCAA](https://www.ncaa.com/news/ncaa/article/2013-11-21/ncaa-best-lighting-practices) recommend lighting levels of 200-800 lux
+on a horizontal plane (e.g. the floor), and, for televised events, 1000-2000 lux on a vertical plane (since TV cameras shoot from the side,
+they want the side to be well lit).  I suspect that FRC events use a horizontal illuminance
+level near the low end of the recommended range, since it's just what the gym has permanently installed.
+I'm sure that FRC events don't use broadcast-level of vertical illuminance (it's shockingly bright), but some events do use some
+side-facing light, as shown in the above picture of finals.  Let's assume 200 lux.
+
+How much of the 200 lux is reflected?  Using the Lambertian reflection formula above, for a matte white surface, reflectance is 
+[about 80%](https://www.engineeringtoolbox.com/light-material-reflecting-factor-d_1842.html), 
+so a surface illuminated with 200 lux will reflect with a luminance of something like __50 lm/sr&middot;m<sup>2</sup>.__
+
+The second case of background intensity is caused by __direct radiation from a light fixture in the camera frame.__  It's common
+for FRC cameras to have an upward tilt, because targets are almost always high.  For example, in the 2022 game
+the target was ~2.5 meters above the floor, and it was common to need to view it from 2.5 meters away or less,
+so the camera was certainly looking at the ceiling.
+
+So how bright are the ceiling fixtures?  A basketball court has an area of 437 square meters.  Illuminating
+the whole court with 200 lux means about 90000 lumens total, divided into, say, 24 luminaires:
+
+<p align=center><img src="https://www.finepixeled.com/wp-content/uploads/2021/10/indoor-basketball-court-lighting-3.jpg" width=640/></p>
+
+So each fixture is producing something like 3750 lumens, through roughly a 0.25 square meter aperture, within roughly a single steradian
+angle.  So the luminance is very roughly __1000 lm/sr&middot;m<sup>2</sup>,__ which is __twenty times the luminance__ of the surfaces on the field.
+
+## Emitter efficiency
+
+
+Before we try to understand emitter or camera efficiency,
+we should first review the key concepts from photometry and radiometry.  First, what's the difference
 between radiometry and photometry?  Radiometry is concerned with the flow of __energy,__ whereas
 photometry is concerned with __perception__: apparent brightness varies by wavelength, as described by the
 [luminous efficiency function](https://en.wikipedia.org/wiki/Luminous_efficiency_function).  For bright light, the eye's response
@@ -135,50 +182,15 @@ There are other factors that make typical CMOS detector quantum efficiency vary 
 
 <p align=center><img src="https://www.e-consystems.com/images/See3CAM/See3CAM_20CUG/quantum-efficiency-graph-large.jpg" width=640/></p>
 
+Notice that the detector response is much broader than the human eye response (note the larger x-axis range).  Where 
+the human eye sees almost nothing at 700 nm, the detector quantum efficiency is around 80%!
 The main reason for the decline at longer wavelengths is that a photon travels some distance in the detector before being
 absorbed.  Longer wavelengths require longer distances to be absorbed.  
 
 Cameras are typically characterized using quantum efficiency, but illuminators are characterized using lumens, so we need
 to translate between them.
 
-
-* __Illuminance (https://en.wikipedia.org/wiki/Illuminance)__ is the amount of light that hits a surface, measured in
-[lux](https://en.wikipedia.org/wiki/Lux)
-* 
-intended [illuminance](https://en.wikipedia.org/wiki/Illuminance) level from the overhead and side lighting
-depicted above.  [Common advice](https://tachyonlight.com/what-is-the-lighting-standard-of-basketball-court/)
-and [the NCAA](https://www.ncaa.com/news/ncaa/article/2013-11-21/ncaa-best-lighting-practices) recommend lighting levels of 200-800 lux
-on a horizontal plane, and, for televised events, 1000-2000 lux on a vertical plane.  I suspect that FRC events use a horizontal lighting
-level near the low end of the recommended range, since it's just what the gym has permanently installed.
-I'm sure that FRC events don't use broadcast-level of vertical lighting, but some events do use some, maybe also 200 lux?
-
-For non-shiny surfaces, it's common to model [diffuse reflection](https://en.wikipedia.org/wiki/Diffuse_reflection)
-as [Lambertian](https://en.wikipedia.org/wiki/Lambertian_reflectance), meaning
-the luminance of the surface is the same no matter the angle of observation.  No real surface is Lambertian, but matte surfaces
-are approximately so.  For this kind of surface, the
-[luminance](https://en.wikipedia.org/wiki/Luminance) (luminous intensity of a light source
-per unit area of the source per unit angle, casually "brightness") is simply the product of the
-[illuminance](https://en.wikipedia.org/wiki/Illuminance) (total flux hitting the surface)
-and [reflectance](https://en.wikipedia.org/wiki/Reflectance), divided by $\pi$:
-
-$$
-L_v = \frac{E_v R}{\pi}
-$$
-
-For a matte white surface, reflectance is 
-[about 80%](https://www.engineeringtoolbox.com/light-material-reflecting-factor-d_1842.html), 
-so that surface illuminated with 200 lux will reflect with a luminance of something like 50 lm/sr&middot;m<sup>2</sup>.
-
-__more here about reflection__
-
-The second case of background intensity is caused by __direct radiation from a light fixture in the camera frame.__  It's common
-for FRC cameras to have an upward tilt, because targets are almost always high.  For example, in the 2022 game
-the target was ~2.5 meters above the floor, and it was common to need to view it from 2.5 meters away or less,
-so the camera was certainly looking at the ceiling.
-
-__more here about direct radiation__
-
-## Emitter efficiency
+Now we can return to the question of emitter efficiency.
 
 Emitter
 Using the [Cree XP-E2](https://cree-led.com/media/documents/XLampXPE2.pdf) as a guide, there is a range of emitter efficiencies to choose from.
