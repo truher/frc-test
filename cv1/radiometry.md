@@ -11,6 +11,10 @@ We should pick a wavelength with these characteristics:
 2. high emission efficiency, so that the emitter can be bright without getting hot
 3. high filter selectivity, to minimize off-spectrum input
 4. high camera sensitivity, to minimize noise
+5. no possibility of injury to skin or eyes
+6. avoids reduction of resolution caused by diffraction
+
+There is some option value in choosing a wavelength that matches one of the colors in the typical Bayer mosaic; see below for details.
 
 ## Ambient intensity
 
@@ -43,17 +47,12 @@ a yellowish color.  A typical white LED spectrum looks like this:
 
 Note the large, narrow blue peak, the much broader yellow peak, and the near-total absence of infrared.
 
-The spectrum of diffuse sky radiation looks like this:
+The spectrum of solar radiation looks like this:
 
-<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b5/Spectrum_of_blue_sky.svg/640px-Spectrum_of_blue_sky.svg.png" width=500/>
+<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/27/Spectrum_of_Sunlight_en.svg/640px-Spectrum_of_Sunlight_en.svg.png" width=640/>
 
-Note the broad blue peak, and the absence of red and infrared.
-
-And finally, direct sunlight, less common, looks like this:
-
-<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e7/Solar_spectrum_en.svg/640px-Solar_spectrum_en.svg.png" width=500 />
-
-Note the scale is different for this picture.  There's a huge amount of infrared, by comparison to all the other spectra above.
+The indirect spectrum is primarily blue, like the blue sky, and the direct spectrum contains an enormous amount of infrared: you can feel it
+as heat.  Perhaps the gyms with windows also use infrared-blocking film, to reduce the energy used for air conditioning.
 
 ## Emitter efficiency
 
@@ -61,5 +60,30 @@ Using the [Cree XP-E2](https://cree-led.com/media/documents/XLampXPE2.pdf) as a 
 
 ## Filter selectivity
 
+
+
 ## Camera sensitivity
 
+
+## Safety
+
+
+## Bayer mosaic
+
+Rather than using a monochrome camera, we could use an RGB camera and choose an illuminator that corresponds to one of the colors in
+the usual [Bayer mosaic](https://en.wikipedia.org/wiki/Bayer_filter).  Here's the spectral response of for each of the
+channels in the Sony IMX287 detector
+in the [Flir Blackfly S](https://www.flir.com/products/blackfly-s-usb3/), a popular ($500) machine vision camera.
+
+<p align=center><img src="http://softwareservices.flir.com/BFS-U3-244S8/latest/EMVA/BFS-U3-244S8_2103.0000.628.000_color_emva_psd_624x312.png" width=640/></p>
+
+The overlapping, gently sloping filters mimic the overlapping, gently sloping response of the human eye: for example, the ratio of blue to green
+response is how the wavelengths between blue and green are differentiated.  If the RGB channels were sharp bandpass filters, the
+camera wouldn't produce anything useful at all: a cyan signal would be read as either completely blue or completely green depending on its
+relationship to the blue/green divider.
+
+To extract a high-contrast monochromatic signal from this detector, we could pick any color from
+the normal result of [demosaicing](https://en.wikipedia.org/wiki/Demosaicing), at the cost of resolution
+and the usual demosaicing artifacts.  Alternatively, we could illuminate with 570nm, where green is sensitive but neither red nor blue is, and
+use the raw signal from the green channel.  We could also use the demosaiced signal for other purposes (e.g. object detection),
+perhaps excluding the band around 570nm if it proves to be a distraction.
