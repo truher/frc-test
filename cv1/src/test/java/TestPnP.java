@@ -89,7 +89,8 @@ public class TestPnP {
                 Imgcodecs.imwrite(String.format("C:\\Users\\joelt\\Desktop\\pics\\target-%d-raw.png", idx),
                         untiltedCameraView);
 
-                MatOfPoint2f imagePoints = VisionUtil.findTargetCornersInImage(idx, true, untiltedCameraView);
+                MatOfPoint2f imagePoints = VisionUtil.findTargetCornersInImage(idx, true,
+                 untiltedCameraView, 240);
                 if (imagePoints == null) {
                     debugmsg("no image points");
                     continue;

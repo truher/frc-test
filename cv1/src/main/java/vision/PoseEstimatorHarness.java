@@ -24,10 +24,10 @@ public class PoseEstimatorHarness {
     public final List<PoseEstimator> poseEstimators;
 
     // true = show accuracy for each point in 10x10m grid
-    final boolean showGrid = false;
+    final boolean showGrid = true;
 
     // true = show stderr for each estimator over all samples
-    final boolean showSummary = true;
+    final boolean showSummary = false;
 
     // true = add noise to points; false = leave points alone
     // if estimating from points this should be true
@@ -52,28 +52,28 @@ public class PoseEstimatorHarness {
         poseEstimators = new ArrayList<PoseEstimator>();
 
         // baseline, constant output
-        poseEstimators.add(new ConstantPoseEstimator());
+      //  poseEstimators.add(new ConstantPoseEstimator());
 
         // pretty good close up, not good in x far away
-        poseEstimators.add(new MonocularPoseEstimator(false));
+     //   poseEstimators.add(new MonocularPoseEstimator(false));
 
         // ok close up
-        poseEstimators.add(new Binocular2dSVDPoseEstimator(false));
+      //  poseEstimators.add(new Binocular2dSVDPoseEstimator(false));
 
         // works pretty well within a few meters.
-        poseEstimators.add(new Binocular2dUmeyamaPoseEstimator(false));
+     //   poseEstimators.add(new Binocular2dUmeyamaPoseEstimator(false));
 
         // ok within a few meters, much worse than IMU options
-        poseEstimators.add(new BinocularConstrainedPoseEstimator(false));
+     //   poseEstimators.add(new BinocularConstrainedPoseEstimator(false));
 
         // good, 4x the error, 2X the speed vs binocular ones
-        poseEstimators.add(new MonocularPoseEstimator(true));
+    //    poseEstimators.add(new MonocularPoseEstimator(true));
 
         // pretty awesome
-        poseEstimators.add(new Binocular2dSVDPoseEstimator(true));
+     //   poseEstimators.add(new Binocular2dSVDPoseEstimator(true));
 
         // awesome
-        poseEstimators.add(new Binocular2dUmeyamaPoseEstimator(true));
+     //   poseEstimators.add(new Binocular2dUmeyamaPoseEstimator(true));
 
         // awesome
         poseEstimators.add(new BinocularConstrainedPoseEstimator(true));
@@ -82,8 +82,8 @@ public class PoseEstimatorHarness {
     public void run() {
         if (showSummary) {
             System.out.println("stderr for each estimator...");
-            System.out.printf("%40s %10s %10s %10s %10s %10s %10s %10s\n",
-                    "name", "heading", "X", "Z", "position", "bearing", "range", "rate");
+            System.out.printf("%40s %10s %10s %10s %10s %10s %10s %10s %10s\n",
+                    "name", "heading", "X", "Z", "position", "bearing", "range", "rate", "failures");
         }
         for (PoseEstimator e : poseEstimators) {
             Random rand = new Random(42);
@@ -124,6 +124,8 @@ public class PoseEstimatorHarness {
             double noisePixels = 2;
             MatOfPoint3f targetPointsMultiplied = VisionUtil.duplicatePoints(targetGeometryMeters, pointMultiplier);
 
+            double targetBrightnessMean = 230;
+            double targetBrightnessStdev = 15;
             int idx = 0;
             double yPos = 0;
             // double tilt = 0;
@@ -134,6 +136,7 @@ public class PoseEstimatorHarness {
             double positionErrSquareSum = 0.0;
             double relativeBearingErrSquareSum = 0.0;
             double rangeErrSquareSum = 0.0;
+            int failures = 0;
             long workTime = 0;
 
             if (showGrid)
@@ -189,7 +192,9 @@ public class PoseEstimatorHarness {
                             // kMat[cameraIdx],
                             // dMat[cameraIdx], targetGeometryMeters, size);
 
-                            Mat cameraView = VisionUtil.renderImage(size, targetGeometryMeters, pts);
+                            int targetBrightness = (int) Math.min(255, targetBrightnessMean
+                                    + rand.nextGaussian() * targetBrightnessStdev);
+                            Mat cameraView = VisionUtil.renderImage(targetBrightness, size, targetGeometryMeters, pts);
 
                             if (cameraView == null) {
                                 log.debugmsg(2, "no image");
@@ -211,7 +216,7 @@ public class PoseEstimatorHarness {
 
                         // if the target isn't in the viewport, skip
 
-                        ++idx;
+                        
 
                         double gyro = pan;
 
@@ -231,9 +236,11 @@ public class PoseEstimatorHarness {
                         }
                         System.gc();
                         if (transform == null) {
+                            failures++;
                             log.debugmsg(2, "no transform");
                             continue pose;
                         }
+                        ++idx;
                         log.debug(2, "transform", transform);
                         Mat rmat = transform.submat(0, 3, 0, 3);
 
@@ -287,15 +294,15 @@ public class PoseEstimatorHarness {
             double panRMSE = Math.sqrt(panErrSquareSum / idx);
             double xRMSE = Math.sqrt(xErrSquareSum / idx);
             double zRMSE = Math.sqrt(zErrSquareSum / idx);
-            double posRMSE = Math.sqrt(positionErrSquareSum/idx);
+            double posRMSE = Math.sqrt(positionErrSquareSum / idx);
             double relativeBearingRMSE = Math.sqrt(relativeBearingErrSquareSum / idx);
             double rangeRMSE = Math.sqrt(rangeErrSquareSum / idx);
 
             if (showSummary) {
                 if (showGrid)
                     System.out.println("===========================");
-                System.out.printf("%40s %10.4f %10.4f %10.4f %10.4f %10.4f %10.4f %10.4f\n",
-                        name, panRMSE, xRMSE, zRMSE, posRMSE, relativeBearingRMSE, rangeRMSE, 1000.0 * idx / workTime);
+                System.out.printf("%40s %10.4f %10.4f %10.4f %10.4f %10.4f %10.4f %10.4f %10d\n",
+                        name, panRMSE, xRMSE, zRMSE, posRMSE, relativeBearingRMSE, rangeRMSE, 1000.0 * idx / workTime, failures);
                 if (showGrid)
                     System.out.println("===========================");
             }

@@ -405,10 +405,15 @@ public abstract class VisionUtil {
         return worldToCameraHomogeneous;
     }
 
+    /**
+     * Filter specificaly for shot noise, e.g. 'open' and 'close' and median blur.
+     */
     public static void removeSaltAndPepperInPlace(Mat src) {
-        Mat kernel = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(3, 3));
-        Imgproc.morphologyEx(src, src, Imgproc.MORPH_OPEN, kernel);
-        Imgproc.morphologyEx(src, src, Imgproc.MORPH_CLOSE, kernel);
+        // Mat kernel = Imgproc.getStructuringElement(Imgproc.MORPH_RECT, new Size(2,
+        // 2));
+        // Imgproc.morphologyEx(src, src, Imgproc.MORPH_OPEN, kernel);
+        // Imgproc.morphologyEx(src, src, Imgproc.MORPH_CLOSE, kernel);
+        Imgproc.medianBlur(src, src, 3);
     }
 
     /**
@@ -420,11 +425,12 @@ public abstract class VisionUtil {
      * @param rawCameraView unprocessed image
      * @return 2d geometry of the corners, in the image
      */
-    public static MatOfPoint2f findTargetCornersInImage(int picIdx, boolean writeFiles, Mat rawCameraView) {
+    public static MatOfPoint2f findTargetCornersInImage(int picIdx, boolean writeFiles, Mat rawCameraView,
+            int threshold) {
 
         // first "binarize" to remove blur
         Mat cameraView = new Mat();
-        Imgproc.threshold(rawCameraView, cameraView, 250, 255, Imgproc.THRESH_BINARY);
+        Imgproc.threshold(rawCameraView, cameraView, threshold, 255, Imgproc.THRESH_BINARY);
         if (writeFiles)
             Imgcodecs.imwrite(String.format("C:\\Users\\joelt\\Desktop\\pics\\target-%d-thresholded.png", picIdx),
                     cameraView);
@@ -456,7 +462,7 @@ public abstract class VisionUtil {
                 Imgproc.RETR_EXTERNAL,
                 Imgproc.CHAIN_APPROX_SIMPLE);
 
-        log.debug(2, "hierarchy", hierarchy);
+        log.debug(0, "hierarchy", hierarchy);
         log.debug(2, "contours size", contours.size());
 
         List<MatOfPoint> bigContours = new ArrayList<>();
@@ -756,14 +762,15 @@ public abstract class VisionUtil {
         return cameraView;
     }
 
-    public static Mat renderImage(Size dsize, MatOfPoint3f targetGeometryMeters, MatOfPoint2f skewedImagePts2f) {
+    public static Mat renderImage(int brightness, Size dsize, MatOfPoint3f targetGeometryMeters,
+            MatOfPoint2f skewedImagePts2f) {
         MatOfPoint2f targetImageGeometry = VisionUtil.makeTargetImageGeometryPixels(targetGeometryMeters, 1000);
 
         Mat transformMat = Imgproc.getPerspectiveTransform(targetImageGeometry, skewedImagePts2f);
 
         // make an image corresponding to the pixel geometry, for warping
         Mat visionTarget = new Mat(VisionUtil.boundingBox(targetImageGeometry), CvType.CV_8UC1,
-                new Scalar(255));
+                new Scalar(brightness));
         Mat cameraView = Mat.zeros(dsize, CvType.CV_8UC1);
         Imgproc.warpPerspective(visionTarget, cameraView, transformMat, dsize);
         visionTarget.release();
