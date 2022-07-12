@@ -29,8 +29,8 @@ The datasheet mentions a number, $R_A$, which is 500.  What does that number mea
 It turns out that retroreflectors are pretty highly studied, because they're important for automobile safety at night.  Every road
 sign includes retroreflectors indended to reflect car headlights into the eyes of the driver.  There are ASTM standards for [describing
 retroreflection](https://tajhizkala.ir/doc/ASTM/E808-01%20(Reapproved%202009).pdf), for
-[measuring it](https://tajhizkala.ir/doc/ASTM/E809-08%20(Reapproved%202013).pdf) with more
-[detail here](https://tajhizkala.ir/doc/ASTM/E810-03%20(Reapproved%202013).pdf).  The measurement is conceptually simple:
+[measuring it](https://tajhizkala.ir/doc/ASTM/E809-08%20(Reapproved%202013).pdf) (with more
+[detail here](https://tajhizkala.ir/doc/ASTM/E810-03%20(Reapproved%202013).pdf)).  The measurement is conceptually simple:
 a sample of area $A$ is illuminated at a distance $d$ from a particular angle relative to perpendicular called the "entrance angle", and the reflected
 light is measured at the same distance $d$ from another angle relative to the source called the "observation angle".  So there are really two
 measurements: the illuminance of the sample, called $E_\perp$, (actually perpendicular to the beam rather than on the surface itself),
@@ -42,7 +42,9 @@ $$
 R_A = \frac{E_r d^2}{E_\perp A}
 $$
 
-so $R_A$ is measured in candelas per lux per square metere ($cd\dotlx^−1\dotm^−2$).
+so $R_A$ is measured in candelas per lux per square metere ($cd \cdot lx^{−1} \cdot m^{−2}$).
+
+Intuitively it measures the ratio of reflected intensity (flux per angle) to total incident flux (illumination times area, $E_\perp \cdot A$)
 
 
 
