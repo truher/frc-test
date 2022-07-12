@@ -31,35 +31,42 @@ sign includes retroreflectors indended to reflect car headlights into the eyes o
 retroreflection](https://tajhizkala.ir/doc/ASTM/E808-01%20(Reapproved%202009).pdf), for
 [measuring it](https://tajhizkala.ir/doc/ASTM/E809-08%20(Reapproved%202013).pdf) with more
 [detail here](https://tajhizkala.ir/doc/ASTM/E810-03%20(Reapproved%202013).pdf).  The measurement is conceptually simple:
-a sample is illuminated from a particular angle relative to perpendicular called the "entrance angle", and the reflected
-light is measured from another angle relative to the source called the "observation angle".  So there are really two
-measurements: the illuminance of the sample, and the illuminance of the observer.  (The sample illuminance measured is actually the
-illuminance perpendicular to the illuminator beam.)
+a sample of area $A$ is illuminated at a distance $d$ from a particular angle relative to perpendicular called the "entrance angle", and the reflected
+light is measured at the same distance $d$ from another angle relative to the source called the "observation angle".  So there are really two
+measurements: the illuminance of the sample, called $E_\perp$, (actually perpendicular to the beam rather than on the surface itself),
+and the illuminance of the observer, called $E_r$.  
 
-There are several ways to 
-express the reflectance, but the important one is the "Coefficient of Retroreflection," $R_A$, which is defined as 
-the ratio of the coefficient of luminous
-intensity (RI
-) to the area (A), expressed in candelas per lux per
-square metre (cd·lx−1·m−2). RA = RI
-/A
+There are several ways to  express the reflectance, but the important one is the "Coefficient of Retroreflection," $R_A$:
 
+$$
+R_A = \frac{E_r d^2}{E_\perp A}
+$$
 
-reflected illuminance, Er, n—illuminance at the receiver measured on a plane perpendicular to the observation
-axis.
-3.2.7.1 Discussion—This quantity is used in the calculation
-of the coefficient of luminous intensity,
-RI
-: RI = (I/E')=(Erd2
-)/E', w
+so $R_A$ is measured in candelas per lux per square metere ($cd\dotlx^−1\dotm^−2$).
 
 
-This is $R_A$ by entrance angle:
 
-<p align=center><img src="https://docs.google.com/spreadsheets/d/e/2PACX-1vS9LfUmscBJBon-H0nxE4GovaWxXLS5JhTjmkOymTXKV8SPol-0FX14R36codUMJB_g8UcuQVn0SOpA/pubchart?oid=836368983&format=image" width=640/></p>
 
-This is $R_A$ by observer angle
+# Variation by observer angle
+
+The reflectance varies strongly with observer angle: almost all the light is reflected right back at the source, so
+the only way to see the reflection is for the observer to be very close to the source.  There are some old datasets
+describing this phenomenon, for various generations of retroreflectors, mostly old ones, but useful to get the
+shape of the relationship.  I transcribed 
+[here](https://docs.google.com/spreadsheets/d/1KAr34-RtiIM0Fbr4D6O5UhFfduAykVAWz9x5DW8REuw/edit#gid=0), with some
+interpolation for missing values, including for the 3M tape used by FRC:
 
 <p align=center><img src="https://docs.google.com/spreadsheets/d/e/2PACX-1vS9LfUmscBJBon-H0nxE4GovaWxXLS5JhTjmkOymTXKV8SPol-0FX14R36codUMJB_g8UcuQVn0SOpA/pubchart?oid=1624612283&format=image" width=640/></p>
 
-The spreadsheet containing these charts is [here](https://docs.google.com/spreadsheets/d/1KAr34-RtiIM0Fbr4D6O5UhFfduAykVAWz9x5DW8REuw/edit#gid=0)
+Note the $R_A$ of 500 is what is quoted by 3M, it's observed 0.2 degrees from the source. At just 0.33 degrees, $R_A$ falls by half!
+For context, if a target were 3 meters away, a 0.2-degree observer would be ten __millimeters__ from the camera.  Move seven millimeters
+further away, and you lose half the intensity.  This is a strong effect!
+
+# Variation by entrance angle
+
+Reflectance varies less strongly with entrance angle, covering about a factor of 2 over 40 degrees:
+
+<p align=center><img src="https://docs.google.com/spreadsheets/d/e/2PACX-1vS9LfUmscBJBon-H0nxE4GovaWxXLS5JhTjmkOymTXKV8SPol-0FX14R36codUMJB_g8UcuQVn0SOpA/pubchart?oid=836368983&format=image" width=640/></p>
+
+This is a relationship we should be aware of, when calculating the contrast for obliquely-illuminated targets, but it's not
+the sort of show-stopper that the observer dependency above is.
