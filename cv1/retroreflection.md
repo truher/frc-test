@@ -5,16 +5,14 @@ to understand how to best build a system around them, we should first understand
 
 First, what is it exactly?  The [game manual](https://firstfrc.blob.core.windows.net/frc2022/Manual/2022FRCGameManual.pdf) tells us
 that the tape used on the field is [3M 8830 Scotchlite™ Reflective Material](https://www.3m.com/3M/en_US/p/d/v000312582/), which is more fully
-described in the [datasheet](https://multimedia.3m.com/mws/media/662425O/reflective-psa-technical-data-sheet.pdf).  It's a polyester film
-topped with microscopic glass spheres:
+described in the [datasheet](https://multimedia.3m.com/mws/media/662425O/reflective-psa-technical-data-sheet.pdf).  It's a polyester fabric
+topped with microscopic glass beads:
 
 <p align=center><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Reflective_leg_band_in_Scanning_Electron_Microscope%2C_15x.GIF/600px-Reflective_leg_band_in_Scanning_Electron_Microscope%2C_15x.GIF" width=500/></p>
 
-Each sphere is about 75 micrometers (&micro;m, "micron") in diameter.
+Each bead is about 75 micrometers (&micro;m, "micron") in diameter.
 
-What do these spheres do?
-
-They reflect light back the way it came:
+What do these beads do? They reflect light back the way it came:
 
 <p align=center><img src="https://illumin.usc.edu/wp-content/uploads/2022/02/image9-1-768x768.png" width=500/></p>
 
