@@ -32,10 +32,21 @@ the unwanted spectrum (thus the name, they split one "color" from the other).  T
 
 # Gels
 
-[Roscolux 27, "Medium Red"](https://www.bhphotovideo.com/c/product/43960-REG/Rosco_RS2711_27_Filter_Medium.html) $8 for almost 4 square feet.
+There are __many__ gels to choose from, you can poke through them
+[here](https://us.rosco.com/en/mycolor).  Many of them have low passband transparency, very gradual cutoffs, and pass multiple bands (e.g. it is
+common for filters that appear blue to actually also pass red).  These are some examples of pretty good gels I found:
 
-<p align=center><img src="https://cdn11.bigcommerce.com/s-nnyoihm3uz/images/stencil/1280x1280/products/8017/9367/R27__10331__01255.1522033566.jpg" width=640/></p>
+[Roscolux 27, "Medium Red"](https://www.bhphotovideo.com/c/product/43960-REG/Rosco_RS2711_27_Filter_Medium.html) $8 for almost 4 square feet.  This
+gel has pretty good passband transparency, >85%, and a cut-off wavelength of about 650nm.
 
-[Roscolux 389, "Chroma Green"](https://www.bhphotovideo.com/c/product/44326-REG/Rosco_RS38911_Lighting_Filter_389_Chroma.html) $8 for almost 4 square feet.
+<p align=center><img src="https://cdn11.bigcommerce.com/s-nnyoihm3uz/images/stencil/1280x1280/products/8017/9367/R27__10331__01255.1522033566.jpg" width=500/></p>
 
-<p align=center><img src="https://cdn11.bigcommerce.com/s-nnyoihm3uz/images/stencil/1280x1280/products/8114/9477/R389__23639__94742.1522033597.jpg" width=640/></p>
+[Roscolux 389, "Chroma Green"](https://www.bhphotovideo.com/c/product/44326-REG/Rosco_RS38911_Lighting_Filter_389_Chroma.html) $8 for almost 4 square feet.  This filter has OK transmission in the passband, about 80% peak, with FWHM of about 480-560 nm,
+and it's not entirely blocking in the yellow-red region.
+
+<p align=center><img src="https://cdn11.bigcommerce.com/s-nnyoihm3uz/images/stencil/1280x1280/products/8114/9477/R389__23639__94742.1522033597.jpg" width=500/></p>
+
+[Roscolux 74 "Night Blue"](https://www.bhphotovideo.com/c/product/44490-REG/Rosco_RS7411_74_Filter_Night.html) $8 for almost 4 square feet.  Notice
+the low transparency, about 50%, in the passband, centered around 470 nm, FWHM of about 440-500 nm.
+
+<p align=center><img src="https://cdn11.bigcommerce.com/s-nnyoihm3uz/images/stencil/1280x1280/products/8155/9518/R74__32392__07317.1522033610.jpg" width=500/></p>
