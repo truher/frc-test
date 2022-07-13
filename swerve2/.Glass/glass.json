@@ -1,5 +1,17 @@
 {
   "NetworkTables": {
+    "LiveWindow": {
+      "ExampleSubsystem": {
+        "open": true
+      },
+      "Ungrouped": {
+        "AnalogInput[0]": {
+          "open": true
+        },
+        "open": true
+      },
+      "open": true
+    },
     "SmartDashboard": {
       "blarg": {
         "open": true

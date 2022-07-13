@@ -18,7 +18,7 @@ public class ExampleSubsystem extends SubsystemBase {
     public final AnalogEncoder ch1;
     public final AnalogEncoder ch2;
     public final AnalogEncoder ch3;
-    public  AHRS ahrs;
+    public AHRS ahrs;
 
     /** Creates a new ExampleSubsystem. */
     public ExampleSubsystem() {
