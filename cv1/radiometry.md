@@ -179,7 +179,8 @@ inbound photon is above the minimum energy (about 1.1 eV, about 1100 nm), it get
 The simple implication here is that, because blue light requires twice as much energy
 to produce than red light, but the camera sensitivity to each is about the same, it's more efficient to use red light.  :-)
 
-There are other factors that make typical CMOS detector quantum efficiency vary with wavelength:
+There are other factors that make typical CMOS detector quantum efficiency vary with wavelength.  This is the
+quantum efficiency of the [OV9281/OV2311 sensor I suggest using](camera.md):
 
 <p align=center><img src="https://www.e-consystems.com/images/See3CAM/See3CAM_20CUG/quantum-efficiency-graph-large.jpg" width=640/></p>
 
