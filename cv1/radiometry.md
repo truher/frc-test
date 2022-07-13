@@ -34,13 +34,13 @@ Most light sources contain a range of wavelengths.  If you
 plot wavelength on the x axis and intensity on the y axis, you get a spectrum, for example the visible part of 
 [sunlight](https://en.wikipedia.org/wiki/Sunlight) at the Earth's surface looks something like this:
 
-<p align=center><img src="https://www.apogeeinstruments.com/content/quantum-sensors/par-explained/sun-clear.jpg" width=640/></p>
+<p align=center><img src="https://www.apogeeinstruments.com/content/quantum-sensors/par-explained/sun-clear.jpg" width=500/></p>
 
 The jaggedness in the spectrum is caused by absorption of specific wavelengths by molecules in the atmosphere, mostly ozone and water.
 
 Another familiar spectrum is the old-fashioned [incandescent light bulb](https://en.wikipedia.org/wiki/Incandescent_light_bulb):
 
-<p align=center><img src="https://www.apogeeinstruments.com/content/quantum-sensors/par-explained/incandescent-100W.jpg" width=640/></p>
+<p align=center><img src="https://www.apogeeinstruments.com/content/quantum-sensors/par-explained/incandescent-100W.jpg" width=500/></p>
 
 I'm sure you remember that incandescent light bulbs are inefficient, and from the spectrum you can see why: most of the watts
 are in the invisible region beyond 700 nm ("infrared"), useless to our eyes.
