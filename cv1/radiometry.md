@@ -175,7 +175,7 @@ and [quantum efficiency](https://en.wikipedia.org/wiki/Quantum_efficiency).  Spe
 per unit __energy__, whereas quantum efficiency measures the response per __photon__.  (Recall from above that a photon is the
 particle-like carrier of light energy.)  Camera
 [image sensors](https://en.wikipedia.org/wiki/Image_sensor) work by counting photons, not by measuring photon energy.  Roughly, if an
-inbound photon is above the minimum energy (about 1.1 eV, about 1100 nm), it gets counted: any extra energy is "wasted."
+inbound photon is above the minimum energy (about 1.1 eV, about 1100 nm), it gets counted: any extra energy simply heats the sensor a tiny bit.
 The simple implication here is that, because blue light requires twice as much energy
 to produce than red light, but the camera sensitivity to each is about the same, it's more efficient to use red light.  :-)
 
