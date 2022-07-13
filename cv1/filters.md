@@ -5,7 +5,8 @@ spectrum is pretty narrow, about 40nm, see the [emitters](emitters.md) doc for d
 
 <p align=center><img src="https://www.apogeeinstruments.com/content/quantum-sensors/par-explained/green-LED-524nm.jpg" width=640/></p>
 
-Ideally we'd like a filter that matches that narrow band, called a "bandpass" filter, like this:
+Ideally we'd like a filter that matches that narrow band, called a "bandpass" filter, like this.  The scales are a little different,
+but you can still see how the LED peak from 500 to 550 nm just fits nicely inside the passband spanning the same range.
 
 <p align=center><img src="https://www.laser2000.de/52866-thickbox_default/525-50-bandpassfilter.jpg" width=640/></p>
 
