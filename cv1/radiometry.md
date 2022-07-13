@@ -64,7 +64,8 @@ used in any specific venue.
 
 The most common lighting technologies for this purpose would be [metal halide](https://en.wikipedia.org/wiki/Metal-halide_lamp)
 or [white LEDs](https://en.wikipedia.org/wiki/LED_lamp#White_light_LEDs).  Since LEDs are more efficient, they are increasingly
-common.
+common.  There are many spectra of common light sources
+[here](https://www.apogeeinstruments.com/how-to-correct-for-spectral-errors-of-popular-light-sources/).
 
 A metal halide lamp is a type of arc lamp that works by exciting metal ions, which then radiate in specific wavelengths.
 The spectrum for metal halide varies by manufacturer and with the age of the bulb, but tends to look something like this:
