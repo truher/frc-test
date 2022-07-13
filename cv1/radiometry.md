@@ -186,7 +186,8 @@ There are other factors that make typical CMOS detector quantum efficiency vary 
 Notice that the detector response is much broader than the human eye response (note the larger x-axis range).  Where 
 the human eye sees almost nothing at 700 nm, the detector quantum efficiency is around 80%!
 The main reason for the decline at longer wavelengths is that a photon travels some distance in the detector before being
-absorbed.  Longer wavelengths require longer distances to be absorbed.  
+absorbed.  Longer wavelengths require longer distances to be absorbed, but the detector isn't very thick, so lots of
+long-wave photons simply exit the sensitive region of the detector before being absorbed.
 
 Cameras are typically characterized using quantum efficiency, but illuminators are characterized using lumens, so we need
 to translate between them.
