@@ -1,6 +1,6 @@
 # Retroreflection
 
-The key features perceived by the vision system are the retroreflective tape targets provided in the FRC field.  In order
+The key features perceived by the vision system are the __retroreflective tape vision targets__ provided in the FRC field.  In order
 to understand how to best build a system around them, we should first understand a bit about retroreflection.
 
 First, what is it exactly?  The [game manual](https://firstfrc.blob.core.windows.net/frc2022/Manual/2022FRCGameManual.pdf) tells us
@@ -16,7 +16,7 @@ What do these beads do? They reflect light back the way it came:
 
 <p align=center><img src="https://illumin.usc.edu/wp-content/uploads/2022/02/image9-1-768x768.png" width=500/></p>
 
-So when you hold a flashlight near your eye and shine it at the retrorefletor, it appears quite bright.  The flashlight
+When you hold a flashlight near your eye and shine it at the retrorefletor, it appears quite bright.  The flashlight
 needs to be pretty close to your eye for this to work.  Try it and see.
 
 ## Quantifying retroreflection
@@ -24,11 +24,11 @@ needs to be pretty close to your eye for this to work.  Try it and see.
 How can we assign some quantities to what we're seeing?  How much of the incident light is reflected?  How narrowly is it reflected?
 The datasheet mentions a number, "Coefficient of Retroreflection," $R_A$, which is 500.  What does that number mean?
 
-The coefficient of retroreflection represents the ratio of reflected intensity, $I_v$, (flux per angle, intuitively, the
+The coefficient of retroreflection represents the ratio of reflected intensity, $I_v$, (flux per angle; intuitively, the
 brightness in a particular direction) to total incident flux, $\phi_v$.  Importantly, when 3M say their produce yields an $R_A$ of 500,
-they specify 5&deg; entrance angle and 0.2&deg; observation angle.  What does that mean?
+they specify 5&deg; entrance angle and 0.2&deg; observation angle.  What does that mean?  It means the result of a specific measurement.
 
-It turns out that retroreflectors are pretty highly studied, because they're important for automobile safety at night.  Every road
+It turns out that retroreflectors have been pretty thoroughly studied, because they're important for automobile safety at night.  Every road
 sign includes retroreflectors indended to reflect car headlights into the eyes of the driver.  There are ASTM standards for [describing
 retroreflection](https://tajhizkala.ir/doc/ASTM/E808-01%20(Reapproved%202009).pdf), for
 [measuring it](https://tajhizkala.ir/doc/ASTM/E809-08%20(Reapproved%202013).pdf) (with more
@@ -42,14 +42,15 @@ The sample, of area $A$, is illuminated from a particular angle relative to perp
 is measured at distance $d$ from an angle relative to the source, called the "observation angle", $\alpha$, using a detector
 with aperture $A_o$.
 
-The measurement is conceptually simple, using the "ratio" method described in the docs above.  The advantage of this method
-is that there are no assumptions about the detector, other than it needs to be linear, and it needs to match the photopic
+The measurement is conceptually simple, using the "ratio" method described in the ASTM docs above.  The advantage of this method
+is that there are no calibration assumptions about the detector, other than it needs to be linear, and it needs to match the photopic
 response.  As long as the sample is in the FOV, the detector aperture doesn't matter very much.  There are two measurements:
 
-1. Measure the reflection.  Set the sample in place, turn on the illuminator, and measure the reflection.
+1. __Reflection.__  Set the sample in place, turn on the illuminator, and measure the reflection.
 This represents the total reflected __flux__ received by the detector, through the aperture, $A_o$.  Call this measurement $m_1$.
-2. Measure the incident illuminance.  Set the detector in place of the sample, pointing at the illuminator,
-to measure the incident perpendicular illuminance.  This represents the total incident flux through the detector aperture.  Call this measurement $m_2$.
+2. __Incident illuminance.__  Set the detector in place of the sample, pointing at the illuminator,
+to measure the incident perpendicular illuminance.  This represents the total incident flux through the detector aperture.
+Call this measurement $m_2$.
 
 Now we can calculate the total incident flux, $\phi_v$.  The measured flux divided by the observer area is the illuminance (flux per area),
 so multiply that by the actual sample area to get the total flux incident on the sample:
@@ -71,6 +72,8 @@ $$
 R_A = \frac{I_v}{\phi_v} = \frac{m_1 \frac{d^2}{A_o}} {\frac{m_2}{A_o} A} = \frac{m_1 d^2}{m_2 A}
 $$
 
+So the ratio of 500 means that, for an incident flux of 1 lumen, the tape produces 500 cd at 0.2&deg; from the incident direction.
+
 ## Retroreflection example
 
 Take an illuminator, for example the Cree XP-E2 "Far Red" illuminator suggested elsewhere.  It produces a pretty wide beam:
@@ -80,24 +83,23 @@ Take an illuminator, for example the Cree XP-E2 "Far Red" illuminator suggested 
 Let's simplify this distribution by saying that the output is pretty constant within the middle +/-45-degree cone, which is 1.84 sr, and that
 represents 2/3 of the output.
 
-Imagine a target 20cm on a side, ten meters away.  The area of 0.04 $m^2$ represents 0.0004 sr, which is a tiny fraction, 0.000217, of the 1.84 cone.
+Imagine a target 20cm on a side, ten meters away.  The area of 0.04 m<sup>2</sup>
+represents 0.0004 sr, which is a tiny fraction, 0.000217, of the 1.84 cone.
 
-Imagine the illuminator produces 150lm (a reasonable number for a single very bright LED), so that 100lm goes into the 1.84sr cone.
+Imagine the illuminator produces 150lm (a reasonable number for a single very bright LED), so that 100lm goes into the 1.84 sr cone.
 
-So the target receives a total flux of 0.0217 lm, and an illuminance of 0.542 cd.
-
-Using the $R_A$ specified by 3M, we simply multiply, and find the reflected intensity at 0.2&deg; is about 10 cd.
+So the target receives a total flux of 0.0217 lm. Using the $R_A$ specified by 3M, we simply multiply,
+and find the reflected intensity at 0.2&deg; is about 10 cd.
 
 Since the target area is 0.04 $m^2$ we can compute the apparent luminance of the target, which corresponds to brightness
-in the camera frame: 10 cd / 0.04 $m^2$ = 250 cd/$m^2$.
+in the camera frame: 10 cd / 0.04 m<sup>2</sup> = 250 cd / m<sup>2</sup>.
 
-For comparison, the background reflection might be something like 50, and the luminaires in the frame might be 1000.
+For comparison, the background reflection might be something like 50 cd / m<sup>2</sup>, and the luminaires in the frame might be 1000.
 
 Another interesting comparison is a diffuse reflector illuminated with the same 100 lm LED.  For an ideal diffuse (lambertian)
-reflector, the luminance is just the illuminance divided by pi (sr).  So starting from the illuminance of 0.542 cd, divide
-by pi to get 0.173 cd/$m^2$.  So the retroreflector is __1500 times__ brighter than a diffuse reflector, for the same illuminance.
-
-
+reflector, the luminance is just the illuminance divided by pi (sr).  So starting from the flux of 0.0217 and area of 0.04 m<sup>2</sup>,
+we find illuminance of 0.542 lux.  Divide
+by pi to get 0.173 cd / m<sup>2</sup>.  So the retroreflector is __1500 times__ brighter than a diffuse reflector, for the same illuminance.
 
 # Variation by observer angle
 
