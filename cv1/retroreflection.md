@@ -24,11 +24,9 @@ needs to be pretty close to your eye for this to work.  Try it and see.
 How can we assign some quantities to what we're seeing?  How much of the incident light is reflected?  How narrowly is it reflected?
 The datasheet mentions a number, "Coefficient of Retroreflection," $R_A$, which is 500.  What does that number mean?
 
-The coefficient of retroreflection represents the ratio of reflected intensity (flux per angle, intuitively, the
-brightness in a particular direction) to total incident flux.
-
-
-How can we quantify this idea?
+The coefficient of retroreflection represents the ratio of reflected intensity, $I_v$, (flux per angle, intuitively, the
+brightness in a particular direction) to total incident flux, $\phi_v$.  Importantly, when 3M say their produce yields an $R_A$ of 500,
+they specify 5&deg; entrance angle and 0.2&deg; observation angle.  What does that mean?
 
 It turns out that retroreflectors are pretty highly studied, because they're important for automobile safety at night.  Every road
 sign includes retroreflectors indended to reflect car headlights into the eyes of the driver.  There are ASTM standards for [describing
@@ -53,25 +51,29 @@ This represents the total reflected __flux__ received by the detector, through t
 2. Measure the incident illuminance.  Set the detector in place of the sample, pointing at the illuminator,
 to measure the incident perpendicular illuminance.  This represents the total incident flux through the detector aperture.  Call this measurement $m_2$.
 
-
-
-
-a sample of area $A$ is illuminated at a distance $d$ from a particular angle relative to perpendicular called the "entrance angle", and the reflected
-light is measured at the same distance $d$ from another angle relative to the source 
-
-So there are really two
-measurements: the illuminance of the sample, called $E_\perp$, (actually perpendicular to the beam rather than on the surface itself),
-and the illuminance of the observer, called $E_r$.  
-
-There are several ways to  express the reflectance, but the important one is the "Coefficient of Retroreflection," $R_A$:
+Now we can calculate the total incident flux, $\phi_v$.  The measured flux divided by the observer area is the illuminance (flux per area),
+so multiply that by the actual sample area to get the total flux incident on the sample:
 
 $$
-R_A = \frac{E_r d^2}{E_\perp A}
+\phi_v = \frac{m_2}{A_o} A
 $$
 
-so $R_A$ is measured in candelas per lux per square metere ($cd \cdot lx^{−1} \cdot m^{−2}$).
+And we can calculate the reflected intensity per unit angle, $I_v$, which is just the measured flux divided by the angle
+corresponding to the aperture ($\frac{A_o}{d^2}$):
 
-Intuitively it measures the ratio of reflected intensity (flux per angle) to total incident flux (illumination times area, $E_\perp \cdot A$)
+$$
+I_v = m_1 \frac{d^2}{A_o}
+$$
+
+So the ratio of refleted intensity to incident flux is:
+
+$$
+R_A = \frac{I_v}{\phi_v} = \frac{m_1 \frac{d^2}{A_o}} {\frac{m_2}{A_o} A} = \frac{m_1 d^2}{m_2 A}
+$$
+
+## Retroreflection example
+
+
 
 
 
