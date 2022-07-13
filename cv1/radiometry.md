@@ -34,13 +34,13 @@ Most light sources contain a range of wavelengths.  If you
 plot wavelength on the x axis and intensity on the y axis, you get a spectrum, for example the visible part of 
 [sunlight](https://en.wikipedia.org/wiki/Sunlight) at the Earth's surface looks something like this:
 
-<p align=center><img src="https://www.lumigrow.com/wp-content/uploads/2020/04/solar-spectrum-graph-714x406.jpg" width=640/></p>
+<p align=center><img src="https://www.apogeeinstruments.com/content/quantum-sensors/par-explained/sun-clear.jpg" width=500/></p>
 
 The jaggedness in the spectrum is caused by absorption of specific wavelengths by molecules in the atmosphere, mostly ozone and water.
 
 Another familiar spectrum is the old-fashioned [incandescent light bulb](https://en.wikipedia.org/wiki/Incandescent_light_bulb):
 
-<p align=center><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/be/Spectral_power_distribution_of_a_25_W_incandescent_light_bulb.png/640px-Spectral_power_distribution_of_a_25_W_incandescent_light_bulb.png" width=640/></p>
+<p align=center><img src="https://www.apogeeinstruments.com/content/quantum-sensors/par-explained/incandescent-100W.jpg" width=500/></p>
 
 I'm sure you remember that incandescent light bulbs are inefficient, and from the spectrum you can see why: most of the watts
 are in the invisible region beyond 700 nm ("infrared"), useless to our eyes.
@@ -64,12 +64,13 @@ used in any specific venue.
 
 The most common lighting technologies for this purpose would be [metal halide](https://en.wikipedia.org/wiki/Metal-halide_lamp)
 or [white LEDs](https://en.wikipedia.org/wiki/LED_lamp#White_light_LEDs).  Since LEDs are more efficient, they are increasingly
-common.
+common.  There are many spectra of common light sources
+[here](https://www.apogeeinstruments.com/how-to-correct-for-spectral-errors-of-popular-light-sources/).
 
 A metal halide lamp is a type of arc lamp that works by exciting metal ions, which then radiate in specific wavelengths.
 The spectrum for metal halide varies by manufacturer and with the age of the bulb, but tends to look something like this:
 
-<p align=center><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/67/Metal_Halide_Rainbow.png/640px-Metal_Halide_Rainbow.png" width=500/></p>
+<p align=center><img src="https://www.apogeeinstruments.com/content/quantum-sensors/par-explained/metal-halide.jpg" width=500/></p>
 
 Note the peaks in yellow and green, and the broad but low background that extends into infrared and near ultraviolet.
 
@@ -155,7 +156,7 @@ photometry is concerned with __perception__: apparent brightness varies by wavel
 [luminous efficiency function](https://en.wikipedia.org/wiki/Luminous_efficiency_function).  For bright light, the eye's response
 is called [photopic](https://en.wikipedia.org/wiki/Photopic_vision), with this response curve:
 
-<p align=center><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/CIE_1931_Luminosity.png/640px-CIE_1931_Luminosity.png" width=640/></p>
+<p align=center><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/CIE_1931_Luminosity.png/640px-CIE_1931_Luminosity.png" width=500/></p>
 
 The human eye is most sensitive around 555 nm, bright green, and doesn't perceive anything shorter than 400 or longer than 700.
 
@@ -174,18 +175,20 @@ and [quantum efficiency](https://en.wikipedia.org/wiki/Quantum_efficiency).  Spe
 per unit __energy__, whereas quantum efficiency measures the response per __photon__.  (Recall from above that a photon is the
 particle-like carrier of light energy.)  Camera
 [image sensors](https://en.wikipedia.org/wiki/Image_sensor) work by counting photons, not by measuring photon energy.  Roughly, if an
-inbound photon is above the minimum energy (about 1.1 eV, about 1100 nm), it gets counted: any extra energy is "wasted."
+inbound photon is above the minimum energy (about 1.1 eV, about 1100 nm), it gets counted: any extra energy simply heats the sensor a tiny bit.
 The simple implication here is that, because blue light requires twice as much energy
 to produce than red light, but the camera sensitivity to each is about the same, it's more efficient to use red light.  :-)
 
-There are other factors that make typical CMOS detector quantum efficiency vary with wavelength:
+There are other factors that make typical CMOS detector quantum efficiency vary with wavelength.  This is the
+quantum efficiency of the [OV9281/OV2311 sensor I suggest using](camera.md):
 
 <p align=center><img src="https://www.e-consystems.com/images/See3CAM/See3CAM_20CUG/quantum-efficiency-graph-large.jpg" width=640/></p>
 
 Notice that the detector response is much broader than the human eye response (note the larger x-axis range).  Where 
 the human eye sees almost nothing at 700 nm, the detector quantum efficiency is around 80%!
 The main reason for the decline at longer wavelengths is that a photon travels some distance in the detector before being
-absorbed.  Longer wavelengths require longer distances to be absorbed.  
+absorbed.  Longer wavelengths require longer distances to be absorbed, but the detector isn't very thick, so lots of
+long-wave photons simply exit the sensitive region of the detector before being absorbed.
 
 Cameras are typically characterized using quantum efficiency, but illuminators are characterized using lumens, so we need
 to translate between them.

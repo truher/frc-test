@@ -4,17 +4,24 @@
 
 There are several criteria involved in the camera choice.
 
-1. __Number of views and eyes.__  I simulated single-view monocular and binocular options (see [comparison](comparison.md)), and found the binocular option
-provides about 4X the accuracy, and since the cost, complexity, and compute load per eye is reasonable, it seems worth doing two.  Note that
+1. __Number of views and eyes.__  I simulated single-view monocular and binocular options (see [comparison](comparison.md)),
+2. and found the binocular option
+provides about 4X the accuracy, and since the cost, complexity, and compute load per eye is reasonable, it seems worth doing two;
+we should explore both options.  Note that
 the eyes in a binocular setup need to be synchronized at the frame level, to avoid inaccuracy derived from timing differences.  Another
 option would be multi-view, e.g. 360-degree coverage, which might involve three or four monocular views, and might enable
 higher accuracy without IMU fusion if multiple targets are visible.  Full-circle binocular coverage would require six to eight cameras,
 which seems like a lot, and unnecessary if multiple targets are visible.  Almost everything here can be easily adapted to 360 arrangements.
 2. __Spectral response.__   Most cameras capture full-color using a [mosaic of tiny color filters](https://en.wikipedia.org/wiki/Bayer_filter),
 which is useful to differentiate objects by color, for example.  But the problem to solve here is simpler: detect retroreflective targets,
-illuminated by a source of our choice.  To maximize contrast of the target, we use an illumination spectrum outside the usual
-gym-lighting spectrum, and a filter to match, in front of a monochrome camera.  The best spectrum for this purpose is near-infrared,
-which means we need an IR-sensitive camera.  There's a fuller discussion of [radiometry issues here](radiometry.md).
+illuminated by a source of our choice.  We don't need color, we just need enough contrast between the target and the background to
+be able to measure the target geometry in the camera image.  There are two options, we should explore both
+(There's a fuller discussion of [radiometry issues here](radiometry.md)):
+    1. To maximize contrast of the target while minimizing illuminator power, we could use an illuminator wavelength outside the background
+    gym-lighting spectrum, and filter out the background, in front of a monochrome camera.  The best spectrum for this purpose is near-infrared,
+    which means we need an IR-sensitive camera.  
+    2. To maximize contrast without a dedicated camera, we could use an illuminator wavelength visible to a full-color (Bayer mosaic)
+    camera, and just make the illuminator bright enough to overpower the background.  The common green LED illuminator uses this strategy.
 3. __Shutter type.__  Most cameras use a [rolling shutter](https://en.wikipedia.org/wiki/Rolling_shutter) which means that a single frame
 is not captured all at once but rather one pixel-row at a time, slicing horizontally.  They work this way to simplify in-camera data
 processing and to increase sensitivity, at the expense of blur, jello, and other artifacts.  A rolling shutter is also much harder to
@@ -30,9 +37,10 @@ difference is cost, S-mount tend to be much less expensive.
 
 ## Selection
 
-[ArduCam](https://www.arducam.com/) provides several [monocular, binocular, and quadocular kits](https://www.arducam.com/raspberry-pi-multiple-cameras/) that seem
-appropriate, specifically this [kit](https://www.arducam.com/product/arducam-1mp2-stereoscopic-camera-bundle-kit-for-raspberry-pi-nvidia-jetson-nano-xavier-nx-two-ov9281-global-shutter-monochrome-camera-modules-and-camarray-stereo-camera-hat/):
-
+[ArduCam](https://www.arducam.com/) provides several
+[monocular, binocular, and quadocular kits](https://www.arducam.com/raspberry-pi-multiple-cameras/) that seem
+appropriate, using the Omnivision OV9281 sensor, which has 1280×800 pixels and a global shutter, about $40 for a single camera.
+A binocular [kit is available](https://www.arducam.com/product/arducam-1mp2-stereoscopic-camera-bundle-kit-for-raspberry-pi-nvidia-jetson-nano-xavier-nx-two-ov9281-global-shutter-monochrome-camera-modules-and-camarray-stereo-camera-hat/),
 
 <img src="https://www.uctronics.com/media/catalog/product/cache/f16269e76514986618cdfcfa729ea40d/a/r/arducam-1mp-0v9281-mipi-stereoscopic_camerabundle_kit-b0266_3_.jpg" height=300/><img src="https://www.arducam.com/wp-content/uploads/2020/10/B0266-2-600x600.jpg" height=300/>
 
@@ -41,6 +49,16 @@ time, and stitching them together into one very wide image for the Raspberry Pi.
 because they can be placed further apart, increasing accuracy.  The same module is also available in a
 [four-way configuration.](https://www.arducam.com/product/arducam-1mp4-quadrascopic-camera-bundle-kit-for-raspberry-pi-nvidia-jetson-nano-xavier-nx-four-ov9281-global-shutter-monochrome-camera-modules-and-camarray-camera-hat/)
 
+Another option is the OV2311 sensor, for example [here](https://www.e-consystems.com/industrial-cameras/ov2311-monochrome-global-shutter-camera.asp).
+or [here](https://www.arducam.com/product/arducam-2mp-ov2311-global-shutter-noir-mono-camera-modules-pivariety/), about $110.  It
+is similar to the OV9281 (mono global shutter), but with double the resolution, 1600 x 1300 pixels, using the same pitch, 3 &micro;m. I'm not sure
+the extra resolution is required.
+
+This is the quantum efficiency of the detector in these cameras:
+
+<p align=center><img src="https://www.e-consystems.com/images/See3CAM/See3CAM_20CUG/quantum-efficiency-graph-large.jpg" width=640/></p>
+
+The best QE is around 600nm, but the FWHM covers the entire spectrum.  There may be some tradeoff in illuminator and filter efficiency here.
 
 
 ## Alternatives
