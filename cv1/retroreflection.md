@@ -65,7 +65,7 @@ $$
 I_v = m_1 \frac{d^2}{A_o}
 $$
 
-So the ratio of refleted intensity to incident flux is:
+So the ratio of reflected intensity to incident flux is:
 
 $$
 R_A = \frac{I_v}{\phi_v} = \frac{m_1 \frac{d^2}{A_o}} {\frac{m_2}{A_o} A} = \frac{m_1 d^2}{m_2 A}
@@ -73,8 +73,29 @@ $$
 
 ## Retroreflection example
 
+Take an illuminator, for example the Cree XP-E2 "Far Red" illuminator suggested elsewhere.  It produces a pretty wide beam:
 
+<p align=center><img src="lamp_angle.png" with=500/></p>
 
+Let's simplify this distribution by saying that the output is pretty constant within the middle +/-45-degree cone, which is 1.84 sr, and that
+represents 2/3 of the output.
+
+Imagine a target 20cm on a side, ten meters away.  The area of 0.04 $m^2$ represents 0.0004 sr, which is a tiny fraction, 0.000217, of the 1.84 cone.
+
+Imagine the illuminator produces 150lm (a reasonable number for a single very bright LED), so that 100lm goes into the 1.84sr cone.
+
+So the target receives a total flux of 0.0217 lm, and an illuminance of 0.542 cd.
+
+Using the $R_A$ specified by 3M, we simply multiply, and find the reflected intensity at 0.2&deg; is about 10 cd.
+
+Since the target area is 0.04 $m^2$ we can compute the apparent luminance of the target, which corresponds to brightness
+in the camera frame: 10 cd / 0.04 $m^2$ = 250 cd/$m^2$.
+
+For comparison, the background reflection might be something like 50, and the luminaires in the frame might be 1000.
+
+Another interesting comparison is a diffuse reflector illuminated with the same 100 lm LED.  For an ideal diffuse (lambertian)
+reflector, the luminance is just the illuminance divided by pi (sr).  So starting from the illuminance of 0.542 cd, divide
+by pi to get 0.173 cd/$m^2$.  So the retroreflector is __1500 times__ brighter than a diffuse reflector, for the same illuminance.
 
 
 
