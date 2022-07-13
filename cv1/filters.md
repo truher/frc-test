@@ -34,8 +34,8 @@ the unwanted spectrum (thus the name, they split one "color" from the other).  T
 
 [Roscolux 27, "Medium Red"](https://www.bhphotovideo.com/c/product/43960-REG/Rosco_RS2711_27_Filter_Medium.html) $8 for almost 4 square feet.
 
-https://cdn11.bigcommerce.com/s-nnyoihm3uz/images/stencil/1280x1280/products/8017/9367/R27__10331__01255.1522033566.jpg?c=2
+<p align=center><img src="https://cdn11.bigcommerce.com/s-nnyoihm3uz/images/stencil/1280x1280/products/8017/9367/R27__10331__01255.1522033566.jpg" width=640/></p>
 
-[Roscolux 389, "Chroma Green"](https://www.bhphotovideo.com/c/product/44326-REG/Rosco_RS38911_Lighting_Filter_389_Chroma.html)
+[Roscolux 389, "Chroma Green"](https://www.bhphotovideo.com/c/product/44326-REG/Rosco_RS38911_Lighting_Filter_389_Chroma.html) $8 for almost 4 square feet.
 
-<p align=center><img src="https://cdn11.bigcommerce.com/s-nnyoihm3uz/images/stencil/1280x1280/products/8114/9477/R389__23639__94742.1522033597.jpg?c=2" width=640/></p>
+<p align=center><img src="https://cdn11.bigcommerce.com/s-nnyoihm3uz/images/stencil/1280x1280/products/8114/9477/R389__23639__94742.1522033597.jpg" width=640/></p>
