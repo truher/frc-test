@@ -156,7 +156,7 @@ photometry is concerned with __perception__: apparent brightness varies by wavel
 [luminous efficiency function](https://en.wikipedia.org/wiki/Luminous_efficiency_function).  For bright light, the eye's response
 is called [photopic](https://en.wikipedia.org/wiki/Photopic_vision), with this response curve:
 
-<p align=center><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/CIE_1931_Luminosity.png/640px-CIE_1931_Luminosity.png" width=640/></p>
+<p align=center><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/CIE_1931_Luminosity.png/640px-CIE_1931_Luminosity.png" width=500/></p>
 
 The human eye is most sensitive around 555 nm, bright green, and doesn't perceive anything shorter than 400 or longer than 700.
 
