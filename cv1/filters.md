@@ -40,12 +40,12 @@ gels because they don't bleach and they don't absorb heat).
 Dye gel: [Roscolux 27, "Medium Red"](https://www.bhphotovideo.com/c/product/43960-REG/Rosco_RS2711_27_Filter_Medium.html)
 $8 for almost 4 square feet. This gel has pretty good passband transparency, >85%, and a cut-off wavelength of about 650nm.
 
-<p align=center><img src="https://legacy.rosco.com/mycolor/SED.cfm?imageName=../images/filters/Roscolux/27.jpg" width=500/></p>
+<p align=center><img src="https://legacy.rosco.com/images/filters/Roscolux/27.jpg" width=500/></p>
 
 Dichroic gel: [Permacolor 6500 "Primary Red"](https://www.bhphotovideo.com/c/product/107002-REG/Rosco_120365007508_Permacolor_Primary_Red.html)
 $16 for a 2 inch square (special order).
 
-<p align=center><img src="https://www.gobosource.com/gos/images/6500.jpg" width=500/></p>
+<p align=center><img src="6500.png" width=500/></p>
 
 # Green
 
@@ -56,14 +56,14 @@ Dye gel: [Roscolux 389, "Chroma Green"](https://www.bhphotovideo.com/c/product/4
 $8 for almost 4 square feet.  This filter has OK transmission in the passband, about 80% peak, with FWHM of about 480-560 nm,
 and it's not entirely blocking in the yellow-red region.
 
-<p align=center><img src="https://legacy.rosco.com/mycolor/SED.cfm?imageName=../images/filters/Roscolux/389.jpg" width=500/></p>
+<p align=center><img src="https://legacy.rosco.com/images/filters/Roscolux/389.jpg" width=500/></p>
 
 Dichroic gel:
 [Permacolor 1086 "Industrial Green"](https://www.bhphotovideo.com/c/product/189992-REG/Rosco_120310867508_Permacolor_Industrial_Green.html)
 $16 for 2 inch square, special order.  Notice the wide passband, about 500 to 600 nm, and the excellent transparency.  There
 is also considerable transmission in UV, but there isn't much UV in the background, so that shouldn't matter.
 
-<p align=center><img src="" width=500/></p>
+<p align=center><img src="1086.png" width=500/></p>
 
 
 
@@ -75,13 +75,13 @@ is also considerable transmission in UV, but there isn't much UV in the backgrou
 Dye gel: [Roscolux 74 "Night Blue"](https://www.bhphotovideo.com/c/product/44490-REG/Rosco_RS7411_74_Filter_Night.html)
 $8 for almost 4 square feet.  Notice the low transparency, about 50%, in the passband, centered around 470 nm, FWHM of about 440-500 nm.
 
-<p align=center><img src="https://legacy.rosco.com/mycolor/SED.cfm?imageName=../images/filters/Roscolux/74.jpg" width=500/></p>
+<p align=center><img src="https://legacy.rosco.com/images/filters/Roscolux/74.jpg" width=500/></p>
 
 
 Dichroic gel: [Permacolor 4600 "Medium Red Blue"](https://www.bhphotovideo.com/c/product/106985-REG/Rosco_120346007508_Permacolor_Medium_Red.html)
 $16 for a 2 inch square (special order).
 
-<p align=center><img src="https://www.gobosource.com/gos/images/4600.jpg" width=500/></p>
+<p align=center><img src="4600.png" width=500/></p>
 
 
 
