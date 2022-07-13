@@ -54,6 +54,12 @@ or [here](https://www.arducam.com/product/arducam-2mp-ov2311-global-shutter-noir
 is similar to the OV9281 (mono global shutter), but with double the resolution, 1600 x 1300 pixels, using the same pitch, 3 &micro;m. I'm not sure
 the extra resolution is required.
 
+This is the quantum efficiency of the detector in these cameras:
+
+<p align=center><img src="https://www.e-consystems.com/images/See3CAM/See3CAM_20CUG/quantum-efficiency-graph-large.jpg" width=640/></p>
+
+The best QE is around 600nm, but the FWHM covers the entire spectrum.  There may be some tradeoff in illuminator and filter efficiency here.
+
 
 ## Alternatives
 
