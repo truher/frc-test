@@ -40,7 +40,7 @@ The jaggedness in the spectrum is caused by absorption of specific wavelengths b
 
 Another familiar spectrum is the old-fashioned [incandescent light bulb](https://en.wikipedia.org/wiki/Incandescent_light_bulb):
 
-<p align=center><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/be/Spectral_power_distribution_of_a_25_W_incandescent_light_bulb.png/640px-Spectral_power_distribution_of_a_25_W_incandescent_light_bulb.png" width=640/></p>
+<p align=center><img src="https://www.apogeeinstruments.com/content/quantum-sensors/par-explained/incandescent-100W.jpg" width=640/></p>
 
 I'm sure you remember that incandescent light bulbs are inefficient, and from the spectrum you can see why: most of the watts
 are in the invisible region beyond 700 nm ("infrared"), useless to our eyes.
@@ -70,7 +70,7 @@ common.  There are many spectra of common light sources
 A metal halide lamp is a type of arc lamp that works by exciting metal ions, which then radiate in specific wavelengths.
 The spectrum for metal halide varies by manufacturer and with the age of the bulb, but tends to look something like this:
 
-<p align=center><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/67/Metal_Halide_Rainbow.png/640px-Metal_Halide_Rainbow.png" width=500/></p>
+<p align=center><img src="https://www.apogeeinstruments.com/content/quantum-sensors/par-explained/metal-halide.jpg" width=500/></p>
 
 Note the peaks in yellow and green, and the broad but low background that extends into infrared and near ultraviolet.
 
