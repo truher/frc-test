@@ -112,7 +112,7 @@ interpolation for missing values, including for the 3M tape used by FRC:
 
 Note the $R_A$ of 500 is what is quoted by 3M, it's observed 0.2 degrees from the source. At just 0.33 degrees, $R_A$ falls by half!
 For context, if a target were 3 meters away, a 0.2-degree observer would be ten __millimeters__ from the camera.  Move seven millimeters
-further away, and you lose half the intensity.  This is a strong effect!
+further away, and you lose half the intensity.  This is a strong effect!  Emitters need to be as close to the camera as possible!
 
 # Variation by entrance angle
 
