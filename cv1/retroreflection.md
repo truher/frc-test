@@ -28,7 +28,13 @@ It turns out that retroreflectors are pretty highly studied, because they're imp
 sign includes retroreflectors indended to reflect car headlights into the eyes of the driver.  There are ASTM standards for [describing
 retroreflection](https://tajhizkala.ir/doc/ASTM/E808-01%20(Reapproved%202009).pdf), for
 [measuring it](https://tajhizkala.ir/doc/ASTM/E809-08%20(Reapproved%202013).pdf) (with more
-[detail here](https://tajhizkala.ir/doc/ASTM/E810-03%20(Reapproved%202013).pdf)).  The measurement is conceptually simple:
+[detail here](https://tajhizkala.ir/doc/ASTM/E810-03%20(Reapproved%202013).pdf)).
+
+The measurement setup looks like this:
+
+<p align=center><img src="810-diagram.png" width=640/></p>
+
+The measurement is conceptually simple:
 a sample of area $A$ is illuminated at a distance $d$ from a particular angle relative to perpendicular called the "entrance angle", and the reflected
 light is measured at the same distance $d$ from another angle relative to the source called the "observation angle".  So there are really two
 measurements: the illuminance of the sample, called $E_\perp$, (actually perpendicular to the beam rather than on the surface itself),
