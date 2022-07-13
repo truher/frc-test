@@ -28,7 +28,9 @@ There are many possibilities for filtering blue, green, or red illumination, and
 the unwanted spectrum; they're intended to filter broad-spectrum illuminators into narrower bands, but they also work just as well
 on the detector end.  Most gels are not particularly precise in spectrum terms, and many of them don't transmit very well in the passband.
 2. The most precise filter is a "dichroic" (Greek meaning "two color") filter. These work using layers of thin films to __reflect__
-the unwanted spectrum (thus the name, they split one "color" from the other).  These are much more expensive than gels.
+the unwanted spectrum (thus the name, they split one "color" from the other).  There are two sources for dichroic filters, industrial
+optics manufacturers (designed for scientific purposes like fluorescence spectroscopy), and, again, theater lighting (dichroics are superior to dye
+gels because they don't bleach and they don't absorb heat).
 
 # Gels
 
@@ -50,3 +52,10 @@ and it's not entirely blocking in the yellow-red region.
 the low transparency, about 50%, in the passband, centered around 470 nm, FWHM of about 440-500 nm.
 
 <p align=center><img src="https://cdn11.bigcommerce.com/s-nnyoihm3uz/images/stencil/1280x1280/products/8155/9518/R74__32392__07317.1522033610.jpg" width=500/></p>
+
+# Dichroics
+
+[Permacolor 6500 "Primary Red"](https://www.bhphotovideo.com/c/product/107002-REG/Rosco_120365007508_Permacolor_Primary_Red.html), $16 for a 2 inch
+square.
+
+<p align=center><img src="https://www.gobosource.com/gos/images/6500.jpg" width=500/></p>
