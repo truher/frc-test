@@ -34,7 +34,7 @@ Most light sources contain a range of wavelengths.  If you
 plot wavelength on the x axis and intensity on the y axis, you get a spectrum, for example the visible part of 
 [sunlight](https://en.wikipedia.org/wiki/Sunlight) at the Earth's surface looks something like this:
 
-<p align=center><img src="https://www.lumigrow.com/wp-content/uploads/2020/04/solar-spectrum-graph-714x406.jpg" width=640/></p>
+<p align=center><img src="https://www.apogeeinstruments.com/content/quantum-sensors/par-explained/sun-clear.jpg" width=640/></p>
 
 The jaggedness in the spectrum is caused by absorption of specific wavelengths by molecules in the atmosphere, mostly ozone and water.
 
