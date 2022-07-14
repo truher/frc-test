@@ -1,13 +1,7 @@
 {
   "NetworkTables": {
     "LiveWindow": {
-      "ExampleSubsystem": {
-        "open": true
-      },
       "Ungrouped": {
-        "AnalogInput[0]": {
-          "open": true
-        },
         "open": true
       },
       "open": true
@@ -16,7 +10,10 @@
       "blarg": {
         "open": true
       },
-      "open": true
+      "open": true,
+      "robot container": {
+        "open": true
+      }
     },
     "types": {
       "/FMSInfo": "FMSInfo",
