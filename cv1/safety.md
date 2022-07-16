@@ -15,14 +15,17 @@ in high doses can affect the eye through a number of mechanisms, for example ret
 When you're building a device that emits radiation of any kind, you need to understand these hazards,
 and make sure that your device won't cause injury to any people nearby.
 
-# Safety Standards
+## Safety Standards
 
-The main safety standard for light sources is [IEC 62471, "Photobiological Safety of Lamps and Lamp Systems."](https://cie.co.at/publications/photobiological-safety-lamps-and-lamp-systems-s-curit-photobiologique-des-lampes-et-des),
-also expressed as [ANSI/IESNA RP-27, "Recommended Practice for Photobiological Safety for
-Lamps and Lamp Systems-Measurement Techniques"](https://webstore.ansi.org/preview-pages/IESNA/preview_ANSI+IESNA+RP-27.2-00.pdf)
+There are several equivalent standards (see appendix); we'll be working through the method specified by the
+International Commission on Non-Ionizing Radiation Protection (ICNIRP),
+[ICNIRP Guidelines on Limits of Exposure to Incoherent Visible and Infrared Radiation."](https://www.icnirp.org/cms/upload/publications/ICNIRPVisible_Infrared2013.pdf).
+I encourage you to read and understand the
+guidelines in total (it's only 26 pages); I'll try to limit discussion here to implications of the guidelines, rather than covering everything.
 
-According to [this summary](https://smartvisionlights.com/wp-content/uploads/IEC_62471_summary.pdf), there are eight
-hazards to evaluate:
+## Types of harm
+
+There are eight hazards to evaluate (TODO: use the ordering from ICNIRP)
 
 1. [Actinic](https://www.ncbi.nlm.nih.gov/books/NBK401580/) UV, 200-400 nm (irradiance)
 2. UVA, 315-400 nm (irradiance)
@@ -38,7 +41,9 @@ Some of the hazards involve harm to the surface of the body (e.g. cornea, skin),
 Other hazards involve harm to the retina, where the light is focused, and these generally depend on 
 ["radiance"](https://en.wikipedia.org/wiki/Radiance) (loosely, apparent "brightness") of the source.
 
-For each of the hazards above, an emitter may be classified into one of four groups:
+## Classification of risk
+
+For each of the hazards above, an emitter may be classified into one of four groups according to the IEC standard:
 
 1. __Exempt__: no hazard
 2. __Group 1 (low risk)__: no hazard assuming normal human behavior
@@ -48,17 +53,11 @@ For each of the hazards above, an emitter may be classified into one of four gro
 We will be designing for group 1: no hazard at all, for all hazards, because we can't restrict or police the population of bystanders to be sure
 their behavior is "normal."
 
-## Summary of the guidelines
-
-We'll be working through the math specified by the International Commission on Non-Ionizing Radiation Protection (ICNIRP),
-[ICNIRP Guidelines on Limits of Exposure to Incoherent Visible and Infrared Radiation."](https://www.icnirp.org/cms/upload/publications/ICNIRPVisible_Infrared2013.pdf).  I encourage you to read and understand the
-guidelines in total; I'll try to limit discussion here to implications of the guidelines, rather than covering everything.
-
-Retinal hazard varies with wavelength, as described in the "hazard functions":
+Some retinal hazards vary with wavelength, as described in the "hazard functions":
 
 <p align=center><img src="https://drive.google.com/uc?export=view&id=1ZXQJZHQRQGgV23JVudl0XwG051RoYHag" width=640/></p>
 
-For hazard 5, thermal, 380-14800 nm, 
+## Retinal thermal hazards (380Y1,400 nm)
 
 
 
@@ -78,3 +77,7 @@ time because they find it fascinating), the (non-exempt) exposure limits should 
 which reviews some of the hazards specific to LEDs and recommends that LEDs be analyzed using the incoherent broadband standards used above.
 * ICNIRP first published guidelines in 1997,
 [Guidelines on Limits of Exposure to Broad-band Incoherent Optical Radiation (0.38 to 3 &micro;m)](https://www.icnirp.org/cms/upload/publications/ICNIRPbroadband.pdf)
+* The same calculations are also available from IEC/CIE as [IEC 62471, "Photobiological Safety of Lamps and Lamp Systems."](https://cie.co.at/publications/photobiological-safety-lamps-and-lamp-systems-s-curit-photobiologique-des-lampes-et-des),
+which is [summarized here](https://smartvisionlights.com/wp-content/uploads/IEC_62471_summary.pdf).
+* Another version of the same method is available from ANSI as [ANSI/IESNA RP-27, "Recommended Practice for Photobiological Safety for
+Lamps and Lamp Systems-Measurement Techniques"](https://webstore.ansi.org/preview-pages/IESNA/preview_ANSI+IESNA+RP-27.2-00.pdf)
