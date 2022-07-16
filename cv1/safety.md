@@ -24,16 +24,21 @@ Lamps and Lamp Systems-Measurement Techniques"](https://webstore.ansi.org/previe
 According to [this summary](https://smartvisionlights.com/wp-content/uploads/IEC_62471_summary.pdf), there are eight
 hazards to evaluate:
 
-1. [Actinic](https://www.ncbi.nlm.nih.gov/books/NBK401580/) UV, 200-400 nm
-2. UVA, 315-400 nm
-3. Blue light, 300-700 nm
-4. Blue light small source, 300-700 nm
-5. Thermal, 380-1400 nm
-6. Thermal invisible, 780-1400 nm
-7. Infrared 780-3000 nm
-8. Thermal skin, 380-3000 nm
+1. [Actinic](https://www.ncbi.nlm.nih.gov/books/NBK401580/) UV, 200-400 nm (irradiance)
+2. UVA, 315-400 nm (irradiance)
+3. Blue light, 300-700 nm (radiance)
+4. Blue light small source, 300-700 nm (irradiance)
+5. Thermal, 380-1400 nm (radiance)
+6. Thermal invisible, 780-1400 nm (radiance)
+7. Infrared 780-3000 nm (irradiance)
+8. Thermal skin, 380-3000 nm (irradiance)
 
-For each of these hazards, an emitter may be classified into one of four groups:
+Some of the hazards involve harm to the surface of the body (e.g. cornea, skin), and these depend on the
+["irradiance"](https://en.wikipedia.org/wiki/Irradiance) of that body surface, which means the total amount of light per area.
+Other hazards involve harm to the retina, where the light is focused, and these generally depend on 
+["radiance"](https://en.wikipedia.org/wiki/Radiance) (loosely, apparent "brightness") of the source.
+
+For each of the hazards above, an emitter may be classified into one of four groups:
 
 1. __Exempt__: no hazard
 2. __Group 1 (low risk)__: no hazard assuming normal human behavior
@@ -43,8 +48,18 @@ For each of these hazards, an emitter may be classified into one of four groups:
 We will be designing for group 1: no hazard at all, for all hazards, because we can't restrict or police the population of bystanders to be sure
 their behavior is "normal."
 
+## Summary of the guidelines
+
 We'll be working through the math specified by the International Commission on Non-Ionizing Radiation Protection (ICNIRP),
-[ICNIRP Guidelines on Limits of Exposure to Incoherent Visible and Infrared Radiation."](https://www.icnirp.org/cms/upload/publications/ICNIRPVisible_Infrared2013.pdf).
+[ICNIRP Guidelines on Limits of Exposure to Incoherent Visible and Infrared Radiation."](https://www.icnirp.org/cms/upload/publications/ICNIRPVisible_Infrared2013.pdf).  I encourage you to read and understand the
+guidelines in total; I'll try to limit discussion here to implications of the guidelines, rather than covering everything.
+
+Retinal hazard varies with wavelength, as described in the "hazard functions".
+
+<p align=center><img src="https://drive.google.com/uc?export=view&id=1Ov6X3WNjt984pUnm9iEdCBblplKPBpy8"/></p>
+
+For hazard 5, thermal, 380-14800 nm, 
+
 
 
 
