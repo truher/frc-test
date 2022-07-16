@@ -21,7 +21,9 @@ There are several equivalent standards (see appendix); we'll be working through 
 International Commission on Non-Ionizing Radiation Protection (ICNIRP),
 [ICNIRP Guidelines on Limits of Exposure to Incoherent Visible and Infrared Radiation."](https://www.icnirp.org/cms/upload/publications/ICNIRPVisible_Infrared2013.pdf).
 I encourage you to read and understand the
-guidelines in total (it's only 26 pages); I'll try to limit discussion here to implications of the guidelines, rather than covering everything.
+guidelines in total (it's only 26 pages).
+I'll try to limit discussion here to implications of the guidelines, rather than covering everything.
+The math is covered in [this python notebook](https://colab.research.google.com/drive/1T6OjM1fbkWaqULhcl7OmBOcejc7mjztV?usp=sharing).
 
 ## Types of harm
 
@@ -53,7 +55,7 @@ For each of the hazards above, an emitter may be classified into one of four gro
 We will be designing for group 1: no hazard at all, for all hazards, because we can't restrict or police the population of bystanders to be sure
 their behavior is "normal."
 
-Some retinal hazards vary with wavelength, as described in the "hazard functions":
+Some retinal hazards vary with wavelength, as described in the "hazard functions", table 2 and figure 5 in the doc, duplicated here:
 
 <p align=center><img src="https://drive.google.com/uc?export=view&id=1ZXQJZHQRQGgV23JVudl0XwG051RoYHag" width=640/></p>
 
