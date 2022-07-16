@@ -72,13 +72,20 @@ Some retinal hazards vary with wavelength, as described in the "hazard functions
 
 For thermal hazards, weigh the spectral radiance by the "Thermal" hazard function above and integrate, to get the __effective retinal thermal radiance__,
 $L_R$ (W m<sup>-2</sup> sr<sup>-1</sup>).  For any source we might use, the thermal hazard function is 1.0, so the source radiance
-can be used directly.  For the [Cree XP-E2 LEDs](https://cree-led.com/media/documents/XLampXPE2.pdf) we have in mind to use,
+can be used directly.
+
+For the [Cree XP-E2 LEDs](https://cree-led.com/media/documents/XLampXPE2.pdf) we have in mind to use,
 the radiant flux is specified at 350mA, between 350 and 675 mW, depending on color.  The correction for maximum continuous current (1 amp)
 is about 275%, i.e. the output is close to linear with current, the 350&ndash;675 mW output might be 1000&ndash;2000mW.
 The [overdriving guidance](https://cree-led.com/media/documents/XLampPulsedCurrent.pdf)
 says that the luminous efficiency at 2.5X maximum current is something like 60% of the 1X maximum; extrapolating, we can estimate that
 the efficiency at 3X is half the 1X efficiency.  Increased forward voltage is one of the drivers of the drop in efficiency; extrapolating
-slightly from the "typical" table, we find a 24% increase from 1X to 3X current.
+slightly from the "typical" table, we find a 24% forward voltage increase from 1X to 3X current, which implies that
+the quantum efficiency of 3X overdriving is about 72% of the QE of the 1X case.
+
+In short, triple the current, double the photons, which means that we can double the source radiance for our maximum 3X operating point.
+
+TODO: move this pulsed discussion to the illuminator page.
 
 ## Blue light hazard
 
