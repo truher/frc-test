@@ -17,19 +17,30 @@ and make sure that your device won't cause injury to any people nearby.
 
 # Safety Standards
 
-The main safety standard for light sources is [IEC 62471, "Photobiological Safety of Lamps and Lamp Systems."](https://cie.co.at/publications/photobiological-safety-lamps-and-lamp-systems-s-curit-photobiologique-des-lampes-et-des)
+The main safety standard for light sources is [IEC 62471, "Photobiological Safety of Lamps and Lamp Systems."](https://cie.co.at/publications/photobiological-safety-lamps-and-lamp-systems-s-curit-photobiologique-des-lampes-et-des),
+also expressed as [ANSI/IESNA RP-27, "Recommended Practice for Photobiological Safety for
+Lamps and Lamp Systems-Measurement Techniques"](https://webstore.ansi.org/preview-pages/IESNA/preview_ANSI+IESNA+RP-27.2-00.pdf)
 
 According to [this summary](https://smartvisionlights.com/wp-content/uploads/IEC_62471_summary.pdf), there are eight
 hazards to evaluate:
 
-A source may be classifed into one of four groups:
+1. [Actinic](https://www.ncbi.nlm.nih.gov/books/NBK401580/) UV, 200-400 nm
+2. UVA, 315-400 nm
+3. Blue light, 300-700 nm
+4. Blue light small source, 300-700 nm
+5. Thermal, 380-1400 nm
+6. Thermal invisible, 780-1400 nm
+7. Infrared 780-3000 nm
+8. Thermal skin, 380-3000 nm
+
+For each of these hazards, an emitter may be classified into one of four groups:
 
 1. __Exempt__: no hazard
 2. __Group 1 (low risk)__: no hazard assuming normal human behavior
 3. __Group 2 (moderate risk)__: no hazard due to aversion response
 4. __Group 3 (high risk)__: hazardous even for momentary exposure
 
-We will be designing for group 1: no hazard at all, because we can't restrict or police the population of bystanders to be sure
+We will be designing for group 1: no hazard at all, for all hazards, because we can't restrict or police the population of bystanders to be sure
 their behavior is "normal."
 
 There are TK standard concerns with lighting, according to the [ICNIRP guidelines](https://www.icnirp.org/cms/upload/publications/ICNIRPbroadband.pdf)
