@@ -54,9 +54,9 @@ We'll be working through the math specified by the International Commission on N
 [ICNIRP Guidelines on Limits of Exposure to Incoherent Visible and Infrared Radiation."](https://www.icnirp.org/cms/upload/publications/ICNIRPVisible_Infrared2013.pdf).  I encourage you to read and understand the
 guidelines in total; I'll try to limit discussion here to implications of the guidelines, rather than covering everything.
 
-Retinal hazard varies with wavelength, as described in the "hazard functions".
+Retinal hazard varies with wavelength, as described in the "hazard functions":
 
-<p align=center><img src="https://drive.google.com/uc?export=view&id=1Ov6X3WNjt984pUnm9iEdCBblplKPBpy8"/></p>
+<p align=center><img src="https://drive.google.com/uc?export=view&id=1ZXQJZHQRQGgV23JVudl0XwG051RoYHag" width=640/></p>
 
 For hazard 5, thermal, 380-14800 nm, 
 
