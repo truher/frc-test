@@ -43,9 +43,10 @@ For each of these hazards, an emitter may be classified into one of four groups:
 We will be designing for group 1: no hazard at all, for all hazards, because we can't restrict or police the population of bystanders to be sure
 their behavior is "normal."
 
-We'll be working through the math specified [guidelines](https://www.icnirp.org/cms/upload/publications/ICNIRPbroadband.pdf)
-and the special [statement on LEDs](https://www.icnirp.org/cms/upload/publications/ICNIRPled2020.pdf)
-provided by the International Commission on Non-Ionizing Radiation Protection (ICNIRP).
+We'll be working through the math specified by the International Commission on Non-Ionizing Radiation Protection (ICNIRP),
+[ICNIRP Guidelines on Limits of Exposure to Incoherent Visible and Infrared Radiation."](https://www.icnirp.org/cms/upload/publications/ICNIRPVisible_Infrared2013.pdf).
+
+
 
 ## Blue light hazard
 
@@ -53,3 +54,12 @@ Given recent attention to blue light hazard, the CIE clarified that blue light i
 [not a hazard for everyday situations](https://cie.co.at/publications/position-statement-blue-light-hazard-april-23-2019)
 but also pointed out that, for people who might not behave "normally" (i.e. a child who might stare at a blue light for a long 
 time because they find it fascinating), the (non-exempt) exposure limits should be __reduced by a factor of ten.__  
+
+<hr>
+
+## Appendix
+
+* ICNIRP provided a special [statement on LEDs](https://www.icnirp.org/cms/upload/publications/ICNIRPled2020.pdf)
+which reviews some of the hazards specific to LEDs and recommends that LEDs be analyzed using the incoherent broadband standards used above.
+* ICNIRP first published guidelines in 1997,
+[Guidelines on Limits of Exposure to Broad-band Incoherent Optical Radiation (0.38 to 3 &micro;m)](https://www.icnirp.org/cms/upload/publications/ICNIRPbroadband.pdf)
