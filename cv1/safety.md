@@ -43,7 +43,9 @@ For each of these hazards, an emitter may be classified into one of four groups:
 We will be designing for group 1: no hazard at all, for all hazards, because we can't restrict or police the population of bystanders to be sure
 their behavior is "normal."
 
-There are TK standard concerns with lighting, according to the [ICNIRP guidelines](https://www.icnirp.org/cms/upload/publications/ICNIRPbroadband.pdf)
+We'll be working through the math specified [guidelines](https://www.icnirp.org/cms/upload/publications/ICNIRPbroadband.pdf)
+and the special [statement on LEDs](https://www.icnirp.org/cms/upload/publications/ICNIRPled2020.pdf)
+provided by the International Commission on Non-Ionizing Radiation Protection (ICNIRP).
 
 ## Blue light hazard
 
