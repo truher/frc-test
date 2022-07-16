@@ -55,14 +55,30 @@ For each of the hazards above, an emitter may be classified into one of four gro
 We will be designing for group 1: no hazard at all, for all hazards, because we can't restrict or police the population of bystanders to be sure
 their behavior is "normal."
 
+## The design
+
+For the purposes of this safety analysis, the illuminator design has several parameters:
+
+* wavelength
+* strobe duration and duty cycle
+* surface brightness per emitter
+* total output
+
+## Retinal thermal hazards (380&ndash;1,400 nm)
+
 Some retinal hazards vary with wavelength, as described in the "hazard functions", table 2 and figure 5 in the doc, duplicated here:
 
 <p align=center><img src="https://drive.google.com/uc?export=view&id=1ZXQJZHQRQGgV23JVudl0XwG051RoYHag" width=640/></p>
 
-## Retinal thermal hazards (380Y1,400 nm)
-
-
-
+For thermal hazards, weigh the spectral radiance by the "Thermal" hazard function above and integrate, to get the __effective retinal thermal radiance__,
+$L_R$ (W m<sup>-2</sup> sr<sup>-1</sup>).  For any source we might use, the thermal hazard function is 1.0, so the source radiance
+can be used directly.  For the [Cree XP-E2 LEDs](https://cree-led.com/media/documents/XLampXPE2.pdf) we have in mind to use,
+the radiant flux is specified at 350mA, between 350 and 675 mW, depending on color.  The correction for maximum continuous current (1 amp)
+is about 275%, i.e. the output is close to linear with current, the 350&ndash;675 mW output might be 1000&ndash;2000mW.
+The [overdriving guidance](https://cree-led.com/media/documents/XLampPulsedCurrent.pdf)
+says that the luminous efficiency at 2.5X maximum current is something like 60% of the 1X maximum; extrapolating, we can estimate that
+the efficiency at 3X is half the 1X efficiency.  Increased forward voltage is one of the drivers of the drop in efficiency; extrapolating
+slightly from the "typical" table, we find a 24% increase from 1X to 3X current.
 
 ## Blue light hazard
 
