@@ -1,11 +1,12 @@
-# Simultaneous Localization and Mapping ("SLAM")
+# System Overview
+
+<p align=center><img src="https://docs.google.com/drawings/d/e/2PACX-1vTermEQdA50RCGKwogC3vFPD0L5BSxefY743VLYksJp7Z4DL-Zu2sy8-F-xLLjQrFHyy93PnW7f7bCW/pub?w=768" width=768/></p>
 
 The overall goal is to __produce estimates for robot pose and target location accurate enough for semi-automated driving.__
 Instead of the usual "remote-controlled car" approach to FRC movement, the approach can be based on higher-level
 commands, for example "go to target" or "return to base," and most important, automated targeting for game piece placement or launching.
 
-There are lots of other things we could do with cameras,
-but those ideas are not addressed here; see "non-goals" below.
+There are lots of other things we could do with cameras, but those ideas are not addressed here; see "non-goals" below.
 
 There are several virtues, vices, and constraints, that affect the design:
 
@@ -24,6 +25,7 @@ in the off-season, and then trivially re-assembled during the build season.  Avo
 8x16-meter field.
 * __Maximize flexibility.__ Neither the game dynamics, nor the field layout, are known in advance, so the objective is to get familiar
 with the technology, accumulate some prototypes, and be able to deploy them quickly in January.
+
 
 The system comprises four parts:
 
@@ -69,3 +71,8 @@ monocular camera and fancy software.  Other than the use of a camera, there's no
 this problem, so we could do both, separately.
 It would even be possible to ignore the retroreflective targets entirely and design a SLAM system around detection of other objects,
 but IMHO the software challenge there is inappropriate.
+
+
+<hr>
+
+1. [the diagram above](https://docs.google.com/drawings/d/1su0P3QJuXBge3MNicDzGQI53iGWPYA5LVvDXvMOyg00/edit)
