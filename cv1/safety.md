@@ -94,7 +94,11 @@ the __radiance dose is 8&ndash;16 kJ m<sup>-2</sup> sr<sup>-1</sup>.__
 We also need to calculate the average radiance, using the duty cycle of 10% or so that we have in mind, so we find 
 an __average radiance of 200&ndash;400 KW m<sup>-2</sup> sr<sup>-1</sup>.__
 
-TODO: move this discussion to the illuminator page.
+TODO: move this discussion to the illuminator page, just report these results.
+
+1. __radiance = 2&ndash;4 MW m<sup>-2</sup> sr<sup>-1</sup>.__  
+2. __radiance dose = 8&ndash;16 kJ m<sup>-2</sup> sr<sup>-1</sup> per pulse__  
+3. __average radiance = 200&ndash;400 KW m<sup>-2</sup> sr<sup>-1</sup>.__
 
 To find the exposure limit, we use the angle, $\alpha$ subtended by the emitter, which is just the diameter (about 1.75mm) divided by the distance.
 A reasonable worst case would be to look closely at the source, say 200 mm away, so the angle would be something like 0.01 radians.
@@ -147,7 +151,7 @@ $$
 Which is still above the calculated dose of 16 kJ m<sup>-2</sup> sr<sup>-1</sup>.
 
 For the pathological case, the average large-source radiance limit is 280 KW m<sup>-2</sup> sr<sup>-1</sup>, which is not above our
-calculated average radiance, so this case is a problem.
+calculated average radiance (200 Kw m<sup>-2</sup> sr<sup>-1</sup>), so this case is a problem.
 
 For the pathological steady case, we use the large-source radiance limit:
 
