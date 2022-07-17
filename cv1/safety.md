@@ -150,8 +150,8 @@ $$
 
 Which is still above the calculated dose of 16 kJ m<sup>-2</sup> sr<sup>-1</sup>.
 
-For the pathological case, the average large-source radiance limit is 280 KW m<sup>-2</sup> sr<sup>-1</sup>, which is not above our
-calculated average radiance (200 Kw m<sup>-2</sup> sr<sup>-1</sup>), so this case is a problem.
+For the pathological case, the average large-source radiance limit is 280 KW m<sup>-2</sup> sr<sup>-1</sup>.  Our
+calculated average radiance (200 Kw m<sup>-2</sup> sr<sup>-1</sup>) __exceeds this limit__.
 
 For the pathological steady case, we use the large-source radiance limit:
 
@@ -159,7 +159,7 @@ $$
 L_R^{EL} = 28 \times 10^4 = 280  KW m^{-2} sr^{-1}
 $$
 
-Which is much less than the calculated radiance of 1&ndash;2 MW m<sup>-2</sup> sr<sup>-1</sup>, so this case is a problem.
+Our calculated radiance of 1&ndash;2 MW m<sup>-2</sup> sr<sup>-1</sup> __exceeds this limit__.
 
 Mitigations of the pathological steady case might include
 
@@ -183,8 +183,8 @@ $$
 L_{WVS}^{EL} = 6300 \times \alpha^{-1} = 36 KW m^{-2} sr^{-1} \textrm{(at 10 mm, pathological case)}
 $$
 
-Our calculated radiance is __fifty times__ the pathological limit, so this case is a problem.  Even the __average__ radiance
-in the non-pathological case is almost a problem.
+Our calculated radiance is  __exceeds this limit__ for the pathological case.  Even the __average__ radiance
+in the non-pathological case almost exceeds the limit.
 
 ## Blue-light photochemical retinal hazard (300 - 700 nm)
 
@@ -222,7 +222,7 @@ $$
 L_B^{EL} = 100 W m^{-2} sr^{-1}
 $$
 
-which is much lower than our design radiance, even for orange light, which means that very long term
+Our design radiance __exceeds this limit__, even for orange light, which means that very long term
 exposure should be curtailed.
 
 ## Retinal photochemical hazard to the aphakic eye and the infant eye (300 - 700 nm)
@@ -235,8 +235,8 @@ In the normal case of 200 mm observation (400 cm<sup>2</sup> area of one steradi
 0.666-1.333 W/sr / 0.04 <sup>2</sup> or 17 - 33 W m<sup>-2</sup>.
 For the pathological case, 0.666-1.333 W/sr / 0.0001 m<sup>2</sup> = 6.6-24.4 KW m<sup>-2</sup>
  
-The irradiance limit is 100 W m<sup>-2</sup> for long exposures, much more than the normal case (ok) and much less than the pathological
-case (bad).
+The irradiance limit is 100 W m<sup>-2</sup> for long exposures.  Our calculated irradiance is within the limit for the normal case,
+but it  __exceeds the limit__ for the pathological case.
 
 TODO: the pulsed case
 
