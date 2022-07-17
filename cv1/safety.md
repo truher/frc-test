@@ -89,30 +89,53 @@ The package of an XP-E2 is a square 3.45 mm on a side, with a hemispherical lens
 so say the apparent emitter size is about 3 mm<sup>2</sup>.
 
 As described elsewhere (TOOD) about two thirds of the output is focused into about one steradian, so our 1000&ndash;2000 mW becomes a radiant
-intensity of about 666-1333 mW/sr, and a radiance of about 2&ndash;4 MW m<sup>-2</sup> sr<sup>-1</sup>.
+intensity of about 666-1333 mW/sr, and a __radiance of about 2&ndash;4 MW m<sup>-2</sup> sr<sup>-1</sup>.__  For a 4 ms pulse,
+the __radiance dose is 8&ndash;16 kJ m<sup>-2</sup> sr<sup>-1</sup>.__
 
 TODO: move this discussion to the illuminator page.
 
 To find the exposure limit, we use the angle, $\alpha$ subtended by the emitter, which is just the diameter (about 1.75mm) divided by the distance.
 A reasonable worst case would be to look closely at the source, say 200 mm away, so the angle would be something like 0.01 radians.
-It is conceivable that someone would hold stare directly into the illuminator, at a range of, say, 10 mm, 0.175 radians.  These are larger
+A pathological case would be for someone to stare directly into the illuminator, at a range of, say, 10 mm, 0.175 radians.  These are larger
 than the "point source" limit of 0.0015 radians; the latter is larger than the "large source" limit.
 
 Another input to the exposure limit is the duration of the dose.  For the illuminator we have in mind, the intended duration something like 4 ms,
-but it could fail and produce steady light (at much less than maximum output).  For the 4 ms case, the limiting andles are 0.0015-0.012 radians.
-for the steady case, the limiting angles are 0.0015-0.1 radians.
+but it could fail and produce steady light at half the intensity (if it failed at the pulse intensity it would quickly stop working altogether).
+For the 4 ms case, the limiting angles are 0.0015-0.012 radians. for the steady case, the limiting angles are 0.0015-0.1 radians.
 
-With these inputs we can calculate the basic exposure limit for intermediate duration:
+With these inputs we can calculate the basic radiance limit for intermediate duration:
 
 $$
-L_R^EL (W m^{-2} sr^{-1}) = 2.0 \times 10^4 \cdot \alpha^{-1} \cdot t^{-0.25}
+L_R^{EL} (W m^{-2} sr^{-1}) = 2.0 \times 10^4 \cdot \alpha^{-1} \cdot t^{-0.25}
 $$
 
 using t = 0.004 and $\alpha$ of 0.01 rad, we obtain
 
 $$
-7.95  MW m^{-2} sr^{-1}
+L_R^{EL} = 7.95  MW m^{-2} sr^{-1}
 $$
+
+Which is above the radiance we calculated above.
+
+The basic radiance dose limit, $D_R^{EL}$ is calculated:
+
+$$
+D_R^{EL} (J m^{-2} sr^{-1}) = 2.0 \times 10^4 \cdot \alpha^{-1} \cdot t^{0.75}
+$$
+
+or
+
+$$
+D_R^{EL} = 31.8  KJ m^{-2} sr^{-1}
+$$
+
+which is also above the radiance dose calculated above.
+
+
+
+For the pathological pulsed case, we use the large-source limit,
+
+For the pathological steady case,
 
 ## Blue light hazard
 
