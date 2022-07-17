@@ -85,7 +85,16 @@ the quantum efficiency of 3X overdriving is about 72% of the QE of the 1X case.
 
 In short, triple the current, double the photons, which means that we can double the source radiance for our maximum 3X operating point.
 
+referring to the illuminator page, the 
+
 TODO: move this pulsed discussion to the illuminator page.
+
+Cree provides [eye safety guidance](https://cree-led.com/media/documents/XLamp_EyeSafety.pdf), based on their own testing,
+which focuses on blue light (400-480 nm).  They
+classify the XP-E2 in the "moderate risk" category ("no hazard due to aversion response") when driven with the 1X current maximum.
+They also find that the transition from "low risk" to "moderate risk" happens at around 0.1 amps, and that the maximum safe distance
+is something like 200-500 mm.  
+
 
 ## Blue light hazard
 
