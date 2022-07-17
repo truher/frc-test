@@ -165,7 +165,8 @@ Mitigations of the pathological steady case might include
 
 * restricting the distance from eye to LEDs, with some sort of shroud. it would need to be pretty big, on the order of 4 cm.
 * diffusing the illuminator, for example with an inexpensive ($15)
-[ground glass diffuser](https://www.edmundoptics.in/f/ground-glass-diffusers/12287/).  this could be quite small, under 1 cm,
+[ground glass diffuser](https://www.edmundoptics.in/f/ground-glass-diffusers/12287/) or
+[film diffuser](https://www.edmundoptics.com/p/300-x-300mm-Light-Diffusing-Film/45303)  this could be quite small, under 1 cm,
 though it would require testing to find the resulting radiance.
 * a more aggressive current limiter for the "steady light" case.
 
@@ -173,9 +174,11 @@ One of the illuminator options is near-infrared, which requires more a conservat
 which is simply to apply the intermediate-duration limit for exposures under 100s.  For exposures over 100s, the limit is
 
 $$
-L_{WVS}^{EL} = 6300 \times \alpha^{-1} = 630 KW m^{-2} sr^{-1} (at 200 mm)
+L_{WVS}^{EL} = 6300 \times \alpha^{-1} = 630 KW m^{-2} sr^{-1} \textrm{(at 200 mm)}
+$$
 
-L_{WVS}^{EL} = 6300 \times \alpha^{-1} = 36 KW m^{-2} sr^{-1} (at 10 mm, pathological case)
+$$
+L_{WVS}^{EL} = 6300 \times \alpha^{-1} = 36 KW m^{-2} sr^{-1} \textrm{(at 10 mm, pathological case)}
 $$
 
 Our calculated radiance is __fifty times__ the pathological limit, so this case is a problem.  Even the __average__ radiance
@@ -232,9 +235,12 @@ For the pathological case, 0.666-1.333 W/sr / 0.0001 m<sup>2</sup> = 6.6-24.4 KW
  
 The irradiance limit is 100 W m<sup>-2</sup> for long exposures, much more than the normal case (ok) and much less than the pathological
 case (bad).
+
 TODO: the pulsed case
 
 ## Visible and infrared thermal injury to the skin
+
+TODO: write this case
 
 <hr>
 
