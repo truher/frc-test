@@ -90,7 +90,9 @@ so say the apparent emitter size is about 3 mm<sup>2</sup>.
 
 As described elsewhere (TOOD) about two thirds of the output is focused into about one steradian, so our 1000&ndash;2000 mW becomes a radiant
 intensity of about 666-1333 mW/sr, and a __radiance of about 2&ndash;4 MW m<sup>-2</sup> sr<sup>-1</sup>.__  For a 4 ms pulse,
-the __radiance dose is 8&ndash;16 kJ m<sup>-2</sup> sr<sup>-1</sup>.__
+the __radiance dose is 8&ndash;16 kJ m<sup>-2</sup> sr<sup>-1</sup>.__  
+We also need to calculate the average radiance, using the duty cycle of 10% or so that we have in mind, so we find 
+an __average radiance of 200&ndash;400 KW m<sup>-2</sup> sr<sup>-1</sup>.__
 
 TODO: move this discussion to the illuminator page.
 
@@ -117,7 +119,15 @@ $$
 D_R^{EL} = 2.0 \times 10^4 \cdot \alpha^{-1} \cdot t^{0.75} = 31.8  KJ m^{-2} sr^{-1}
 $$
 
-which is above the calculated radiance dose of 16 kJ m<sup>-2</sup> sr<sup>-1</sup>._.
+which is above the calculated radiance dose of 16 KJ m<sup>-2</sup> sr<sup>-1</sup>._.
+
+We also need to look at the average radiance for long exposures,
+
+$$
+L_R^{EL} (W m^{-2} sr^{-1}) = 2.8 \times 10^4 \cdot \alpha^{-1} = 2.8 MW m^{-2} sr^{-1}
+$$
+
+which is much more than the calculated average radiance.
 
 For the continuous output (malfunction) case, the output is about half (at most) about 1&ndash;2 MW m<sup>-2</sup> sr<sup>-1</sup>,
 and the exposure limits are as follows:
@@ -135,6 +145,9 @@ D_R^{EL} = 10 \times 10^4 \cdot t^{0.25} = 25.2  KJ m^{-2} sr^{-1}
 $$
 
 Which is still above the calculated dose of 16 kJ m<sup>-2</sup> sr<sup>-1</sup>.
+
+For the pathological case, the average large-source radiance limit is 280 KW m<sup>-2</sup> sr<sup>-1</sup>, which is not above our
+calculated average radiance, so this case is a problem.
 
 For the pathological steady case, we use the large-source radiance limit:
 
@@ -161,9 +174,10 @@ L_{WVS}^{EL} = 6300 \times \alpha^{-1} = 630 KW m^{-2} sr^{-1} (at 200 mm)
 L_{WVS}^{EL} = 6300 \times \alpha^{-1} = 36 KW m^{-2} sr^{-1} (at 10 mm, pathological case)
 $$
 
-Our calculated radiance is __fifty times__ the pathological limit, so this case is a problem.
+Our calculated radiance is __fifty times__ the pathological limit, so this case is a problem.  Even the __average__ radiance
+in the non-pathological case is almost a problem.
 
-# Blue-light photochemical retinal hazard (300 - 700 nm)
+## Blue-light photochemical retinal hazard (300 - 700 nm)
 
 Similarly to the thermal case above, the hazard weighting function, $B(\lambda)$ is used to calculate an __effective blue-light radiance.__
 
@@ -174,7 +188,49 @@ The hazard function varies by three orders of magnitude over the spectrum we're 
 1. green (550 nm) $B(\lambda)$ = 0.01  
 1. orange and beyond (590+ nm) $B(\lambda)$ = 0.001
 
+Accordingly we have effective radiances ranging from 2&ndash;4 MW m<sup>-2</sup> sr<sup>-1</sup> (blue)
+to 2&ndash;4 KW m<sup>-2</sup> sr<sup>-1</sup> (orange), and effective doses ranging from 8&ndash;16 kJ m<sup>-2</sup> sr<sup>-1</sup> (blue)
+to 8&ndash;16 J m<sup>-2</sup> sr<sup>-1</sup> (orange).
 
+For short exposures, the blue-light exposure limit is expressed as a radiance dose:
+
+$$
+D_B^{EL} = 1 MJ m^{-2} sr^{-1}
+$$
+
+which is much higher than our radiance dose per pulse, even for blue light.
+
+For the steady case, the exposure limit can be expressed as a duration:
+
+1. blue: 0.5-1 s
+2. cyan: 5-10 s
+3. green: 50-100 s
+4. orange: 500-1000 s
+
+For very long exposures (>10000 s), the exposure limit is expressed as a radiance:
+
+$$
+L_B^{EL} = 100 W m^{-2} sr^{-1}
+$$
+
+which is much lower than our design radiance, even for orange light, which means that very long term
+exposure should be curtailed.
+
+## Retinal photochemical hazard to the aphakic eye and the infant eye (300 - 700 nm)
+
+For this case, the hazard function, $A(\lambda)$ is up to 6 times higher than $B(\lambda)$, but the calculation is otherwise the same.
+
+## Cornea and lens (780 nm - 1 mm)
+
+In the normal case of 200 mm observation (400 cm<sup>2</sup> area of one steradian) the irradiance is something like 
+0.666-1.333 W/sr / 0.04 <sup>2</sup> or 17 - 33 W m<sup>-2</sup>.
+For the pathological case, 0.666-1.333 W/sr / 0.0001 m<sup>2</sup> = 6.6-24.4 KW m<sup>-2</sup>
+ 
+The irradiance limit is 100 W m<sup>-2</sup> for long exposures, much more than the normal case (ok) and much less than the pathological
+case (bad).
+TODO: the pulsed case
+
+## Visible and infrared thermal injury to the skin
 
 <hr>
 
