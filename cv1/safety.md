@@ -76,7 +76,7 @@ can be used directly.
 
 For the [Cree XP-E2 LEDs](https://cree-led.com/media/documents/XLampXPE2.pdf) we have in mind to use,
 the radiant flux is specified at 350mA, between 350 and 675 mW, depending on color.  The correction for maximum continuous current (1 amp)
-is about 275%, i.e. the output is close to linear with current, the 350&ndash;675 mW output might be 1000&ndash;2000mW.
+is about 275%, i.e. the output is close to linear with current, the 350&ndash;675 mW output might be 1000&ndash;2000 mW.
 The [overdriving guidance](https://cree-led.com/media/documents/XLampPulsedCurrent.pdf)
 says that the luminous efficiency at 2.5X maximum current is something like 60% of the 1X maximum; extrapolating, we can estimate that
 the efficiency at 3X is half the 1X efficiency.  Increased forward voltage is one of the drivers of the drop in efficiency; extrapolating
@@ -85,16 +85,34 @@ the quantum efficiency of 3X overdriving is about 72% of the QE of the 1X case.
 
 In short, triple the current, double the photons, which means that we can double the source radiance for our maximum 3X operating point.
 
-referring to the illuminator page, the 
+The package of an XP-E2 is a square 3.45 mm on a side, with a hemispherical lens that makes the die appear something like a quarter of the area,
+so say the apparent emitter size is about 3 mm<sup>2</sup>.
 
-TODO: move this pulsed discussion to the illuminator page.
+As described elsewhere (TOOD) about two thirds of the output is focused into about one steradian, so our 1000&ndash;2000 mW becomes a radiant
+intensity of about 666-1333 mW/sr, and a radiance of about 2&ndash;4 MW m<sup>-2</sup> sr<sup>-1</sup>.
 
-Cree provides [eye safety guidance](https://cree-led.com/media/documents/XLamp_EyeSafety.pdf), based on their own testing,
-which focuses on blue light (400-480 nm).  They
-classify the XP-E2 in the "moderate risk" category ("no hazard due to aversion response") when driven with the 1X current maximum.
-They also find that the transition from "low risk" to "moderate risk" happens at around 0.1 amps, and that the maximum safe distance
-is something like 200-500 mm.  
+TODO: move this discussion to the illuminator page.
 
+To find the exposure limit, we use the angle, $\alpha$ subtended by the emitter, which is just the diameter (about 1.75mm) divided by the distance.
+A reasonable worst case would be to look closely at the source, say 200 mm away, so the angle would be something like 0.01 radians.
+It is conceivable that someone would hold stare directly into the illuminator, at a range of, say, 10 mm, 0.175 radians.  These are larger
+than the "point source" limit of 0.0015 radians; the latter is larger than the "large source" limit.
+
+Another input to the exposure limit is the duration of the dose.  For the illuminator we have in mind, the intended duration something like 4 ms,
+but it could fail and produce steady light (at much less than maximum output).  For the 4 ms case, the limiting andles are 0.0015-0.012 radians.
+for the steady case, the limiting angles are 0.0015-0.1 radians.
+
+With these inputs we can calculate the basic exposure limit for intermediate duration:
+
+$$
+L_R^EL (W m^{-2} sr^{-1}) = 2.0 \times 10^4 \cdot \alpha^{-1} \cdot t^{-0.25}
+$$
+
+using t = 0.004 and $\alpha$ of 0.01 rad, we obtain
+
+$$
+7.95  MW m^{-2} sr^{-1}
+$$
 
 ## Blue light hazard
 
@@ -102,6 +120,13 @@ Given recent attention to blue light hazard, the CIE clarified that blue light i
 [not a hazard for everyday situations](https://cie.co.at/publications/position-statement-blue-light-hazard-april-23-2019)
 but also pointed out that, for people who might not behave "normally" (i.e. a child who might stare at a blue light for a long 
 time because they find it fascinating), the (non-exempt) exposure limits should be __reduced by a factor of ten.__  
+
+Cree provides [eye safety guidance](https://cree-led.com/media/documents/XLamp_EyeSafety.pdf), based on their own testing,
+which focuses on blue light (400-480 nm).  They
+classify the XP-E2 in the "moderate risk" category ("no hazard due to aversion response") when driven with the 1X current maximum.
+They also find that the transition from "low risk" to "moderate risk" happens at around 0.1 amps, and that the maximum safe distance
+is something like 200-500 mm.  
+
 
 <hr>
 
