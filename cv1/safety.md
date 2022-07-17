@@ -144,6 +144,13 @@ $$
 
 Which is much less than the calculated radiance of 1&ndash;2 MW m<sup>-2</sup> sr<sup>-1</sup>, so this case is a problem.
 
+Mitigations of the pathological steady case might include
+
+* restricting the distance from eye to LEDs, with some sort of shroud. it would need to be pretty big, on the order of 4 cm.
+* diffusing the illuminator, for example with an inexpensive ($15)
+[ground glass diffuser](https://www.edmundoptics.in/f/ground-glass-diffusers/12287/).  this could be quite small, under 1 cm.
+* a more aggressive current limiter for the "steady light" case.
+
 
 
 ## Blue light hazard
