@@ -139,7 +139,7 @@ Which is still above the calculated dose of 16 kJ m<sup>-2</sup> sr<sup>-1</sup>
 For the pathological steady case, we use the large-source radiance limit:
 
 $$
-D_R^{EL} = 28 \times 10^4 = 280  KW m^{-2} sr^{-1}
+L_R^{EL} = 28 \times 10^4 = 280  KW m^{-2} sr^{-1}
 $$
 
 Which is much less than the calculated radiance of 1&ndash;2 MW m<sup>-2</sup> sr<sup>-1</sup>, so this case is a problem.
@@ -148,8 +148,20 @@ Mitigations of the pathological steady case might include
 
 * restricting the distance from eye to LEDs, with some sort of shroud. it would need to be pretty big, on the order of 4 cm.
 * diffusing the illuminator, for example with an inexpensive ($15)
-[ground glass diffuser](https://www.edmundoptics.in/f/ground-glass-diffusers/12287/).  this could be quite small, under 1 cm.
+[ground glass diffuser](https://www.edmundoptics.in/f/ground-glass-diffusers/12287/).  this could be quite small, under 1 cm,
+though it would require testing to find the resulting radiance.
 * a more aggressive current limiter for the "steady light" case.
+
+One of the illuminator options is near-infrared, which requires more a conservative steady limit called the "weak visual stimulus" limit,
+which is simply to apply the intermediate-duration limit for exposures under 100s.  For exposures over 100s, the limit is
+
+$$
+L_{WVS}^{EL} = 6300 \times \alpha^{-1} = 630 KW m^{-2} sr^{-1} (at 200 mm)
+
+L_{WVS}^{EL} = 6300 \times \alpha^{-1} = 36 KW m^{-2} sr^{-1} (at 10 mm, pathological case)
+$$
+
+Our calculated radiance is __fifty times__ the pathological limit, so this case is a problem.
 
 
 
