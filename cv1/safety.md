@@ -164,10 +164,11 @@ Which is much less than the calculated radiance of 1&ndash;2 MW m<sup>-2</sup> s
 Mitigations of the pathological steady case might include
 
 * restricting the distance from eye to LEDs, with some sort of shroud. it would need to be pretty big, on the order of 4 cm.
-* diffusing the illuminator, for example with an inexpensive ($15)
-[ground glass diffuser](https://www.edmundoptics.in/f/ground-glass-diffusers/12287/) or
-[film diffuser](https://www.edmundoptics.com/p/300-x-300mm-Light-Diffusing-Film/45303)  this could be quite small, under 1 cm,
-though it would require testing to find the resulting radiance.
+* diffusing the illuminator.  a diffuser is very common in LED designs, and it can be quite small.  examples:
+  * [ground glass diffuser](https://www.edmundoptics.in/f/ground-glass-diffusers/12287/) ($15)
+  * [film diffuser](https://www.edmundoptics.com/p/300-x-300mm-Light-Diffusing-Film/45303)  
+  * reflective diffuser, i.e. white paper.
+  * a frosted optic.  these also reduce the FOV of the illuminator to something like 40 degrees which i think is too narrow.
 * a more aggressive current limiter for the "steady light" case.
 
 One of the illuminator options is near-infrared, which requires more a conservative steady limit called the "weak visual stimulus" limit,
