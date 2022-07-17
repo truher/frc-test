@@ -164,7 +164,8 @@ Which is much less than the calculated radiance of 1&ndash;2 MW m<sup>-2</sup> s
 Mitigations of the pathological steady case might include
 
 * restricting the distance from eye to LEDs, with some sort of shroud. it would need to be pretty big, on the order of 4 cm.
-* diffusing the illuminator.  a diffuser is very common in LED designs, and it can be quite small.  examples:
+* diffusing the illuminator.  a [diffuser](https://www.rpcphotonics.com/pdfs/Optical_Diffuser_Technologies_Final_030215.pdf)
+is very common in LED designs, and it can be quite small.  examples:
   * [ground glass diffuser](https://www.edmundoptics.in/f/ground-glass-diffusers/12287/) ($15)
   * [film diffuser](https://www.edmundoptics.com/p/300-x-300mm-Light-Diffusing-Film/45303)  
   * reflective diffuser, i.e. white paper.
