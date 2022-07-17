@@ -183,8 +183,12 @@ $$
 L_{WVS}^{EL} = 6300 \times \alpha^{-1} = 36 KW m^{-2} sr^{-1} \textrm{(at 10 mm, pathological case)}
 $$
 
-Our calculated radiance is  __exceeds this limit__ for the pathological case.  Even the __average__ radiance
-in the non-pathological case almost exceeds the limit.
+Our calculated radiance  __exceeds this limit__ in all cases.  In the pathological case, our calculated radiance
+is __one hundred times the limit__.
+
+The definition of "weak visual stimulus" is wavelengths over 780 nm, which is higher than the "Far Red" lamp wavelength of
+720-740 nm, but only a little.  I think we should be conservative and avoid the 720-740 nm range.The "Photo Red" range
+seems acceptable at 650-670 nm.
 
 ## Blue-light photochemical retinal hazard (300 - 700 nm)
 
