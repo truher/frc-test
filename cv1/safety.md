@@ -1,6 +1,6 @@
 # Safety
 
-Radiation of any wavelength can dangerous.  
+Radiation of sufficient intensity of any wavelength can dangerous.  
 
 * [Very long-wave radiation](https://www.fcc.gov/engineering-technology/electromagnetic-compatibility-division/radio-frequency-safety/faq/rf-safety)
 (e.g. radio waves) can heat parts of the body not accustomed to being heated.
@@ -163,20 +163,17 @@ $$
 
 Our calculated radiance is __fifty times__ the pathological limit, so this case is a problem.
 
+# Blue-light photochemical retinal hazard (300 - 700 nm)
 
+Similarly to the thermal case above, the hazard weighting function, $B(\lambda)$ is used to calculate an __effective blue-light radiance.__
 
-## Blue light hazard
+The hazard function varies by three orders of magnitude over the spectrum we're considering; let's consider four options:
 
-Given recent attention to blue light hazard, the CIE clarified that blue light is
-[not a hazard for everyday situations](https://cie.co.at/publications/position-statement-blue-light-hazard-april-23-2019)
-but also pointed out that, for people who might not behave "normally" (i.e. a child who might stare at a blue light for a long 
-time because they find it fascinating), the (non-exempt) exposure limits should be __reduced by a factor of ten.__  
+1. blue (435 nm) $B(\lambda)$ = 1.0
+1. cyan (500 nm) $B(\lambda)$ = 0.1
+1. green (550 nm) $B(\lambda)$ = 0.01  
+1. orange and beyond (590+ nm) $B(\lambda)$ = 0.001
 
-Cree provides [eye safety guidance](https://cree-led.com/media/documents/XLamp_EyeSafety.pdf), based on their own testing,
-which focuses on blue light (400-480 nm).  They
-classify the XP-E2 in the "moderate risk" category ("no hazard due to aversion response") when driven with the 1X current maximum.
-They also find that the transition from "low risk" to "moderate risk" happens at around 0.1 amps, and that the maximum safe distance
-is something like 200-500 mm.  
 
 
 <hr>
@@ -191,3 +188,13 @@ which reviews some of the hazards specific to LEDs and recommends that LEDs be a
 which is [summarized here](https://smartvisionlights.com/wp-content/uploads/IEC_62471_summary.pdf).
 * Another version of the same method is available from ANSI as [ANSI/IESNA RP-27, "Recommended Practice for Photobiological Safety for
 Lamps and Lamp Systems-Measurement Techniques"](https://webstore.ansi.org/preview-pages/IESNA/preview_ANSI+IESNA+RP-27.2-00.pdf)
+* Blue light hazard
+  * Given recent attention to blue light hazard, the CIE clarified that blue light is
+  [not a hazard for everyday situations](https://cie.co.at/publications/position-statement-blue-light-hazard-april-23-2019)
+  but also pointed out that, for people who might not behave "normally" (i.e. a child who might stare at a blue light for a long 
+  time because they find it fascinating), the (non-exempt) exposure limits should be __reduced by a factor of ten.__  
+  * Cree provides [eye safety guidance](https://cree-led.com/media/documents/XLamp_EyeSafety.pdf), based on their own testing,
+  which focuses on blue light (400-480 nm).  They
+  classify the XP-E2 in the "moderate risk" category ("no hazard due to aversion response") when driven with the 1X current maximum.
+  They also find that the transition from "low risk" to "moderate risk" happens at around 0.1 amps, and that the maximum safe distance
+  is something like 200-500 mm.  
