@@ -16,8 +16,13 @@ Because we want maximum intensity, we want maximum efficiency.
 the better the reduction in radiance.  There is a limit to the useful scattering angle: we'd like to keep the bulk of the output within
 the camera FOV.
 
-There are several kinds of diffusers available, ranging from frosted glass (cheap, moderate scattering angle)
-to advanced holographic films (expensive, high scattering angle).
+There are several kinds of diffusers available:
+
+1. sandblasted glass: cheap ($15), low scattering angle (eight degrees)
+3. [Spectralon film](https://sphereoptics.de/en/product/zenith-polymer-diffusers/): lambertian (!), low transmission (40%)
+4. [Lumen XT film](https://www.modernplastics.com/wp-content/uploads/2015/05/PDS112_Lumen.pdf): 86&deg; scattering, 82% transmission (!) in LW7 grade.  LW3 grade is 38&deg;, 93% transmission.  available in 4x8 foot sheets for $250, but we only need about $1 worth.  ([More detail](https://www.curbellplastics.com/Research-Solutions/Technical-Resources/Technical-Resources/Plastic-Diffuser-Solutions-for-LED-Lighting))
+5. [Edmund TAC film](https://www.edmundoptics.com/p/200-x-200mm-Light-Diffusing-Film/47383), about 20&deg; scattering, 36% transmission (low).
+2. advanced holographic films: very expensive ($150), high scattering angle (up to 80&deg;)
 
 We'll start with the former.  How should we design the diffuser geometry?
 
