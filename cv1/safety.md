@@ -103,39 +103,48 @@ Another input to the exposure limit is the duration of the dose.  For the illumi
 but it could fail and produce steady light at half the intensity (if it failed at the pulse intensity it would quickly stop working altogether).
 For the 4 ms case, the limiting angles are 0.0015-0.012 radians. for the steady case, the limiting angles are 0.0015-0.1 radians.
 
-With these inputs we can calculate the basic radiance limit for intermediate duration:
+With these inputs we can calculate the basic radiance limit for intermediate duration, using t = 0.004 and $\alpha$ of 0.01 rad, we obtain
 
 $$
-L_R^{EL} (W m^{-2} sr^{-1}) = 2.0 \times 10^4 \cdot \alpha^{-1} \cdot t^{-0.25}
+L_R^{EL} = 2.0 \times 10^4 \cdot \alpha^{-1} \cdot t^{-0.25} = 7.95  MW m^{-2} sr^{-1}
 $$
 
-using t = 0.004 and $\alpha$ of 0.01 rad, we obtain
-
-$$
-L_R^{EL} = 7.95  MW m^{-2} sr^{-1}
-$$
-
-Which is above the radiance we calculated above.
+Which is above the calculated radiance of 2&ndash;4 MW m<sup>-2</sup> sr<sup>-1</sup>.
 
 The basic radiance dose limit, $D_R^{EL}$ is calculated:
 
 $$
-D_R^{EL} (J m^{-2} sr^{-1}) = 2.0 \times 10^4 \cdot \alpha^{-1} \cdot t^{0.75}
+D_R^{EL} = 2.0 \times 10^4 \cdot \alpha^{-1} \cdot t^{0.75} = 31.8  KJ m^{-2} sr^{-1}
 $$
 
-or
+which is above the calculated radiance dose of 16 kJ m<sup>-2</sup> sr<sup>-1</sup>._.
+
+For the continuous output (malfunction) case, the output is about half (at most) about 1&ndash;2 MW m<sup>-2</sup> sr<sup>-1</sup>,
+and the exposure limits are as follows:
 
 $$
-D_R^{EL} = 31.8  KJ m^{-2} sr^{-1}
+L_R^{EL} (W m^{-2} sr^{-1}) = 2.8 \times 10^4 \cdot \alpha^{-1} = 2.8 MW m^{-2} sr^{-1}
 $$
 
-which is also above the radiance dose calculated above.
+Which is above the calculated radiance of 1&ndash;2 MW m<sup>-2</sup> sr<sup>-1</sup>.
+
+For the pathological pulsed case, we use the large-source dose limit,
+
+$$
+D_R^{EL} = 10 \times 10^4 \cdot t^{0.25} = 25.2  KJ m^{-2} sr^{-1}
+$$
+
+Which is still above the calculated dose of 16 kJ m<sup>-2</sup> sr<sup>-1</sup>.
+
+For the pathological steady case, we use the large-source radiance limit:
+
+$$
+D_R^{EL} = 28 \times 10^4 = 280  KW m^{-2} sr^{-1}
+$$
+
+Which is much less than the calculated radiance of 1&ndash;2 MW m<sup>-2</sup> sr<sup>-1</sup>, so this case is a problem.
 
 
-
-For the pathological pulsed case, we use the large-source limit,
-
-For the pathological steady case,
 
 ## Blue light hazard
 
