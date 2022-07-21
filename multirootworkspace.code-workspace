@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "multiroot1"
+		},
+		{
+			"path": "multiroot2"
+		}
+	],
+    "settings": {
+        "java.configuration.updateBuildConfiguration": "automatic",
+        "java.server.launchMode": "Standard"
+    }
+}

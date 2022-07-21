@@ -45,6 +45,11 @@ wpi.java.debugJni = false
 // Set this to true to enable desktop support.
 def includeDesktopSupport = true
 
+sourceSets.main.java.srcDirs = [
+    'src/main/java',
+    '../multiroot2/src/main/java'
+] 
+
 // Defining my dependencies. In this case, WPILib (+ friends), and vendor libraries.
 // Also defines JUnit 4.
 dependencies {

@@ -33,6 +33,7 @@ public class Robot extends TimedRobot {
     // result in both sides moving forward. Depending on how your robot's
     // gearbox is constructed, you might have to invert the left side instead.
     m_rightDrive.setInverted(true);
+    Lib.hello();
   }
 
   /** This function is run once each time the robot enters autonomous mode. */
@@ -70,4 +71,9 @@ public class Robot extends TimedRobot {
   /** This function is called periodically during test mode. */
   @Override
   public void testPeriodic() {}
+
+@Override
+public void simulationPeriodic() {
+    Lib.hello();
+}
 }
