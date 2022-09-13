@@ -5,7 +5,16 @@
         "feed[7]": {
           "open": true
         },
-        "open": true
+        "open": true,
+        "wheel1[8]": {
+          "open": true
+        },
+        "wheel2[9]": {
+          "open": true
+        },
+        "wheel[8]": {
+          "open": true
+        }
       },
       "open": true
     },
@@ -13,11 +22,17 @@
       "DB": {
         "open": true
       },
+      "blarg": {
+        "open": true
+      },
       "open": true
     },
     "types": {
       "/FMSInfo": "FMSInfo",
-      "/LiveWindow/Ungrouped/feed[7]": "Motor Controller"
+      "/LiveWindow/Ungrouped/feed[7]": "Motor Controller",
+      "/LiveWindow/Ungrouped/wheel1[8]": "Motor Controller",
+      "/LiveWindow/Ungrouped/wheel2[9]": "Motor Controller",
+      "/LiveWindow/Ungrouped/wheel[8]": "Motor Controller"
     }
   },
   "NetworkTables Settings": {
