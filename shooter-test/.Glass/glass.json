@@ -1,0 +1,27 @@
+{
+  "NetworkTables": {
+    "LiveWindow": {
+      "Ungrouped": {
+        "feed[7]": {
+          "open": true
+        },
+        "open": true
+      },
+      "open": true
+    },
+    "SmartDashboard": {
+      "DB": {
+        "open": true
+      },
+      "open": true
+    },
+    "types": {
+      "/FMSInfo": "FMSInfo",
+      "/LiveWindow/Ungrouped/feed[7]": "Motor Controller"
+    }
+  },
+  "NetworkTables Settings": {
+    "mode": "Client",
+    "serverTeam": "100"
+  }
+}
