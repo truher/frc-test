@@ -1,12 +1,15 @@
 
 package frc.robot;
 
+import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableBuilder;
+import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.PWM;
 import edu.wpi.first.wpilibj.Servo;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.XboxController;
+import edu.wpi.first.wpilibj.CounterBase.EncodingType;
 import edu.wpi.first.wpilibj.motorcontrol.PWMMotorController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
@@ -45,16 +48,33 @@ public class Robot extends TimedRobot implements Sendable {
     private double m_current_elevation = 0.5;
 
     // WHEELS
-    private static final int WHEEL_FULL = 4095;
+    private static final double kP = 0.1;
+    private static final double kD = 0.1;
+    private final PIDController m_wheel_controller1 = new PIDController(kP, 0, kD);
+    private final PIDController m_wheel_controller2 = new PIDController(kP, 0, kD);
+
+    private double m_controller_output1;
+    private double m_controller_output2;
+
+    // MXP ports don't work.  why?
+    // private final Encoder m_wheel_encoder1 = new Encoder(10, 11);
+    // private final Encoder m_wheel_encoder2 = new Encoder(12, 13);
+    private final Encoder m_wheel_encoder1 = new Encoder(6, 7, false, EncodingType.k1X);
+    private final Encoder m_wheel_encoder2 = new Encoder(8, 9, false, EncodingType.k1X);
+
+    private static final double WHEEL_MAX_RPM = 1500;
+    private static final double WHEEL_FF = 2.7;
+
+    // gear ratio for pololu 4789 is 15.24884259
+    // for magnet 2599 a quadrature encoder yields 3 four-phase cycles per revolution
+    // so ticks per rev is 45.74652778
+    private static final double TICKS_PER_TURN = 45.74652778;
 
     private class Wheel extends PWMMotorController {
         protected Wheel(String name, int channel) {
             super(name, channel);
-            // m_pwm.setBounds(5.0, 0.0, 0.0, 0.0, 0.0);
             m_pwm.setPeriodMultiplier(PWM.PeriodMultiplier.k1X);
-            // m_pwm.setSpeed(0.0);
             m_pwm.setRaw(0);
-            // m_pwm.setZeroLatch();
         }
 
         public void setRaw(int value) {
@@ -67,7 +87,7 @@ public class Robot extends TimedRobot implements Sendable {
         }
     }
 
-    double m_wheel_speed = 0;
+    double m_desired_wheel_speed_rpm = 0;
     private final Wheel m_wheel1 = new Wheel("wheel1", 8) {
     };
     private final Wheel m_wheel2 = new Wheel("wheel2", 9) {
@@ -76,6 +96,8 @@ public class Robot extends TimedRobot implements Sendable {
     private final XboxController m_controller = new XboxController(0);
 
     public Robot() {
+        m_wheel_encoder1.setDistancePerPulse(60 / TICKS_PER_TURN); // read RPM
+        m_wheel_encoder2.setDistancePerPulse(60 / TICKS_PER_TURN);
         SmartDashboard.putData("blarg", this);
     }
 
@@ -146,9 +168,15 @@ public class Robot extends TimedRobot implements Sendable {
         m_elevation.set(m_current_elevation);
 
         // WHEELS
-        m_wheel_speed = m_controller.getLeftTriggerAxis(); // wheel speed
-        m_wheel1.setRaw((int) (m_wheel_speed * WHEEL_FULL));
-        m_wheel2.setRaw((int) (m_wheel_speed * WHEEL_FULL));
+        m_desired_wheel_speed_rpm = WHEEL_MAX_RPM * m_controller.getLeftTriggerAxis();
+        
+        m_controller_output1 = m_wheel_controller1.calculate(m_wheel_encoder1.getRate(), m_desired_wheel_speed_rpm);
+        m_controller_output2 = m_wheel_controller2.calculate(m_wheel_encoder2.getRate(), m_desired_wheel_speed_rpm);
+
+        m_wheel1.setRaw((int) Math.max(0, Math.min(4095,
+                (WHEEL_FF * m_desired_wheel_speed_rpm + m_controller_output1))));
+        m_wheel2.setRaw((int) Math.max(0, Math.min(4095,
+                (WHEEL_FF * m_desired_wheel_speed_rpm + m_controller_output2))));
     }
 
     @Override
@@ -167,11 +195,18 @@ public class Robot extends TimedRobot implements Sendable {
         builder.addDoubleProperty("m_elevation", () -> m_elevation.get(), null);
 
         // WHEELS
-        builder.addDoubleProperty("m_wheel_speed", () -> m_wheel_speed, null);
-        builder.addDoubleProperty("m_wheel1", () -> m_wheel1.get(), null);
-        builder.addDoubleProperty("m_wheel2", () -> m_wheel2.get(), null);
+        builder.addDoubleProperty("m_desired_wheel_speed_rpm", () -> m_desired_wheel_speed_rpm, null);
         builder.addDoubleProperty("m_wheel1 raw", () -> m_wheel1.getRaw(), null);
         builder.addDoubleProperty("m_wheel2 raw", () -> m_wheel2.getRaw(), null);
+
+        builder.addDoubleProperty("m_wheel_encoder1_rate_rpm", () -> m_wheel_encoder1.getRate(), null);
+        builder.addDoubleProperty("m_wheel_encoder2_rate_rpm", () -> m_wheel_encoder2.getRate(), null);
+
+        builder.addDoubleProperty("m_controller_output1", () -> m_controller_output1, null);
+        builder.addDoubleProperty("m_controller_output2", () -> m_controller_output2, null);
+
+        builder.addDoubleProperty("m_controller_error1", () -> m_wheel_controller1.getPositionError(), null);
+        builder.addDoubleProperty("m_controller_error2", () -> m_wheel_controller2.getPositionError(), null);
 
     }
 }
