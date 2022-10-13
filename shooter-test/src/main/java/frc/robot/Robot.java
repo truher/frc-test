@@ -4,6 +4,7 @@ package frc.robot;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableBuilder;
+import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.PWM;
 import edu.wpi.first.wpilibj.Servo;
@@ -19,6 +20,8 @@ public class Robot extends TimedRobot implements Sendable {
     // FEED
     private static final int FEED_DURATION = 7;
     private static final double FEED_SPEED = 1.0;
+
+    
 
     private class Feed extends PWMMotorController {
         protected Feed(String name, int channel) {
@@ -98,6 +101,7 @@ public class Robot extends TimedRobot implements Sendable {
     public Robot() {
         m_wheel_encoder1.setDistancePerPulse(60 / TICKS_PER_TURN); // read RPM
         m_wheel_encoder2.setDistancePerPulse(60 / TICKS_PER_TURN);
+        DataLogManager.start(); // logs all NT updates
         SmartDashboard.putData("blarg", this);
     }
 
