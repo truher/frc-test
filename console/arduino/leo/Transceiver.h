@@ -6,24 +6,15 @@
 #include "PluggableUSB.h"
 #include "Data.h"
 
+/**
+ * HID Report Descriptor
+ *
+ * This layout must match the struct in Data.
+ */
 // this is the one that works:
 // TODO: add reportid?
 // TODO note that 0x81 input includes a bit for "wrap"
-// this is actually constant, should match the report structs.
 static const uint8_t HIDReportDescriptor[] = {
-
-  // HID Report
-
-  // 05 01 09 04 a1 01 05 09 19 01 29 20 15 00 25 01
-  // 75 01 95 20 55 00 65 00 81 02 05 01 09 39 15 00
-  // 25 07 35 00 46 3b 01 65 14 75 04 95 01 81 02 09
-  // 39 15 00 25 07 35 00 46 3b 01 65 14 75 04 95 01
-  // 81 02 09 01 15 00 27 ff ff 00 00 75 10 95 06 a1
-  // 00 09 30 09 31 09 32 09 33 09 34 09 35 81 02 c0
-  // 05 02 15 00 27 ff ff 00 00 75 10 95 05 a1 00 09
-  // ba 09 bb 09 c4 09 c5 09 c8 81 02 c0 a1 01 05 09
-  // 19 01 29 20 15 00 25 01 75 01 95 10 91 02 c0 c0
-
   0x05, 0x01,                    // Usage Page: Generic Desktop Controls (0x01)
   0x09, 0x04,                    // Usage: Joystick (0x04)
   0xa1, 0x01,                    // Collection type: Application (0x01)
@@ -39,26 +30,6 @@ static const uint8_t HIDReportDescriptor[] = {
   0x65, 0x00,                    // ....Unit (0x00) (TDOO remove)
   0x81, 0x02,                    // ....Input (Data,Var,Abs)
   0x05, 0x01,                    // ....Usage Page: Generic Desktop Controls (0x01)
-                                 // Hat
-  0x09, 0x39,                    // ....Usage: Hat switch (0x39) (TODO remove)
-  0x15, 0x00,                    // ....Logical minimum: 0
-  0x25, 0x07,                    // ....Logical maximum: 7
-  0x35, 0x00,                    // ....Physical minimum: 0 (degrees)
-  0x46, 0x3b, 0x01,              // .... Physical maximum: 315 (degrees)
-  0x65, 0x14,                    // ....Unit (0x14)
-  0x75, 0x04,                    // ....Report size: 4
-  0x95, 0x01,                    // ....Report count: 1
-  0x81, 0x02,                    // ....Input (Data,Var,Abs)
-                                 // Hat
-  0x09, 0x39,                    // ....Usage: Hat switch (0x39)
-  0x15, 0x00,                    // ....Logical minimum: 0
-  0x25, 0x07,                    // ....Logical maximum: 7
-  0x35, 0x00,                    // ....Physical minimum: 0 (degrees)
-  0x46, 0x3b, 0x01,              // .... Physical maximum: 315 (degrees)
-  0x65, 0x14,                    // ....Unit (0x14)
-  0x75, 0x04,                    // ....Report size: 4
-  0x95, 0x01,                    // ....Report count: 1
-  0x81, 0x02,                    // ....Input (Data,Var,Abs)
                                  // Joysticks TODO remove these
   0x09, 0x01,                    // ....Usage: Pointer (0x01)
   0x15, 0x00,                    // ....Logical minimum: 0
@@ -262,9 +233,7 @@ protected:
     *interfaceCount += 1;  // uses 1, this just tells the caller how many records to expect.
 
     const uint8_t interfaceDescriptor[] = {
-
       // INTERFACE DESCRIPTOR (2.0): class HID
-      //  09 04 02 00 01 03 00 00 00
       0x09,              // bLength: 9
       0x04,              // bDescriptorType: 0x04 (INTERFACE)
       pluggedInterface,  // bInterfaceNumber, 2 in the example  <== when is this initialized?
@@ -274,10 +243,8 @@ protected:
       0x00,              // bInterfaceSubClass: No Subclass (0x00)
       0x00,              // bInterfaceProtocol: 0x00
       0x00,              // iInterface: 0
-
       // HID DESCRIPTOR
       // this doesn't match the struct in HID.h (?)
-      // 09 21 01 01 00 01 22 90 00
       0x09,                                  // bLength: 9
       0x21,                                  // bDescriptorType: 0x21 (HID)
       0x01, 0x01,                            // bcdHID: 0x0101 (21)
@@ -286,9 +253,7 @@ protected:
       0x22,                                  // bDescriptorType: HID Report (0x22)
       lowByte(sizeof(HIDReportDescriptor)),  // wDescriptorLength: (144 in the example)
       highByte(sizeof(HIDReportDescriptor)),
-
       // ENDPOINT DESCRIPTOR
-      // 07 05 84 03 40 00 01
       0x07,                    // bLength: 7
       0x05,                    // bDescriptorType: 0x05 (ENDPOINT)
       pluggedEndpoint | 0x80,  //bEndpointAddress: (0x84  IN  Endpoint:4 in example)

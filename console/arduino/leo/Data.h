@@ -1,7 +1,11 @@
 #ifndef DATA_H
 #define DATA_H
 
-/** Contains state suitable for direct USB I/O. */
+/** 
+ * Contains state suitable for direct USB I/O.
+ *
+ * This layout must match the HID Report Descriptor in Transceiver.
+ */
 class Data {
 public:
   typedef struct {
@@ -37,8 +41,6 @@ public:
     bool b30 : 1;
     bool b31 : 1;
     bool b32 : 1;
-    uint8_t h0 : 4;
-    uint8_t h1 : 4;  // todo : remove, probably wrong?  packed?
     uint16_t x : 16;
     uint16_t y : 16;
     uint16_t z : 16;
