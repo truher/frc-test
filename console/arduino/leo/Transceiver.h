@@ -19,16 +19,6 @@ static const uint8_t HIDReportDescriptor[] = {
   0x09, 0x04,        // Usage: Joystick (0x04)
   0xa1, 0x01,        // Collection type: Application (0x01)
 
-                     // Buttons
-  0x05, 0x09,        // ....Usage Page: Button (0x09)
-  0x19, 0x01,        // ....Usage minimum: 0x01
-  0x29, 0x20,        // ....Usage maximum: 0x20
-  0x15, 0x00,        // ....Logical minimum: 0
-  0x25, 0x01,        // ....Logical maximum: 1
-  0x75, 0x01,        // ....Report size: 1
-  0x95, 0x20,        // ....Report count: 32
-  0x81, 0x02,        // ....Input (Data,Var,Abs)
-
                      // Joysticks
   0x05, 0x01,        // ....Usage Page: Generic Desktop Controls (0x01)
   0x09, 0x01,        // ....Usage: Pointer (0x01)
@@ -45,6 +35,16 @@ static const uint8_t HIDReportDescriptor[] = {
   0x09, 0x35,        // ........Usage: Rz (0x35)
   0x81, 0x02,        // ........Input (Data,Var,Abs)
   0xc0,              // ....End Collection (0xc)
+
+                     // Buttons
+  0x05, 0x09,        // ....Usage Page: Button (0x09)
+  0x19, 0x01,        // ....Usage minimum: 0x01
+  0x29, 0x20,        // ....Usage maximum: 0x20
+  0x15, 0x00,        // ....Logical minimum: 0
+  0x25, 0x01,        // ....Logical maximum: 1
+  0x75, 0x01,        // ....Report size: 1
+  0x95, 0x20,        // ....Report count: 32
+  0x81, 0x02,        // ....Input (Data,Var,Abs)
 
                      // Outputs
   0x05, 0x08,        // ....Usage Page: LED (0x08)

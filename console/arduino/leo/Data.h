@@ -9,6 +9,12 @@
 class Data {
 public:
   typedef struct {
+    uint16_t x : 16;
+    uint16_t y : 16;
+    uint16_t z : 16;
+    uint16_t rx : 16;
+    uint16_t ry : 16;
+    uint16_t rz : 16;
     bool b1 : 1;
     bool b2 : 1;
     bool b3 : 1;
@@ -41,12 +47,6 @@ public:
     bool b30 : 1;
     bool b31 : 1;
     bool b32 : 1;
-    uint16_t x : 16;
-    uint16_t y : 16;
-    uint16_t z : 16;
-    uint16_t rx : 16;
-    uint16_t ry : 16;
-    uint16_t rz : 16;
   } WorkingReportTx;
   volatile WorkingReportTx workingReportTx_;
 
