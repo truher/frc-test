@@ -15,46 +15,46 @@
 // this is the one that works:
 // TODO note that 0x81 input includes a bit for "wrap"
 static const uint8_t HIDReportDescriptor[] = {
-  0x05, 0x01,                    // Usage Page: Generic Desktop Controls (0x01)
-  0x09, 0x04,                    // Usage: Joystick (0x04)
-  0xa1, 0x01,                    // Collection type: Application (0x01)
-                                 // Buttons
-  0x05, 0x09,                    // ....Usage Page: Button (0x09)
-  0x19, 0x01,                    // ....Usage minimum: 0x01
-  0x29, 0x20,                    // ....Usage maximum: 0x20
-  0x15, 0x00,                    // ....Logical minimum: 0
-  0x25, 0x01,                    // ....Logical maximum: 1
-  0x75, 0x01,                    // ....Report size: 1
-  0x95, 0x20,                    // ....Report count: 32
-  0x81, 0x02,                    // ....Input (Data,Var,Abs)
-  0x05, 0x01,                    // ....Usage Page: Generic Desktop Controls (0x01)
-                                 // Joysticks
-  0x09, 0x01,                    // ....Usage: Pointer (0x01)
-  0x15, 0x00,                    // ....Logical minimum: 0
-  0x27, 0xff, 0xff, 0x00, 0x00,  // Logical maximum: 65535 TODO fix this
-  0x75, 0x10,                    // ....Report size: 16
-  0x95, 0x06,                    // ....Report count: 6
-  0xa1, 0x00,                    // ....Collection type: Physical (0x00)
-  0x09, 0x30,                    // ........Usage: X (0x30)
-  0x09, 0x31,                    // ........Usage: Y (0x31)
-  0x09, 0x32,                    // ........Usage: Z (0x32)
-  0x09, 0x33,                    // ........Usage: Rx (0x33)
-  0x09, 0x34,                    // ........Usage: Ry (0x34)
-  0x09, 0x35,                    // ........Usage: Rz (0x35)
-  0x81, 0x02,                    // ........Input (Data,Var,Abs)
-  0xc0,                          // ....End Collection (0xc) 
-                                 // Outputs
-  0xa1, 0x01,                    // ....Collection type: Application (0x01)
-  0x05, 0x09,                    // ........Usage Page: Button (0x09)
-  0x19, 0x01,                    // ........Usage minimum: 0x01
-  0x29, 0x10,                    // ........Usage maximum: 16 (32 won't be populated)
-  0x15, 0x00,                    // ........Logical minimum: 0
-  0x25, 0x01,                    // ........Logical maximum: 1
-  0x75, 0x01,                    // ........Report size: 1
-  0x95, 0x10,                    // ........Report count: 16 (32 does not work)
-  0x91, 0x02,                    // ........Output (Data,Var,Abs)
-  0xc0,                          // ....End Collection (0xc)
-  0xc0,                          // End Collection (0xc)
+  0x05, 0x01,        // Usage Page: Generic Desktop Controls (0x01)
+  0x09, 0x04,        // Usage: Joystick (0x04)
+  0xa1, 0x01,        // Collection type: Application (0x01)
+                     // Buttons
+  0x05, 0x09,        // ....Usage Page: Button (0x09)
+  0x19, 0x01,        // ....Usage minimum: 0x01
+  0x29, 0x20,        // ....Usage maximum: 0x20
+  0x15, 0x00,        // ....Logical minimum: 0
+  0x25, 0x01,        // ....Logical maximum: 1
+  0x75, 0x01,        // ....Report size: 1
+  0x95, 0x20,        // ....Report count: 32
+  0x81, 0x02,        // ....Input (Data,Var,Abs)
+  0x05, 0x01,        // ....Usage Page: Generic Desktop Controls (0x01)
+                     // Joysticks
+  0x09, 0x01,        // ....Usage: Pointer (0x01)
+  0x15, 0x00,        // ....Logical minimum: 0
+  0x26, 0xff, 0xff,  // Logical maximum: 65535 TODO fix this
+  0x75, 0x10,        // ....Report size: 16
+  0x95, 0x06,        // ....Report count: 6
+  0xa1, 0x00,        // ....Collection type: Physical (0x00)
+  0x09, 0x30,        // ........Usage: X (0x30)
+  0x09, 0x31,        // ........Usage: Y (0x31)
+  0x09, 0x32,        // ........Usage: Z (0x32)
+  0x09, 0x33,        // ........Usage: Rx (0x33)
+  0x09, 0x34,        // ........Usage: Ry (0x34)
+  0x09, 0x35,        // ........Usage: Rz (0x35)
+  0x81, 0x02,        // ........Input (Data,Var,Abs)
+  0xc0,              // ....End Collection (0xc) 
+                     // Outputs
+  0xa1, 0x01,        // ....Collection type: Application (0x01)
+  0x05, 0x09,        // ........Usage Page: Button (0x09)
+  0x19, 0x01,        // ........Usage minimum: 0x01
+  0x29, 0x10,        // ........Usage maximum: 16 (32 won't be populated)
+  0x15, 0x00,        // ........Logical minimum: 0
+  0x25, 0x01,        // ........Logical maximum: 1
+  0x75, 0x01,        // ........Report size: 1
+  0x95, 0x10,        // ........Report count: 16 (32 does not work)
+  0x91, 0x02,        // ........Output (Data,Var,Abs)
+  0xc0,              // ....End Collection (0xc)
+  0xc0,              // End Collection (0xc)
 
 };
 
