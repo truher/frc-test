@@ -18,7 +18,7 @@ public class RobotContainer {
     // 1);
     private final NotifierCommand m_recurring1 = new NotifierCommand(
             () -> setoutput1(), 0.1);
-            private final NotifierCommand m_recurring2 = new NotifierCommand(
+    private final NotifierCommand m_recurring2 = new NotifierCommand(
             () -> setoutput2(), 0.1 * Math.sqrt(2));
 
     public RobotContainer() {
