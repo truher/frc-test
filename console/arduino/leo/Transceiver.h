@@ -47,7 +47,7 @@ static const uint8_t HIDReportDescriptor[] = {
   0xc0,              // ....End Collection (0xc)
 
                      // Outputs
-  0x05, 0x09,        // ....Usage Page: Button (0x09)
+  0x05, 0x08,        // ....Usage Page: LED (0x08)
   0x19, 0x01,        // ....Usage minimum: 0x01
   0x29, 0x10,        // ....Usage maximum: 16 (32 won't be populated)
   0x15, 0x00,        // ....Logical minimum: 0
@@ -55,6 +55,7 @@ static const uint8_t HIDReportDescriptor[] = {
   0x75, 0x01,        // ....Report size: 1
   0x95, 0x10,        // ....Report count: 16 (32 does not work)
   0x91, 0x02,        // ....Output (Data,Var,Abs)
+
   0xc0,              // End Collection (0xc)
 
 };
