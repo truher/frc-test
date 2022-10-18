@@ -26,8 +26,6 @@ static const uint8_t HIDReportDescriptor[] = {
   0x25, 0x01,                    // ....Logical maximum: 1
   0x75, 0x01,                    // ....Report size: 1
   0x95, 0x20,                    // ....Report count: 32
-  0x55, 0x00,                    // ....Unit exponent: 0 (TODO remove)
-  0x65, 0x00,                    // ....Unit (0x00) (TDOO remove)
   0x81, 0x02,                    // ....Input (Data,Var,Abs)
   0x05, 0x01,                    // ....Usage Page: Generic Desktop Controls (0x01)
                                  // Joysticks
