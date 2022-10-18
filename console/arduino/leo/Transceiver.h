@@ -10,9 +10,9 @@
  * HID Report Descriptor
  *
  * This layout must match the struct in Data.
+ * TODO: add reportid?
  */
 // this is the one that works:
-// TODO: add reportid?
 // TODO note that 0x81 input includes a bit for "wrap"
 static const uint8_t HIDReportDescriptor[] = {
   0x05, 0x01,                    // Usage Page: Generic Desktop Controls (0x01)
@@ -30,7 +30,7 @@ static const uint8_t HIDReportDescriptor[] = {
   0x65, 0x00,                    // ....Unit (0x00) (TDOO remove)
   0x81, 0x02,                    // ....Input (Data,Var,Abs)
   0x05, 0x01,                    // ....Usage Page: Generic Desktop Controls (0x01)
-                                 // Joysticks TODO remove these
+                                 // Joysticks
   0x09, 0x01,                    // ....Usage: Pointer (0x01)
   0x15, 0x00,                    // ....Logical minimum: 0
   0x27, 0xff, 0xff, 0x00, 0x00,  // Logical maximum: 65535 TODO fix this
@@ -44,21 +44,7 @@ static const uint8_t HIDReportDescriptor[] = {
   0x09, 0x34,                    // ........Usage: Ry (0x34)
   0x09, 0x35,                    // ........Usage: Rz (0x35)
   0x81, 0x02,                    // ........Input (Data,Var,Abs)
-  0xc0,                          // ....End Collection (0xc)
-                                 // More Joysticks
-  0x05, 0x02,                    // ....Simulation Controls (0x02) (TODO remove)
-  0x15, 0x00,                    // ....Logical minimum: 0
-  0x27, 0xff, 0xff, 0x00, 0x00,  // Logical maximum: 65535 TODO fix this
-  0x75, 0x10,                    // ....Report size: 16
-  0x95, 0x05,                    // ....Report count: 5
-  0xa1, 0x00,                    // ....Collection type: Physical (0x00)
-  0x09, 0xba,                    // ........Usage: Rudder (0xba)
-  0x09, 0xbb,                    // ........Usage: Throttle (0xbb)
-  0x09, 0xc4,                    // ........Usage: Accelerator (0xc4)
-  0x09, 0xc5,                    // ........Usage: Brake (0xc5)
-  0x09, 0xc8,                    // ........Usage: Steering (0xc8)
-  0x81, 0x02,                    // ........Input (Data,Var,Abs)
-  0xc0,                          // ....End Collection (0xc)
+  0xc0,                          // ....End Collection (0xc) 
                                  // Outputs
   0xa1, 0x01,                    // ....Collection type: Application (0x01)
   0x05, 0x09,                    // ........Usage Page: Button (0x09)

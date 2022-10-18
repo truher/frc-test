@@ -47,11 +47,6 @@ public:
     uint16_t rx : 16;
     uint16_t ry : 16;
     uint16_t rz : 16;
-    uint16_t rudder : 16;  // todo: remove
-    uint16_t throttle : 16;
-    uint16_t accelerator : 16;
-    uint16_t brake : 16;
-    uint16_t steering : 16;
   } WorkingReportTx;
   volatile WorkingReportTx workingReportTx_;
 
