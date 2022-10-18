@@ -1,5 +1,6 @@
 #ifndef DATA_H
 #define DATA_H
+#include <stdint.h>
 
 /** 
  * Contains state suitable for direct USB I/O.
@@ -10,12 +11,16 @@ class Data {
 public:
   typedef struct {
     // signed axes, center is zero
+    // see www.usb.org/sites/default/files/hut1_3_0.pdf section 4
+    // DS gets confused if the last axis ("wheel") is added, so skip it.
     int16_t x : 16;
     int16_t y : 16;
     int16_t z : 16;
     int16_t rx : 16;
     int16_t ry : 16;
     int16_t rz : 16;
+    int16_t slider : 16;
+    int16_t dial : 16;
     bool b1 : 1;
     bool b2 : 1;
     bool b3 : 1;
@@ -53,7 +58,7 @@ public:
 
   /**
    * Represents the RoboRIO's 16 bits of output.  The RIO API implies that there are 32 bits, but
-   * if you use a 32 bit HID report, the RIO produces nothing.
+   * if you use a 32 bit HID report, the RIO produces nothing.  16 bits seems to work.
    */
   typedef struct {
     bool i1 : 1;

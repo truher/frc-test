@@ -11,21 +11,20 @@
  *
  * This layout must match the struct in Data.
  * TODO: add reportid?
+ * see www.usb.org/sites/default/files/hut1_3_0.pdf section 4
+ * configuring the last axis ("wheel") confuses the DS, so skip it.
  */
-// this is the one that works:
-// TODO note that 0x81 input includes a bit for "wrap"
 static const uint8_t HIDReportDescriptor[] = {
   0x05, 0x01,        // Usage Page: Generic Desktop Controls (0x01)
   0x09, 0x04,        // Usage: Joystick (0x04)
   0xa1, 0x01,        // Collection type: Application (0x01)
-
                      // Joysticks
   0x05, 0x01,        // ....Usage Page: Generic Desktop Controls (0x01)
   0x09, 0x01,        // ....Usage: Pointer (0x01)v
   0x16, 0x00, 0x80,  // ....Logical minimum: -32768
-  0x26, 0xff, 0x7f,  // Logical maximum: 32767
+  0x26, 0xff, 0x7f,  // ....Logical maximum: 32767
   0x75, 0x10,        // ....Report size: 16
-  0x95, 0x06,        // ....Report count: 6
+  0x95, 0x08,        // ....Report count: 8
   0xa1, 0x00,        // ....Collection type: Physical (0x00)
   0x09, 0x30,        // ........Usage: X (0x30)
   0x09, 0x31,        // ........Usage: Y (0x31)
@@ -33,9 +32,10 @@ static const uint8_t HIDReportDescriptor[] = {
   0x09, 0x33,        // ........Usage: Rx (0x33)
   0x09, 0x34,        // ........Usage: Ry (0x34)
   0x09, 0x35,        // ........Usage: Rz (0x35)
+  0x09, 0x36,        // ........Usage: Slider (0x36)
+  0x09, 0x37,        // ........Usage: Dial (0x37)
   0x81, 0x02,        // ........Input (Data,Var,Abs)
   0xc0,              // ....End Collection (0xc)
-
                      // Buttons
   0x05, 0x09,        // ....Usage Page: Button (0x09)
   0x19, 0x01,        // ....Usage minimum: 0x01
@@ -45,8 +45,8 @@ static const uint8_t HIDReportDescriptor[] = {
   0x75, 0x01,        // ....Report size: 1
   0x95, 0x20,        // ....Report count: 32
   0x81, 0x02,        // ....Input (Data,Var,Abs)
-
                      // Outputs
+                     // the DS appears to support 32 bits but only works with 16.
   0x05, 0x08,        // ....Usage Page: LED (0x08)
   0x19, 0x01,        // ....Usage minimum: 0x01
   0x29, 0x10,        // ....Usage maximum: 16 (32 won't be populated)
@@ -55,59 +55,11 @@ static const uint8_t HIDReportDescriptor[] = {
   0x75, 0x01,        // ....Report size: 1
   0x95, 0x10,        // ....Report count: 16 (32 does not work)
   0x91, 0x02,        // ....Output (Data,Var,Abs)
-
   0xc0,              // End Collection (0xc)
-
-};
-
-
-
-// TODO convert to using this one
-
-static const uint8_t HIDReportDescriptor2[] = {
-  0x05, 0x01,        // USAGE_PAGE (Generic Desktop)
-  0x09, 0x04,        // USAGE (Joystick: 0x04)
-  0xa1, 0x01,        // COLLECTION (Application)
-  0x85, 0x03,        // ....REPORT_ID (Default: 3 hidReportId) (required part of app collection)
-  0x05, 0x01,        // ....USAGE_PAGE (Generic Desktop)
-  0x09, 0x01,        // ....USAGE (Pointer)
-  0xA1, 0x00,        // ....COLLECTION (Physical)
-  0x09, 0x30,        // ........USAGE (X)
-  0x09, 0x31,        // ........USAGE (Y)
-  0x09, 0x32,        // ........USAGE (Z)
-  0x09, 0x33,        // ........USAGE (Rx)
-  0x09, 0x34,        // ........USAGE (Ry)
-  0x09, 0x35,        // ........USAGE (Rz) (TODO add three more here)
-  0x15, 0x00,        // ........LOGICAL_MINIMUM (0)
-  0x26, 0xFF, 0xFF,  // ........LOGICAL_MAXIMUM (65535) (TODO make this match ADC)
-  0x75, 0x10,        // ........REPORT_SIZE (16)
-  0x95, 0x06,        // ........REPORT_COUNT (axisCount) (TODO more axes)
-  0x81, 0x02,        // ........INPUT (Data,Var,Abs)
-  0x05, 0x09,        // ....USAGE_PAGE (Button)
-  0x19, 0x01,        // ....USAGE_MINIMUM (Button 1)
-  0x29, 0x20,        // ....USAGE_MAXIMUM (Button 32)
-  0x15, 0x00,        // ....LOGICAL_MINIMUM (0)
-  0x25, 0x01,        // ....LOGICAL_MAXIMUM (1) (msp has physical min/max below this line)
-  0x75, 0x01,        // ....REPORT_SIZE (1)
-  0x95, 0x20,        // ....REPORT_COUNT (# of buttons)
-  0x81, 0x02,        // ....INPUT (Data,Var,Abs)
-  //0x05, 0x08,  // ....USAGE_PAGE (LEDs) (msp uses *buttons* as outputs.  huh. )  ###
-  0x05, 0x09,  // ....USAGE_PAGE (Button, like msp)
-  //0x09, 0x01,  // try this crazy thing i have no idea what it does.  "vendor usage?"
-  0x19, 0x01,  // ....USAGE_MINIMUM (LED 1)
-  0x29, 0x10,  // ....USAGE_MAXIMUM (LED 32) ... was 0x20
-  0x15, 0x00,  // ....LOGICAL_MINIMUM (0)
-  0x25, 0x01,  // ....LOGICAL_MAXIMUM (1) (msp has physical min/max here)
-  0x75, 0x01,  // ....REPORT_SIZE (1) (bit)
-  0x95, 0x10,  // ....REPORT_COUNT (# of buttons) ... was 0x20
-  0x91, 0x02,  // ....OUTPUT (Data,Var,Abs)
-  0xc0,        // ....END_COLLECTION (Physical)
-  0xc0         // END_COLLECTION
 };
 
 /** Sends and receives data via USB. */
 class Transceiver : public PluggableUSBModule {
-  // class Transceiver {
 public:
 
   Transceiver::Transceiver(Data &data)
@@ -251,7 +203,6 @@ protected:
     return USB_SendControl(0, interfaceDescriptor, sizeof(interfaceDescriptor));
   }
 
-
   /**Returns bytes sent*/
   // override
   int Transceiver::getDescriptor(USBSetup &setup) {
@@ -278,7 +229,6 @@ protected:
     protocol = 0x01;  // HID_REPORT_PROTOCOL;
     return total;
   }
-
 
 private:
   uint8_t epType[1];

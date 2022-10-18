@@ -29,12 +29,14 @@ public:
     if (readValue != data_.reportTx_.b1) {
       data_.reportTx_.b1 = readValue;
       // fake an axis
-      data_.reportTx_.x =  -15000;
-      data_.reportTx_.y =  -10000;
-      data_.reportTx_.z =   -5000;
-      data_.reportTx_.rx =   5000;
-      data_.reportTx_.ry =  15000;
-      data_.reportTx_.rz =  25000;
+      data_.reportTx_.x =  -25000;
+      data_.reportTx_.y =  -20000;
+      data_.reportTx_.z =  -15000;
+      data_.reportTx_.rx = -10000;
+      data_.reportTx_.ry =  -5000;
+      data_.reportTx_.rz =   5000;
+      data_.reportTx_.slider =  10000;
+      data_.reportTx_.dial =  15000;
       updated = true;
     }
 
@@ -47,6 +49,8 @@ public:
       data_.reportTx_.rx = 0;
       data_.reportTx_.ry = 0;
       data_.reportTx_.rz = 0;
+      data_.reportTx_.slider = 0;
+      data_.reportTx_.dial =  0;
       updated = true;
     }
     return updated;
