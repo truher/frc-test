@@ -18,6 +18,7 @@ static const uint8_t HIDReportDescriptor[] = {
   0x05, 0x01,        // Usage Page: Generic Desktop Controls (0x01)
   0x09, 0x04,        // Usage: Joystick (0x04)
   0xa1, 0x01,        // Collection type: Application (0x01)
+
                      // Buttons
   0x05, 0x09,        // ....Usage Page: Button (0x09)
   0x19, 0x01,        // ....Usage minimum: 0x01
@@ -27,8 +28,9 @@ static const uint8_t HIDReportDescriptor[] = {
   0x75, 0x01,        // ....Report size: 1
   0x95, 0x20,        // ....Report count: 32
   0x81, 0x02,        // ....Input (Data,Var,Abs)
-  0x05, 0x01,        // ....Usage Page: Generic Desktop Controls (0x01)
+
                      // Joysticks
+  0x05, 0x01,        // ....Usage Page: Generic Desktop Controls (0x01)
   0x09, 0x01,        // ....Usage: Pointer (0x01)
   0x15, 0x00,        // ....Logical minimum: 0
   0x26, 0xff, 0xff,  // Logical maximum: 65535 TODO fix this
@@ -42,18 +44,17 @@ static const uint8_t HIDReportDescriptor[] = {
   0x09, 0x34,        // ........Usage: Ry (0x34)
   0x09, 0x35,        // ........Usage: Rz (0x35)
   0x81, 0x02,        // ........Input (Data,Var,Abs)
-  0xc0,              // ....End Collection (0xc) 
-                     // Outputs
-  0xa1, 0x01,        // ....Collection type: Application (0x01)
-  0x05, 0x09,        // ........Usage Page: Button (0x09)
-  0x19, 0x01,        // ........Usage minimum: 0x01
-  0x29, 0x10,        // ........Usage maximum: 16 (32 won't be populated)
-  0x15, 0x00,        // ........Logical minimum: 0
-  0x25, 0x01,        // ........Logical maximum: 1
-  0x75, 0x01,        // ........Report size: 1
-  0x95, 0x10,        // ........Report count: 16 (32 does not work)
-  0x91, 0x02,        // ........Output (Data,Var,Abs)
   0xc0,              // ....End Collection (0xc)
+
+                     // Outputs
+  0x05, 0x09,        // ....Usage Page: Button (0x09)
+  0x19, 0x01,        // ....Usage minimum: 0x01
+  0x29, 0x10,        // ....Usage maximum: 16 (32 won't be populated)
+  0x15, 0x00,        // ....Logical minimum: 0
+  0x25, 0x01,        // ....Logical maximum: 1
+  0x75, 0x01,        // ....Report size: 1
+  0x95, 0x10,        // ....Report count: 16 (32 does not work)
+  0x91, 0x02,        // ....Output (Data,Var,Abs)
   0xc0,              // End Collection (0xc)
 
 };
