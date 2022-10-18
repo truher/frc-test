@@ -1,6 +1,11 @@
 #ifndef INDICATOR_H
 #define INDICATOR_H
 #include "Data.h"
+#include <Arduino.h>
+
+#define LED_1 13
+#define LED_2 12
+#define LED_3 11
 
 /**
  * Expresses physical state: lights, sounds, etc.
@@ -10,7 +15,9 @@ public:
   Data& data_;
   Indicator::Indicator(Data& data)
     : data_(data) {
-    pinMode(LED_BUILTIN, OUTPUT);
+    pinMode(LED_1, OUTPUT);
+    pinMode(LED_2, OUTPUT);
+    pinMode(LED_3, OUTPUT);
   }
 
   /** 
@@ -19,7 +26,9 @@ public:
    * TODO: more outputs
    */
   void Indicator::indicate() {
-    digitalWrite(LED_BUILTIN, data_.reportRx_.i1);
+    digitalWrite(LED_1, data_.reportRx_.i1);
+    digitalWrite(LED_2, data_.reportRx_.i2);
+    digitalWrite(LED_3, data_.reportRx_.i3);
   }
 };
 
