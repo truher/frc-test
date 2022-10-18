@@ -9,12 +9,13 @@
 class Data {
 public:
   typedef struct {
-    uint16_t x : 16;
-    uint16_t y : 16;
-    uint16_t z : 16;
-    uint16_t rx : 16;
-    uint16_t ry : 16;
-    uint16_t rz : 16;
+    // signed axes, center is zero
+    int16_t x : 16;
+    int16_t y : 16;
+    int16_t z : 16;
+    int16_t rx : 16;
+    int16_t ry : 16;
+    int16_t rz : 16;
     bool b1 : 1;
     bool b2 : 1;
     bool b3 : 1;
@@ -47,42 +48,13 @@ public:
     bool b30 : 1;
     bool b31 : 1;
     bool b32 : 1;
-  } WorkingReportTx;
-  volatile WorkingReportTx workingReportTx_;
-
-
-  // 16 byte report
-  typedef struct {
-    uint16_t x : 16;
-    uint16_t y : 16;
-    uint16_t z : 16;
-    uint16_t rx : 16;
-    uint16_t ry : 16;
-    uint16_t rz : 16;
-    bool b1 : 1;
-    bool b2 : 1;
-    bool b3 : 1;
-    bool b4 : 1;
-    bool b5 : 1;
-    bool b6 : 1;
-    bool b7 : 1;
-    bool b8 : 1;
-    bool b9 : 1;
-    bool b10 : 1;
-    bool b11 : 1;
-    bool b12 : 1;
-    bool b13 : 1;
-    bool b14 : 1;
-    bool b15 : 1;
-    bool b16 : 1;
   } ReportTx;
   volatile ReportTx reportTx_;
 
-
   /**
- * Represents the RoboRIO's 16 bits of output.  The RIO API implies that there are 32 bits, but
- * if you use a 32 bit HID report, the RIO produces nothing.
-*/
+   * Represents the RoboRIO's 16 bits of output.  The RIO API implies that there are 32 bits, but
+   * if you use a 32 bit HID report, the RIO produces nothing.
+   */
   typedef struct {
     bool i1 : 1;
     bool i2 : 1;

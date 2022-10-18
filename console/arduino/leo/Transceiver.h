@@ -21,9 +21,9 @@ static const uint8_t HIDReportDescriptor[] = {
 
                      // Joysticks
   0x05, 0x01,        // ....Usage Page: Generic Desktop Controls (0x01)
-  0x09, 0x01,        // ....Usage: Pointer (0x01)
-  0x15, 0x00,        // ....Logical minimum: 0
-  0x26, 0xff, 0xff,  // Logical maximum: 65535 TODO fix this
+  0x09, 0x01,        // ....Usage: Pointer (0x01)v
+  0x16, 0x00, 0x80,  // ....Logical minimum: -32768
+  0x26, 0xff, 0x7f,  // Logical maximum: 32767
   0x75, 0x10,        // ....Report size: 16
   0x95, 0x06,        // ....Report count: 6
   0xa1, 0x00,        // ....Collection type: Physical (0x00)
@@ -123,7 +123,7 @@ public:
 
 
   void Transceiver::send() {
-    SendReport((const void *)&data_.workingReportTx_, sizeof(data_.workingReportTx_));
+    SendReport((const void *)&data_.reportTx_, sizeof(data_.reportTx_));
   }
 
   int Transceiver::SendReport(const void *data, int len) {

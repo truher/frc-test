@@ -26,14 +26,27 @@ public:
     bool updated = false;
 
     bool readValue = !(bool)digitalRead(BUTTON_1);
-    if (readValue != data_.workingReportTx_.b1) {
-      data_.workingReportTx_.b1 = readValue;
+    if (readValue != data_.reportTx_.b1) {
+      data_.reportTx_.b1 = readValue;
+      // fake an axis
+      data_.reportTx_.x =  -15000;
+      data_.reportTx_.y =  -10000;
+      data_.reportTx_.z =   -5000;
+      data_.reportTx_.rx =   5000;
+      data_.reportTx_.ry =  15000;
+      data_.reportTx_.rz =  25000;
       updated = true;
     }
 
     readValue = !(bool)digitalRead(BUTTON_2);
-    if (readValue != data_.workingReportTx_.b2) {
-      data_.workingReportTx_.b2 = readValue;
+    if (readValue != data_.reportTx_.b2) {
+      data_.reportTx_.b2 = readValue;
+      data_.reportTx_.x =  0;
+      data_.reportTx_.y =  0;
+      data_.reportTx_.z =  0;
+      data_.reportTx_.rx = 0;
+      data_.reportTx_.ry = 0;
+      data_.reportTx_.rz = 0;
       updated = true;
     }
     return updated;
