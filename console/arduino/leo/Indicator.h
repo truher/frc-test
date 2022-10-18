@@ -9,6 +9,7 @@
 
 /**
  * Expresses physical state: lights, sounds, etc.
+ * TODO: more outputs
  */
 class Indicator {
 public:
@@ -23,7 +24,6 @@ public:
   /** 
    * Indicating reasserts everything.
    * TODO: only some of them
-   * TODO: more outputs
    */
   void Indicator::indicate() {
     digitalWrite(LED_1, data_.reportRx_.i1);

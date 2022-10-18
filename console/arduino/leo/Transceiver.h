@@ -45,8 +45,7 @@ static const uint8_t HIDReportDescriptor[] = {
   0x75, 0x01,        // ....Report size: 1
   0x95, 0x20,        // ....Report count: 32
   0x81, 0x02,        // ....Input (Data,Var,Abs)
-                     // Outputs
-                     // the DS appears to support 32 bits but only works with 16.
+                     // Outputs (the DS appears to support 32 bits but only works with 16.)
   0x05, 0x08,        // ....Usage Page: LED (0x08)
   0x19, 0x01,        // ....Usage minimum: 0x01
   0x29, 0x10,        // ....Usage maximum: 16 (32 won't be populated)
@@ -168,7 +167,7 @@ protected:
   */
   // override
   int Transceiver::getInterface(uint8_t *interfaceCount) {
-    *interfaceCount += 1;  // uses 1, this just tells the caller how many records to expect.
+    *interfaceCount += 1;  // uses 1, tells the caller how many records to expect.
 
     const uint8_t interfaceDescriptor[] = {
       // INTERFACE DESCRIPTOR (2.0): class HID
@@ -182,7 +181,7 @@ protected:
       0x00,              // bInterfaceProtocol: 0x00
       0x00,              // iInterface: 0
       // HID DESCRIPTOR
-      // this doesn't match the struct in HID.h (?)
+      // TODO: why this doesn't match the struct in HID.h?
       0x09,                                  // bLength: 9
       0x21,                                  // bDescriptorType: 0x21 (HID)
       0x01, 0x01,                            // bcdHID: 0x0101 (21)
@@ -194,7 +193,7 @@ protected:
       // ENDPOINT DESCRIPTOR
       0x07,                    // bLength: 7
       0x05,                    // bDescriptorType: 0x05 (ENDPOINT)
-      pluggedEndpoint | 0x80,  //bEndpointAddress: (0x84  IN  Endpoint:4 in example)
+      pluggedEndpoint | 0x80,  // bEndpointAddress: (0x84  IN  Endpoint:4 in example)
       0x03,                    // bmAttributes: 0x03 (Transfertype: Interrupt-Transfer (0x3))
       0x40, 0x00,              // wMaxPacketSize: 64, (little-endian = L first)
       0x01,                    // bInterval: 1
