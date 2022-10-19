@@ -11,8 +11,9 @@
  *
  * This layout must match the struct in Data.
  * TODO: add reportid?
- * see www.usb.org/sites/default/files/hut1_3_0.pdf section 4
- * configuring the last axis ("wheel") confuses the DS, so skip it.
+ * Configuring the 9th axis ("wheel") confuses the DS, so skip it.
+ *
+ * See hut1_3_0.pdf section 4 for details
  */
 static const uint8_t HIDReportDescriptor[] = {
   0x05, 0x01,        // Usage Page: Generic Desktop Controls (0x01)
@@ -56,34 +57,34 @@ static const uint8_t HIDReportDescriptor[] = {
   0x91, 0x02,        // ....Output (Data,Var,Abs)
   0xc0,              // End Collection (0xc)
 };
+static const int descLen = sizeof(HIDReportDescriptor);
 
-/** Sends and receives data via USB. */
+/**
+ * Sends and receives data via USB.
+*/
 class Transceiver : public PluggableUSBModule {
 public:
-
   Transceiver::Transceiver(Data &data)
-    : PluggableUSBModule(1, 1, epType),  // epType, below
-      data_(data),
-      protocol(1),  // HID report
-      idle(1) {
-    epType[0] = 0xc1;  // EP_TYPE_INTERRUPT_IN (EPTYPE1 | EPTYPE0 | EPDIR)
+    : PluggableUSBModule(1, 1, epType), data_(data) {
+    epType[0] = 0xc1;  // endpoint type = interrupt in
     dataAvailable = 0;
     PluggableUSB().plug(this);
-    send();  // send a baseline report
+    send();  // send a baseline report (of zeroes)
   }
 
-
+  /** 
+   * Sends the data as a HID Report.
+   */
   void Transceiver::send() {
     SendReport((const void *)&data_.reportTx_, sizeof(data_.reportTx_));
   }
 
-  int Transceiver::SendReport(const void *data, int len) {
-    USB_Send(pluggedEndpoint | TRANSFER_RELEASE, data, len);
-  }
-
-  // turn this off for now
+  /**
+   * Checks to see if the data has been updated.
+   *
+   * TODO: actually compare new values to old values?
+   */
   bool Transceiver::recv() {
-    // todo actually compare new values to old values?
     if (dataAvailable) {
       dataAvailable = 0;
       return true;
@@ -95,85 +96,57 @@ protected:
   Data &data_;
   int dataAvailable;
 
-  // override
+  /**
+  * Handles USB Class-specific requests using the Default pipe.
+  *
+  * Ignores all DeviceToHost requests (GetReport, GetIdle, GetProtocol).
+  * Only the Interrupt In pipe is used for device-to-host messages.
+  *
+  * Ignores all HostToDevice requests (e.g. SetIdle, SetProtocol, SetFeature) except
+  * for one, SetReport, which contains output data.  This method is intended for
+  * higher-latency outputs compared to the Interrupt Out pipe, which is not used by the DS.
+  *
+  * Returns true if the request is handled, false if ignored.  Maybe that produces
+  * a NAK?
+  *
+  * See hid1_1.pdf section 7.2 for details.
+  */
   bool Transceiver::setup(USBSetup &setup) {
-    if (pluggedInterface != setup.wIndex) {
-      return false;
-    }
-
-    uint8_t request = setup.bRequest;
-    uint8_t requestType = setup.bmRequestType;
-
-    if (requestType == 0xa1) {  //  DEVICETOHOST	0x80 | CLASS 0x20 | INTERFACE	0x01
-      if (request == 0x01) {    // HID_GET_REPORT == ?
-        // unsupported
-        // TODO: HID_GetReport();
-        return true;
-      }
-      if (request == 0x03) {  // HID_GET_PROTOCOL == ?
-        // unsupported
-        // TODO: Send8(protocol);
-        return true;
-      }
-      if (request == 0x02) {  // HID_GET_IDLE == how often the device resends unchanged data
-        // unsupported
-        // TODO: Send8(idle);
-        return false;
-      }
-    }
-
-    if (requestType == 0x21) {  // HOSTTODEVICE 00 CLASS 20 INTERFACE 01
-      if (request == 0x0B) {    // HID_SET_PROTOCOL
-        // The USB Host tells us if we are in boot or report mode.
-        // This only works with a real boot compatible device.
-        // this doesn't actually do anything
-        protocol = setup.wValueL;
-        return true;
-      }
-      if (request == 0x0A) {  // HID_SET_IDLE == how often the device resends unchanged data
-                              // this doesn't actually do anything
-        idle = setup.wValueL;
-        return true;
-      }
-      if (request == 0x09) {  // HID_SET_REPORT
-        uint8_t reportType = setup.wValueH;
-        int length = setup.wLength;
-        // HID Request Type HID1.11 Page 51 7.2.1 Get_Report Request
-        if (reportType == 0x03) {  // HID_REPORT_TYPE_FEATURE
-          // unsupported
-          return true;
-        }
-        if (reportType == 0x02) {  // HID_REPORT_TYPE_OUTPUT
-          // accept an output report
-          // writes from the end, thus this addition/subtraction to put the write in the right place.
-          // of course i *think* it should only ever produce the correct length, how could it do anything else?
-          if (length > sizeof(data_.reportRx_)) {
-            length = sizeof(data_.reportRx_);
+    if (setup.bmRequestType == 0x21) {             // request type = host to device
+      if (setup.bRequest == 0x09) {                // request = SET_REPORT
+        if (setup.wValueH == 0x02) {               // report type = OUTPUT
+          if (setup.wIndex == pluggedInterface) {  // The message is addressed to this interface.
+            int length = setup.wLength;
+            // Writes from the end, thus this addition/subtraction to put the write in the right place.
+            // I *think* it should only ever produce the correct length, how could it do anything else?
+            if (length > sizeof(data_.reportRx_)) {
+              length = sizeof(data_.reportRx_);
+            }
+            USB_RecvControl((uint8_t *)&(data_.reportRx_) + sizeof(data_.reportRx_) - length, length);
+            dataAvailable = length;
+            return true;
           }
-          USB_RecvControl((uint8_t *)&(data_.reportRx_) + sizeof(data_.reportRx_) - length, length);
-          dataAvailable = length;
-          return true;
         }
       }
     }
-
+    // Returning false indicates we're not listening, doesn't seem to hurt anything.
     return false;
   }
 
   /**
-  * Supplies the HID details to the control channel.
-  * Uses pluggedInterface and pluggedEndpoint, which are
-  * assigned in PluggableUSB().plug(), called in ctor.
-  */
-  // override
+   * Supplies the HID details to the control channel.
+   *
+   * Uses pluggedInterface and pluggedEndpoint, which are
+   * assigned in PluggableUSB().plug(), called in ctor.
+   */
   int Transceiver::getInterface(uint8_t *interfaceCount) {
-    *interfaceCount += 1;  // uses 1, tells the caller how many records to expect.
+    *interfaceCount += 1;
 
     const uint8_t interfaceDescriptor[] = {
       // INTERFACE DESCRIPTOR (2.0): class HID
       0x09,              // bLength: 9
       0x04,              // bDescriptorType: 0x04 (INTERFACE)
-      pluggedInterface,  // bInterfaceNumber, 2 in the example  <== when is this initialized?
+      pluggedInterface,  // bInterfaceNumber
       0x00,              // bAlternateSetting: 0
       0x01,              // bNumEndpoints: 1
       0x03,              // bInterfaceClass: HID (0x03)
@@ -182,57 +155,54 @@ protected:
       0x00,              // iInterface: 0
       // HID DESCRIPTOR
       // TODO: why this doesn't match the struct in HID.h?
-      0x09,                                  // bLength: 9
-      0x21,                                  // bDescriptorType: 0x21 (HID)
-      0x01, 0x01,                            // bcdHID: 0x0101 (21)
-      0x00,                                  // bCountryCode: Not Supported (0x00)
-      0x01,                                  // bNumDescriptors: 1
-      0x22,                                  // bDescriptorType: HID Report (0x22)
-      lowByte(sizeof(HIDReportDescriptor)),  // wDescriptorLength: (144 in the example)
-      highByte(sizeof(HIDReportDescriptor)),
+      0x09,              // bLength: 9
+      0x21,              // bDescriptorType: 0x21 (HID)
+      0x01, 0x01,        // bcdHID: 0x0101 (21)
+      0x00,              // bCountryCode: Not Supported (0x00)
+      0x01,              // bNumDescriptors: 1
+      0x22,              // bDescriptorType: HID Report (0x22)
+      lowByte(descLen),  // wDescriptorLength
+      highByte(descLen),
       // ENDPOINT DESCRIPTOR
       0x07,                    // bLength: 7
       0x05,                    // bDescriptorType: 0x05 (ENDPOINT)
-      pluggedEndpoint | 0x80,  // bEndpointAddress: (0x84  IN  Endpoint:4 in example)
+      pluggedEndpoint | 0x80,  // bEndpointAddress
       0x03,                    // bmAttributes: 0x03 (Transfertype: Interrupt-Transfer (0x3))
-      0x40, 0x00,              // wMaxPacketSize: 64, (little-endian = L first)
+      0x40, 0x00,              // wMaxPacketSize: 64
       0x01,                    // bInterval: 1
 
     };
     return USB_SendControl(0, interfaceDescriptor, sizeof(interfaceDescriptor));
   }
 
-  /**Returns bytes sent*/
-  // override
+  /**
+   * Handles GetDescriptor requests.
+   *
+   * Returns the number of bytes sent.
+   *
+   * See hid1_1.pdf section 7.1 for details.
+   */
   int Transceiver::getDescriptor(USBSetup &setup) {
-    // Check if this is a HID Class Descriptor request
-    if (setup.bmRequestType != 0x81) {  // DEVICETOHOST 80 | STANRDARD 00 | INTERFACE 01
-      return 0;
+    if (setup.bmRequestType == 0x81) {           // request type = HID class descriptor
+      if (setup.wValueH == 0x22) {               // descriptor type = report
+        if (setup.wIndex == pluggedInterface) {  // The message is addressed to this interface.
+          int total = 0;
+          int res = USB_SendControl(0, HIDReportDescriptor, descLen);
+          if (res == -1)
+            return -1;
+          total += res;
+          return total;
+        }
+      }
     }
-    if (setup.wValueH != 0x22) {  // HID_REPORT_DESCRIPTOR_TYPE
-      return 0;
-    }
-
-    // In a HID Class Descriptor wIndex cointains the interface number
-    if (setup.wIndex != pluggedInterface) {
-      return 0;
-    }
-
-    int total = 0;
-    int res = USB_SendControl(0, HIDReportDescriptor, sizeof(HIDReportDescriptor));
-    if (res == -1)
-      return -1;
-    total += res;
-    // Normal or bios protocol (Keyboard/Mouse) HID1.11 Page 54 7.2.5 Get_Protocol Request
-    // "protocol" variable is used for this purpose.
-    protocol = 0x01;  // HID_REPORT_PROTOCOL;
-    return total;
+    return 0;
   }
 
 private:
   uint8_t epType[1];
-  // TODO remove these
-  uint8_t protocol;
-  uint8_t idle;
+
+  int Transceiver::SendReport(const void *data, int len) {
+    USB_Send(pluggedEndpoint | TRANSFER_RELEASE, data, len);
+  }
 };
 #endif  // TRANSCEIVER_H
