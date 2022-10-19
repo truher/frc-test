@@ -57,7 +57,6 @@ static const uint8_t HIDReportDescriptor[] = {
   0x91, 0x02,        // ....Output (Data,Var,Abs)
   0xc0,              // End Collection (0xc)
 };
-static const int descLen = sizeof(HIDReportDescriptor);
 
 /**
  * Sends and receives data via USB.
@@ -82,7 +81,9 @@ public:
   /**
    * Checks to see if the data has been updated.
    *
-   * TODO: actually compare new values to old values?
+   * TODO: Actual updates happen asynchronously and overwrite the data
+   * without warning, which might not be great.  Instead make a read buffer
+   * and make this method compare it to the old values.
    */
   bool Transceiver::recv() {
     if (dataAvailable) {
@@ -93,9 +94,6 @@ public:
   }
 
 protected:
-  Data &data_;
-  int dataAvailable;
-
   /**
   * Handles USB Class-specific requests using the Default pipe.
   *
@@ -112,18 +110,14 @@ protected:
   * See hid1_1.pdf section 7.2 for details.
   */
   bool Transceiver::setup(USBSetup &setup) {
-    if (setup.bmRequestType == 0x21) {             // request type = host to device
-      if (setup.bRequest == 0x09) {                // request = SET_REPORT
-        if (setup.wValueH == 0x02) {               // report type = OUTPUT
-          if (setup.wIndex == pluggedInterface) {  // The message is addressed to this interface.
-            if (setup.wLength == sizeof(data_.reportRx_)) {
-              USB_RecvControl((uint8_t *)&(data_.reportRx_), setup.wLength);
-              dataAvailable = setup.wLength;
-              return true;
-            }
-          }
-        }
-      }
+    if (setup.bmRequestType == 0x21          // request type = host to device
+        && setup.bRequest == 0x09            // request = SET_REPORT
+        && setup.wValueH == 0x02             // report type = OUTPUT
+        && setup.wIndex == pluggedInterface  // The message is addressed to this interface.
+        && setup.wLength == sizeof(data_.reportRx_)) {
+      USB_RecvControl((uint8_t *)&(data_.reportRx_), setup.wLength);
+      dataAvailable = setup.wLength;
+      return true;
     }
     // Returning false indicates we're not listening, doesn't seem to hurt anything.
     return false;
@@ -151,14 +145,14 @@ protected:
       0x00,              // iInterface: 0
       // HID DESCRIPTOR
       // TODO: why this doesn't match the struct in HID.h?
-      0x09,              // bLength: 9
-      0x21,              // bDescriptorType: 0x21 (HID)
-      0x01, 0x01,        // bcdHID: 0x0101 (21)
-      0x00,              // bCountryCode: Not Supported (0x00)
-      0x01,              // bNumDescriptors: 1
-      0x22,              // bDescriptorType: HID Report (0x22)
-      lowByte(descLen),  // wDescriptorLength
-      highByte(descLen),
+      0x09,                                  // bLength: 9
+      0x21,                                  // bDescriptorType: 0x21 (HID)
+      0x01, 0x01,                            // bcdHID: 0x0101 (21)
+      0x00,                                  // bCountryCode: Not Supported (0x00)
+      0x01,                                  // bNumDescriptors: 1
+      0x22,                                  // bDescriptorType: HID Report (0x22)
+      lowByte(sizeof(HIDReportDescriptor)),  // wDescriptorLength
+      highByte(sizeof(HIDReportDescriptor)),
       // ENDPOINT DESCRIPTOR
       0x07,                    // bLength: 7
       0x05,                    // bDescriptorType: 0x05 (ENDPOINT)
@@ -179,23 +173,18 @@ protected:
    * See hid1_1.pdf section 7.1 for details.
    */
   int Transceiver::getDescriptor(USBSetup &setup) {
-    if (setup.bmRequestType == 0x81) {           // request type = HID class descriptor
-      if (setup.wValueH == 0x22) {               // descriptor type = report
-        if (setup.wIndex == pluggedInterface) {  // The message is addressed to this interface.
-          int total = 0;
-          int res = USB_SendControl(0, HIDReportDescriptor, descLen);
-          if (res == -1)
-            return -1;
-          total += res;
-          return total;
-        }
-      }
+    if (setup.bmRequestType == 0x81             // request type = HID class descriptor
+        && setup.wValueH == 0x22                // descriptor type = report
+        && setup.wIndex == pluggedInterface) {  // The message is addressed to this interface.
+      return USB_SendControl(0, HIDReportDescriptor, sizeof(HIDReportDescriptor));
     }
     return 0;
   }
 
 private:
   uint8_t epType[1];
+  Data &data_;
+  int dataAvailable;
 
   int Transceiver::SendReport(const void *data, int len) {
     USB_Send(pluggedEndpoint | TRANSFER_RELEASE, data, len);
