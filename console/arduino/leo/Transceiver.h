@@ -116,15 +116,11 @@ protected:
       if (setup.bRequest == 0x09) {                // request = SET_REPORT
         if (setup.wValueH == 0x02) {               // report type = OUTPUT
           if (setup.wIndex == pluggedInterface) {  // The message is addressed to this interface.
-            int length = setup.wLength;
-            // Writes from the end, thus this addition/subtraction to put the write in the right place.
-            // I *think* it should only ever produce the correct length, how could it do anything else?
-            if (length > sizeof(data_.reportRx_)) {
-              length = sizeof(data_.reportRx_);
+            if (setup.wLength == sizeof(data_.reportRx_)) {
+              USB_RecvControl((uint8_t *)&(data_.reportRx_), setup.wLength);
+              dataAvailable = setup.wLength;
+              return true;
             }
-            USB_RecvControl((uint8_t *)&(data_.reportRx_) + sizeof(data_.reportRx_) - length, length);
-            dataAvailable = length;
-            return true;
           }
         }
       }
