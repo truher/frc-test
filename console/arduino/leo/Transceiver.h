@@ -58,6 +58,9 @@ static const uint8_t HIDReportDescriptor[] = {
   0xc0,              // End Collection (0xc)
 };
 
+static const char *MANUFACTURER_DESCRIPTOR = "Team 100";
+static const char *PRODUCT_DESCRIPTOR = "Operator Console";
+
 /**
  * Sends and receives data via USB.
 */
@@ -166,6 +169,31 @@ protected:
   }
 
   /**
+   * Cribbed from USBCore.cpp because it's not exposed in USBAPI.h. 
+   * 
+   * USB wants this to be UTF-16 but the string above is ASCII, so this kinda fixes it up.
+   *
+   * the response format is:
+   * byte 1: the length of the payload including this header
+   * byte 2: the number 3 which means "this is a string payload"
+   * the rest of the bytes, UTF-16 encoded which just means zeros.
+   *
+   * we don't have access to the raw SendControl(u8) function so we have to
+   * create a payload for USB_SendControl(void* d, len) function.
+   */
+  bool Transceiver::SendStringDescriptor(const u8 *string_P, u8 string_len) {
+    u8 buflen = 2 + string_len * 2;
+    char buffer[buflen];
+    buffer[0] = buflen;
+    buffer[1] = 0x03;
+    for (u8 i = 0; i < string_len; i++) {
+      buffer[2 + i * 2] = string_P[i];
+      buffer[3 + i * 2] = 0;
+    }
+    return USB_SendControl(0, buffer, buflen);
+  }
+
+  /**
    * Handles GetDescriptor requests.
    *
    * Returns the number of bytes sent.
@@ -173,10 +201,18 @@ protected:
    * See hid1_1.pdf section 7.1 for details.
    */
   int Transceiver::getDescriptor(USBSetup &setup) {
-    if (setup.bmRequestType == 0x81             // request type = HID class descriptor
-        && setup.wValueH == 0x22                // descriptor type = report
-        && setup.wIndex == pluggedInterface) {  // The message is addressed to this interface.
-      return USB_SendControl(0, HIDReportDescriptor, sizeof(HIDReportDescriptor));
+    if (setup.bmRequestType == 0x80) {  // Request type = standard
+      if (setup.wValueH == 0x03) {      // Descriptor type = string
+        if (setup.wValueL == 0x02)      // Descriptor index = product
+          return SendStringDescriptor(PRODUCT_DESCRIPTOR, strlen(PRODUCT_DESCRIPTOR));
+        if (setup.wValueL == 0x01)  // Descriptor index = manufacturer
+          return SendStringDescriptor(MANUFACTURER_DESCRIPTOR, strlen(MANUFACTURER_DESCRIPTOR));
+      }
+    } else if (setup.bmRequestType == 0x81) {  // Request type = HID class descriptor
+      if (setup.wIndex == pluggedInterface) {  // Interface number = this one
+        if (setup.wValueH == 0x22)             // Descriptor type = report
+          return USB_SendControl(0, HIDReportDescriptor, sizeof(HIDReportDescriptor));
+      }
     }
     return 0;
   }
