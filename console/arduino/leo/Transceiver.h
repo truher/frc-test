@@ -58,7 +58,37 @@ static const uint8_t HIDReportDescriptor[] = {
   0xc0,              // End Collection (0xc)
 };
 
+/**
+ * USB Device Descriptor
+ *
+ * This provides vendor id and product id, which Windows uses as keys.
+ *
+ * See https://www.usb.org/defined-class-codes for device class/subclass/protocols
+ * See http://www.linux-usb.org/usb-ids.html for vendor and product ids.
+ *
+ * TODO: each console subpanel should have a distinct idVendor.
+ */
+static const uint8_t USBDeviceDescriptor[] = {
+  0x12,        // bLength: 18
+  0x01,        // bDescriptorType: 1
+  0x02, 0x00,  // bcdUSB: 2
+  0xef,        // bDeviceClass: miscellaneous
+  0x02,        // bDeviceSubClass: 2
+  0x01,        // bDeviceProtocol: 1 (interface association descriptor)
+  0x40,        // bMaxPacketSize: 64
+  // 0x41, 0x23, // idVendor: 0x2341 (Arduino)
+  // 0x36, 0x80, // idProduct: 0x8036 (Leonardo)
+  0x43, 0x23,  // idVendor: 0x2343 (unassigned)
+  0x00, 0x00,  // idProduct: 0x0000 (empty)
+  0x00, 0x01,  // bcdDevice: 0x0100, release number
+  0x01,        // iManufacturer
+  0x02,        // iProduct
+  0x03,        // iSerialNumber
+  0x01         // bNumConfigurations
+};
+
 static const char *MANUFACTURER_DESCRIPTOR = "Team 100";
+// TODO: each console subpanel should have a distinct product descriptor.
 static const char *PRODUCT_DESCRIPTOR = "Operator Console";
 
 /**
@@ -202,8 +232,10 @@ protected:
    */
   int Transceiver::getDescriptor(USBSetup &setup) {
     if (setup.bmRequestType == 0x80) {  // Request type = standard
-      if (setup.wValueH == 0x03) {      // Descriptor type = string
-        if (setup.wValueL == 0x02)      // Descriptor index = product
+      if (setup.wValueH == 0x01) {      // Descriptor type = device
+        return USB_SendControl(0, USBDeviceDescriptor, sizeof(USBDeviceDescriptor));
+      } else if (setup.wValueH == 0x03) {  // Descriptor type = string
+        if (setup.wValueL == 0x02)         // Descriptor index = product
           return SendStringDescriptor(PRODUCT_DESCRIPTOR, strlen(PRODUCT_DESCRIPTOR));
         if (setup.wValueL == 0x01)  // Descriptor index = manufacturer
           return SendStringDescriptor(MANUFACTURER_DESCRIPTOR, strlen(MANUFACTURER_DESCRIPTOR));
