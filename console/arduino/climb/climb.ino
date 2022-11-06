@@ -4,7 +4,7 @@
 #include "Indicator.h"
 
 Data data_;
-Transceiver transceiver_(Transceiver::SubConsole::AUTOPILOT, data_);
+Transceiver transceiver_(Transceiver::SubConsole::CLIMB, data_);
 Sensor sensor_(data_);
 Indicator indicator_(data_);
 
