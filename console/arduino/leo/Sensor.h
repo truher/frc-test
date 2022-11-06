@@ -14,7 +14,7 @@
 class Sensor {
 public:
   Data& data_;
-  Sensor::Sensor(Data& data)
+  Sensor(Data& data)
     : data_(data) {
     pinMode(BUTTON_1, INPUT_PULLUP);
     pinMode(BUTTON_2, INPUT_PULLUP);
@@ -22,7 +22,7 @@ public:
   /** 
    * Updates state with inputs, return true if anything changed.
    */
-  bool Sensor::sense() {
+  bool sense() {
     bool updated = false;
 
     bool readValue = !(bool)digitalRead(BUTTON_1);

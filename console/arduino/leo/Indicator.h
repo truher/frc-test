@@ -14,7 +14,7 @@
 class Indicator {
 public:
   Data& data_;
-  Indicator::Indicator(Data& data)
+  Indicator(Data& data)
     : data_(data) {
     pinMode(LED_1, OUTPUT);
     pinMode(LED_2, OUTPUT);
@@ -25,7 +25,7 @@ public:
    * Indicating reasserts everything.
    * TODO: only some of them
    */
-  void Indicator::indicate() {
+  void indicate() {
     digitalWrite(LED_1, data_.reportRx_.i1);
     digitalWrite(LED_2, data_.reportRx_.i2);
     digitalWrite(LED_3, data_.reportRx_.i3);

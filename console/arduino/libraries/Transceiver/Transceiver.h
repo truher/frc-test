@@ -58,46 +58,46 @@ static const uint8_t HIDReportDescriptor[] = {
   0xc0,              // End Collection (0xc)
 };
 
-/**
- * USB Device Descriptor
- *
- * This provides vendor id and product id, which Windows uses as keys.
- *
- * See https://www.usb.org/defined-class-codes for device class/subclass/protocols
- * See http://www.linux-usb.org/usb-ids.html for vendor and product ids.
- *
- * TODO: each console subpanel should have a distinct idVendor.
- */
-static const uint8_t USBDeviceDescriptor[] = {
-  0x12,        // bLength: 18
-  0x01,        // bDescriptorType: 1
-  0x02, 0x00,  // bcdUSB: 2
-  0xef,        // bDeviceClass: miscellaneous
-  0x02,        // bDeviceSubClass: 2
-  0x01,        // bDeviceProtocol: 1 (interface association descriptor)
-  0x40,        // bMaxPacketSize: 64
-  // 0x41, 0x23, // idVendor: 0x2341 (Arduino)
-  // 0x36, 0x80, // idProduct: 0x8036 (Leonardo)
-  0x43, 0x23,  // idVendor: 0x2343 (unassigned)
-  0x00, 0x00,  // idProduct: 0x0000 (empty)
-  0x00, 0x01,  // bcdDevice: 0x0100, release number
-  0x01,        // iManufacturer
-  0x02,        // iProduct
-  0x03,        // iSerialNumber
-  0x01         // bNumConfigurations
-};
-
 static const char *MANUFACTURER_DESCRIPTOR = "Team 100";
 // TODO: each console subpanel should have a distinct product descriptor.
-static const char *PRODUCT_DESCRIPTOR = "Operator Console";
+//static const char *PRODUCT_DESCRIPTOR = "Operator Console";
 
 /**
  * Sends and receives data via USB.
 */
 class Transceiver : public PluggableUSBModule {
 public:
-  Transceiver::Transceiver(Data &data)
-    : PluggableUSBModule(1, 1, epType), data_(data) {
+
+  /**
+   * Each submodule sketch should use one of these.
+   *
+   * The value is the "product id" used in the USB Device Descriptor.
+   * Windows assumes that the product id/product name association never
+   * changes, so it caches it in the registry forever.  To avoid confusion
+   * new names should never be assigned to old enum values.
+   */
+  enum class SubConsole {
+    PILOT = 0x0003,
+    AUTOPILOT = 0x0004,
+    CLIMB = 0x0005,
+    ARM = 0x0006
+  };
+
+  /**
+   * Never change these strings without also changing the numbers above.
+   */
+  const char *getProductDescriptor() {
+    switch (subConsole_) {
+      case SubConsole::PILOT: return "Pilot";
+      case SubConsole::AUTOPILOT: return "Autopilot";
+      case SubConsole::CLIMB: return "Climb";
+      case SubConsole::ARM: return "Arm";
+      default: return "Unassigned";
+    }
+  }
+
+  Transceiver(SubConsole subConsole, Data &data)
+    : PluggableUSBModule(1, 1, epType), subConsole_(subConsole), data_(data) {
     epType[0] = 0xc1;  // endpoint type = interrupt in
     dataAvailable = 0;
     PluggableUSB().plug(this);
@@ -107,7 +107,7 @@ public:
   /** 
    * Sends the data as a HID Report.
    */
-  void Transceiver::send() {
+  void send() {
     SendReport((const void *)&data_.reportTx_, sizeof(data_.reportTx_));
   }
 
@@ -118,13 +118,15 @@ public:
    * without warning, which might not be great.  Instead make a read buffer
    * and make this method compare it to the old values.
    */
-  bool Transceiver::recv() {
+  bool recv() {
     if (dataAvailable) {
       dataAvailable = 0;
       return true;
     }
     return false;
   }
+
+
 
 protected:
   /**
@@ -142,7 +144,7 @@ protected:
   *
   * See hid1_1.pdf section 7.2 for details.
   */
-  bool Transceiver::setup(USBSetup &setup) {
+  bool setup(USBSetup &setup) {
     if (setup.bmRequestType == 0x21          // request type = host to device
         && setup.bRequest == 0x09            // request = SET_REPORT
         && setup.wValueH == 0x02             // report type = OUTPUT
@@ -162,7 +164,7 @@ protected:
    * Uses pluggedInterface and pluggedEndpoint, which are
    * assigned in PluggableUSB().plug(), called in ctor.
    */
-  int Transceiver::getInterface(uint8_t *interfaceCount) {
+  int getInterface(uint8_t *interfaceCount) {
     *interfaceCount += 1;
 
     const uint8_t interfaceDescriptor[] = {
@@ -187,12 +189,12 @@ protected:
       lowByte(sizeof(HIDReportDescriptor)),  // wDescriptorLength
       highByte(sizeof(HIDReportDescriptor)),
       // ENDPOINT DESCRIPTOR
-      0x07,                    // bLength: 7
-      0x05,                    // bDescriptorType: 0x05 (ENDPOINT)
-      pluggedEndpoint | 0x80,  // bEndpointAddress
-      0x03,                    // bmAttributes: 0x03 (Transfertype: Interrupt-Transfer (0x3))
-      0x40, 0x00,              // wMaxPacketSize: 64
-      0x01,                    // bInterval: 1
+      0x07,                               // bLength: 7
+      0x05,                               // bDescriptorType: 0x05 (ENDPOINT)
+      (uint8_t)(pluggedEndpoint | 0x80),  // bEndpointAddress
+      0x03,                               // bmAttributes: 0x03 (Transfertype: Interrupt-Transfer (0x3))
+      0x40, 0x00,                         // wMaxPacketSize: 64
+      0x01,                               // bInterval: 1
 
     };
     return USB_SendControl(0, interfaceDescriptor, sizeof(interfaceDescriptor));
@@ -211,7 +213,7 @@ protected:
    * we don't have access to the raw SendControl(u8) function so we have to
    * create a payload for USB_SendControl(void* d, len) function.
    */
-  bool Transceiver::SendStringDescriptor(const u8 *string_P, u8 string_len) {
+  bool SendStringDescriptor(const char *string_P, u8 string_len) {
     u8 buflen = 2 + string_len * 2;
     char buffer[buflen];
     buffer[0] = buflen;
@@ -224,26 +226,69 @@ protected:
   }
 
   /**
+ * USB Device Descriptor
+ *
+ * This provides vendor id and product id, which Windows uses as keys.
+ *
+ * See https://www.usb.org/defined-class-codes for device class/subclass/protocols
+ * See http://www.linux-usb.org/usb-ids.html for vendor and product ids.
+ *
+ * TODO: each console subpanel should have a distinct idVendor.
+ */
+  int sendUSBDeviceDescriptor() {
+    const uint8_t USBDeviceDescriptor[] = {
+      0x12,        // bLength: 18
+      0x01,        // bDescriptorType: 1
+      0x02, 0x00,  // bcdUSB: 2
+      0xef,        // bDeviceClass: miscellaneous
+      0x02,        // bDeviceSubClass: 2
+      0x01,        // bDeviceProtocol: 1 (interface association descriptor)
+      0x40,        // bMaxPacketSize: 64
+      // 0x41, 0x23, // idVendor: 0x2341 (Arduino)
+      // 0x36, 0x80, // idProduct: 0x8036 (Leonardo)
+      0x43, 0x23,  // idVendor: 0x2343 (unassigned)
+      //0x01, 0x00, // idProduct: 0x0001
+      lowByte(static_cast<uint16_t>(subConsole_)),   // idProduct: 0x0001
+      highByte(static_cast<uint16_t>(subConsole_)),  // idProduct: 0x0001
+      0x00, 0x01,                                    // bcdDevice: 0x0100, release number
+      0x01,                                          // iManufacturer
+      0x02,                                          // iProduct
+      0x03,                                          // iSerialNumber
+      0x01                                           // bNumConfigurations
+    };
+    return USB_SendControl(0, USBDeviceDescriptor, sizeof(USBDeviceDescriptor));
+  }
+
+
+
+  /**
    * Handles GetDescriptor requests.
    *
    * Returns the number of bytes sent.
    *
    * See hid1_1.pdf section 7.1 for details.
    */
-  int Transceiver::getDescriptor(USBSetup &setup) {
+  int getDescriptor(USBSetup &setup) {
     if (setup.bmRequestType == 0x80) {  // Request type = standard
       if (setup.wValueH == 0x01) {      // Descriptor type = device
-        return USB_SendControl(0, USBDeviceDescriptor, sizeof(USBDeviceDescriptor));
+        return sendUSBDeviceDescriptor();
+        // const uint8_t *USBDeviceDescriptor = getUSBDeviceDescriptor();
+        // return USB_SendControl(0, USBDeviceDescriptor, sizeof(USBDeviceDescriptor));
       } else if (setup.wValueH == 0x03) {  // Descriptor type = string
-        if (setup.wValueL == 0x02)         // Descriptor index = product
-          return SendStringDescriptor(PRODUCT_DESCRIPTOR, strlen(PRODUCT_DESCRIPTOR));
-        if (setup.wValueL == 0x01)  // Descriptor index = manufacturer
+        if (setup.wValueL == 0x02) {       // Descriptor index = product
+          // return SendStringDescriptor(PRODUCT_DESCRIPTOR, strlen(PRODUCT_DESCRIPTOR));
+          const char *productDescriptor = getProductDescriptor();
+          return SendStringDescriptor(productDescriptor, strlen(productDescriptor));
+        }
+        if (setup.wValueL == 0x01) {  // Descriptor index = manufacturer
           return SendStringDescriptor(MANUFACTURER_DESCRIPTOR, strlen(MANUFACTURER_DESCRIPTOR));
+        }
       }
     } else if (setup.bmRequestType == 0x81) {  // Request type = HID class descriptor
       if (setup.wIndex == pluggedInterface) {  // Interface number = this one
-        if (setup.wValueH == 0x22)             // Descriptor type = report
+        if (setup.wValueH == 0x22) {           // Descriptor type = report
           return USB_SendControl(0, HIDReportDescriptor, sizeof(HIDReportDescriptor));
+        }
       }
     }
     return 0;
@@ -253,8 +298,10 @@ private:
   uint8_t epType[1];
   Data &data_;
   int dataAvailable;
+  //uint16_t idProduct_;
+  SubConsole subConsole_;
 
-  int Transceiver::SendReport(const void *data, int len) {
+  int SendReport(const void *data, int len) {
     USB_Send(pluggedEndpoint | TRANSFER_RELEASE, data, len);
   }
 };
