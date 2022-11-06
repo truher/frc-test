@@ -10,8 +10,10 @@
  * HID Report Descriptor
  *
  * This layout must match the struct in Data.
- * TODO: add reportid?
+ *
  * Configuring the 9th axis ("wheel") confuses the DS, so skip it.
+ *
+ * There's no report id here, so every report should include everything.
  *
  * See hut1_3_0.pdf section 4 for details
  */
@@ -59,8 +61,6 @@ static const uint8_t HIDReportDescriptor[] = {
 };
 
 static const char *MANUFACTURER_DESCRIPTOR = "Team 100";
-// TODO: each console subpanel should have a distinct product descriptor.
-//static const char *PRODUCT_DESCRIPTOR = "Operator Console";
 
 /**
  * Sends and receives data via USB.
@@ -125,8 +125,6 @@ public:
     }
     return false;
   }
-
-
 
 protected:
   /**
@@ -233,23 +231,22 @@ protected:
  * See https://www.usb.org/defined-class-codes for device class/subclass/protocols
  * See http://www.linux-usb.org/usb-ids.html for vendor and product ids.
  *
- * TODO: each console subpanel should have a distinct idVendor.
+ * The original Leonardo values are
+ * 0x41, 0x23, // idVendor: 0x2341 (Arduino)
+ * 0x36, 0x80, // idProduct: 0x8036 (Leonardo)
  */
   int sendUSBDeviceDescriptor() {
     const uint8_t USBDeviceDescriptor[] = {
-      0x12,        // bLength: 18
-      0x01,        // bDescriptorType: 1
-      0x02, 0x00,  // bcdUSB: 2
-      0xef,        // bDeviceClass: miscellaneous
-      0x02,        // bDeviceSubClass: 2
-      0x01,        // bDeviceProtocol: 1 (interface association descriptor)
-      0x40,        // bMaxPacketSize: 64
-      // 0x41, 0x23, // idVendor: 0x2341 (Arduino)
-      // 0x36, 0x80, // idProduct: 0x8036 (Leonardo)
-      0x43, 0x23,  // idVendor: 0x2343 (unassigned)
-      //0x01, 0x00, // idProduct: 0x0001
-      lowByte(static_cast<uint16_t>(subConsole_)),   // idProduct: 0x0001
-      highByte(static_cast<uint16_t>(subConsole_)),  // idProduct: 0x0001
+      0x12,                                          // bLength: 18
+      0x01,                                          // bDescriptorType: 1
+      0x02, 0x00,                                    // bcdUSB: 2
+      0xef,                                          // bDeviceClass: miscellaneous
+      0x02,                                          // bDeviceSubClass: 2
+      0x01,                                          // bDeviceProtocol: 1 (interface association descriptor)
+      0x40,                                          // bMaxPacketSize: 64
+      0x43, 0x23,                                    // idVendor: 0x2343 (unassigned)
+      lowByte(static_cast<uint16_t>(subConsole_)),   // idProduct (l)
+      highByte(static_cast<uint16_t>(subConsole_)),  // idProduct (h)
       0x00, 0x01,                                    // bcdDevice: 0x0100, release number
       0x01,                                          // iManufacturer
       0x02,                                          // iProduct
@@ -259,29 +256,23 @@ protected:
     return USB_SendControl(0, USBDeviceDescriptor, sizeof(USBDeviceDescriptor));
   }
 
-
-
   /**
    * Handles GetDescriptor requests.
    *
    * Returns the number of bytes sent.
    *
-   * See hid1_1.pdf section 7.1 for details.
+   * See https://www.usb.org/sites/default/files/documents/hid1_11.pdf section 7.1 for details.
    */
   int getDescriptor(USBSetup &setup) {
     if (setup.bmRequestType == 0x80) {  // Request type = standard
       if (setup.wValueH == 0x01) {      // Descriptor type = device
         return sendUSBDeviceDescriptor();
-        // const uint8_t *USBDeviceDescriptor = getUSBDeviceDescriptor();
-        // return USB_SendControl(0, USBDeviceDescriptor, sizeof(USBDeviceDescriptor));
       } else if (setup.wValueH == 0x03) {  // Descriptor type = string
-        if (setup.wValueL == 0x02) {       // Descriptor index = product
-          // return SendStringDescriptor(PRODUCT_DESCRIPTOR, strlen(PRODUCT_DESCRIPTOR));
+        if (setup.wValueL == 0x01) {       // Descriptor index = manufacturer
+          return SendStringDescriptor(MANUFACTURER_DESCRIPTOR, strlen(MANUFACTURER_DESCRIPTOR));
+        } else if (setup.wValueL == 0x02) {  // Descriptor index = product
           const char *productDescriptor = getProductDescriptor();
           return SendStringDescriptor(productDescriptor, strlen(productDescriptor));
-        }
-        if (setup.wValueL == 0x01) {  // Descriptor index = manufacturer
-          return SendStringDescriptor(MANUFACTURER_DESCRIPTOR, strlen(MANUFACTURER_DESCRIPTOR));
         }
       }
     } else if (setup.bmRequestType == 0x81) {  // Request type = HID class descriptor
@@ -298,7 +289,6 @@ private:
   uint8_t epType[1];
   Data &data_;
   int dataAvailable;
-  //uint16_t idProduct_;
   SubConsole subConsole_;
 
   int SendReport(const void *data, int len) {
