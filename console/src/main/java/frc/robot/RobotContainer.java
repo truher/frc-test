@@ -9,8 +9,8 @@ import frc.robot.commands.JoystickDumper;
 
 public class RobotContainer {
     // note joysticks have 16 outputs not 32
-    private final Joystick m_joystick = new Joystick(0);
-    private final Command m_dumper = new JoystickDumper(m_joystick);
+    private  Joystick m_joystick;
+    private final Command m_dumper;
     boolean outputState1 = false;
     boolean outputState2 = false;
     // private final NotifierCommand m_recurring = new NotifierCommand(
@@ -22,6 +22,15 @@ public class RobotContainer {
             () -> setoutput2(), 0.1 * Math.sqrt(2));
 
     public RobotContainer() {
+        // avoid confusion with "port numbers" by naming each HID differently.
+        for (int i = 0; i < DriverStation.kJoystickPorts; ++i) {
+            if ( DriverStation.getJoystickName(i) == "foo") {
+                m_joystick = new Joystick(i);
+                break;
+            }
+        }
+        m_joystick = new Joystick(0);
+        m_dumper = new JoystickDumper(m_joystick);
         System.out.println("joystick name: " + m_joystick.getName());
         System.out.println("axis count: " + m_joystick.getAxisCount());
         System.out.println("button count: " + m_joystick.getButtonCount());
