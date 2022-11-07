@@ -76,11 +76,11 @@ public:
    * changes, so it caches it in the registry forever.  To avoid confusion
    * new names should never be assigned to old enum values.
    */
-  enum class SubConsole {
-    PILOT = 0x0003,
-    AUTOPILOT = 0x0004,
-    CLIMB = 0x0005,
-    ARM = 0x0006
+  enum class SubConsole : uint16_t {
+    PILOT = 3,
+    AUTOPILOT = 4,
+    CLIMB = 5,
+    ARM = 6
   };
 
   /**
