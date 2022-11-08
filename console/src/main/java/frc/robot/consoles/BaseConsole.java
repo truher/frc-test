@@ -6,6 +6,7 @@ import edu.wpi.first.wpilibj.DriverStation;
 public class BaseConsole {
     private final int m_port;
     private int m_outputs; // access only with synchronize
+    private int m_outputs_sent; // don't repeat yourself
 
     protected BaseConsole(int port) {
         m_port = port;
@@ -46,7 +47,10 @@ public class BaseConsole {
         if (m_port < 0)
             return;
         synchronized (this) {
-            HAL.setJoystickOutputs((byte) m_port, m_outputs, (short) 0, (short) 0);
+            if (m_outputs != m_outputs_sent) {
+                HAL.setJoystickOutputs((byte) m_port, m_outputs, (short) 0, (short) 0);
+                m_outputs_sent = m_outputs;
+            }
         }
     }
 
@@ -54,13 +58,31 @@ public class BaseConsole {
      * bit: 0-15
      */
     protected void setOutput(int bit, boolean value) {
-        int bit_mask = 1 << bit; // 1 in the correct spot
+        int val = value ? 1 : 0 << bit;
+        int mask = ~(1 << bit);
+        setOutput(val, mask);
+    }
+
+    /**
+     * val: bits to write; zero elsewhere
+     * mask: bits to keep, zero in the val field
+     */
+    protected void setOutput(int val, int mask) {
         synchronized (this) {
-            int masked_output = m_outputs & ~bit_mask; // set the bit to zero
-            if (value) {
-                m_outputs = masked_output | bit_mask;
-            }
+            m_outputs = (m_outputs & mask) | val;
         }
+    }
+
+    /**
+     * Sets a field in the middle of the struct.
+     */
+    protected void applyOutput(int val, int width, int offset) {
+        if (val > (1 << width) - 1) {
+            return;
+        }
+        int mask = ~(((1 << width) - 1) << offset); // 0 where we want to write
+        val = val << offset;
+        setOutput(val, mask);
     }
 
     protected void setOutput(int bit) {

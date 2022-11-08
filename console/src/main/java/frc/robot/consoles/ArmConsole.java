@@ -1,12 +1,12 @@
 package frc.robot.consoles;
 
-import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.NotifierCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 
 public class ArmConsole extends BaseConsole {
+    private static final double EPSILON = 0.1;
 
     /**
      * Just to show how to wire things up.
@@ -23,7 +23,7 @@ public class ArmConsole extends BaseConsole {
          * Uses trapezoid trajectories and inverse kinematics to put the effector
          * at the specified location.
          */
-        public void setGoal(double height, double distance) {
+        public void toGoal(double height, double distance) {
         }
 
         /**
@@ -41,13 +41,21 @@ public class ArmConsole extends BaseConsole {
         }
 
         /**
+         * Get the speed for observers.
+         */
+        public double getSpeed() {
+            return 0.0;
+        }
+
+        /**
          * Override everything and stop.
          */
         public void stop() {
         }
     }
 
-    FakeTwoJointArm m_fakeArm = new FakeTwoJointArm();
+    private final FakeTwoJointArm m_fakeArm = new FakeTwoJointArm();
+    private final Config m_config;
 
     public static class Config {
         double slowSpeed = 0.25;
@@ -64,6 +72,7 @@ public class ArmConsole extends BaseConsole {
 
     public ArmConsole(Config config) {
         super(portFromName("Arm"));
+        m_config = config;
 
         // manual control knobs
         m_fakeArm.setDefaultCommand(
@@ -72,38 +81,25 @@ public class ArmConsole extends BaseConsole {
 
         // speed buttons
         new Trigger(() -> stopButton()).whileActiveContinuous(
-                new InstantCommand(
-                        () -> m_fakeArm.stop(), m_fakeArm));
+                () -> m_fakeArm.stop(), m_fakeArm);
         new Trigger(() -> slowButton()).whenActive(
-                new InstantCommand(
-                        () -> m_fakeArm.setSpeed(config.slowSpeed), m_fakeArm));
+                () -> m_fakeArm.setSpeed(config.slowSpeed), m_fakeArm);
         new Trigger(() -> medButton()).whenActive(
-                new InstantCommand(
-                        () -> m_fakeArm.setSpeed(config.medSpeed), m_fakeArm));
+                () -> m_fakeArm.setSpeed(config.medSpeed), m_fakeArm);
         new Trigger(() -> fastButton()).whenActive(
-                new InstantCommand(
-                        () -> m_fakeArm.setSpeed(config.fastSpeed), m_fakeArm));
+                () -> m_fakeArm.setSpeed(config.fastSpeed), m_fakeArm);
 
         // goal setting buttons
-        new Trigger(() -> highGoalButton()).whileActiveOnce(
-                new InstantCommand(
-                        () -> m_fakeArm.setGoal(
-                                config.highGoalHeight, config.highGoalDistance),
-                        m_fakeArm));
-        new Trigger(() -> lowGoalButton()).whileActiveOnce(
-                new InstantCommand(
-                        () -> m_fakeArm.setGoal(
-                                config.lowGoalHeight, config.lowGoalDistance),
-                        m_fakeArm));
-        new Trigger(() -> farGoalButton()).whileActiveOnce(
-                new InstantCommand(
-                        () -> m_fakeArm.setGoal(
-                                config.farGoalHeight, config.farGoalDistance),
-                        m_fakeArm));
+        new Trigger(() -> highGoalButton()).whileActiveContinuous(
+                () -> m_fakeArm.toGoal(config.highGoalHeight, config.highGoalDistance), m_fakeArm);
+        new Trigger(() -> lowGoalButton()).whileActiveContinuous(
+                () -> m_fakeArm.toGoal(config.lowGoalHeight, config.lowGoalDistance), m_fakeArm);
+        new Trigger(() -> farGoalButton()).whileActiveContinuous(
+                () -> m_fakeArm.toGoal(config.farGoalHeight, config.farGoalDistance), m_fakeArm);
 
-        // goal observer
+        // observer for indicator lights
         new NotifierCommand(
-                () -> setoutput1(), config.notifierRate).schedule();
+                () -> observe(), config.notifierRate).schedule();
     }
 
     private boolean highGoalButton() {
@@ -146,22 +142,40 @@ public class ArmConsole extends BaseConsole {
         return getRawAxis(1);
     }
 
-    // output channels
-    
-    private int atGoalLight() {
-        return 0;
+    // output bits:
+    // 0: goal light (on/off)
+    // 1,2,3: speed lights (one of five states: one of four or none)
+
+    private void setGoalLight(boolean state) {
+        applyOutput(state ? 1 : 0, 1, 0);
+    }
+
+    private void setSpeedLight(int speed) {
+        applyOutput(speed, 3, 1);
     }
 
     /*
      * Encodes some state in some outputs.
      */
-    private void setoutput1() {
-        if (m_fakeArm.atGoal()) {
-            setOutput(atGoalLight());
+    private void observe() {
+        setGoalLight(m_fakeArm.atGoal());
+        // speed selector button lights
+        if (almostEqual(m_fakeArm.getSpeed(), 0.0)) {
+            setSpeedLight(0);
+        } else if (almostEqual(m_fakeArm.getSpeed(), m_config.slowSpeed)) {
+            setSpeedLight(1);
+        } else if (almostEqual(m_fakeArm.getSpeed(), m_config.medSpeed)) {
+            setSpeedLight(2);
+        } else if (almostEqual(m_fakeArm.getSpeed(), m_config.fastSpeed)) {
+            setSpeedLight(3);
         } else {
-            clearOutput(atGoalLight());
+            setSpeedLight(4);
         }
         sendOutputs();
+    }
+
+    private boolean almostEqual(double a, double b) {
+        return Math.abs(a - b) < EPSILON;
     }
 
 }
