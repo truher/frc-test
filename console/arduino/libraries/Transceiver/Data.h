@@ -54,7 +54,7 @@ public:
     bool b31 : 1;
     bool b32 : 1;
   } ReportTx;
-  volatile ReportTx reportTx_;
+   ReportTx reportTx_;
 
   /**
    * Represents the RoboRIO's 16 bits of output.  The RIO API implies that there are 32 bits, but
@@ -78,7 +78,7 @@ public:
     bool i15 : 1;
     bool i16 : 1;
   } ReportRx;
-  volatile ReportRx reportRx_;
+   ReportRx reportRx_;
 };
 
 #endif  // DATA_H
