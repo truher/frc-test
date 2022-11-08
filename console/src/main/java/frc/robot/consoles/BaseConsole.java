@@ -62,4 +62,12 @@ public class BaseConsole {
             }
         }
     }
+
+    protected void setOutput(int bit) {
+        setOutput(bit, true);
+    }
+
+    protected void clearOutput(int bit) {
+        setOutput(bit, false);
+    }
 }

@@ -21,7 +21,8 @@ public class RobotContainer {
 
     PilotConsole m_pilotConsole = new PilotConsole();
     AutopilotConsole m_autopilotConsole = new AutopilotConsole();
-    ArmConsole m_armConsole = new ArmConsole();
+    ArmConsole.Config armConfig = new ArmConsole.Config();
+    ArmConsole m_armConsole = new ArmConsole(armConfig);
     ClimbConsole m_climbConsole = new ClimbConsole();
 
     public RobotContainer() {
