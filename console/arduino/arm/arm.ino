@@ -6,7 +6,7 @@
 Data data_;
 Transceiver transceiver_(Transceiver::SubConsole::ARM, data_);
 Sensor sensor_(data_);
-Indicator indicator_(data_);
+Indicator indicator_(data_.reportRx_);
 
 void setup() {
 }
