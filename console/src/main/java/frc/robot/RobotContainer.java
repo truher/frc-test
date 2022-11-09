@@ -19,11 +19,20 @@ public class RobotContainer {
     // private final NotifierCommand m_recurring2 = new NotifierCommand(
     // () -> setoutput2(), 0.1 * Math.sqrt(2));
 
-    PilotConsole m_pilotConsole = new PilotConsole();
-    AutopilotConsole m_autopilotConsole = new AutopilotConsole();
+    PilotConsole.Config pilotConfig = new PilotConsole.Config();
+    PilotConsole.FakeDrivetrain fakeDrivetrain = new PilotConsole.FakeDrivetrain();
+    PilotConsole m_pilotConsole = new PilotConsole(pilotConfig, fakeDrivetrain);
+
+    AutopilotConsole.Config config = new AutopilotConsole.Config();
+    AutopilotConsole m_autopilotConsole = new AutopilotConsole(config, fakeDrivetrain);
+
     ArmConsole.Config armConfig = new ArmConsole.Config();
-    ArmConsole m_armConsole = new ArmConsole(armConfig);
-    ClimbConsole m_climbConsole = new ClimbConsole();
+    ArmConsole.FakeTwoJointArm fakeArm = new ArmConsole.FakeTwoJointArm();
+    ArmConsole m_armConsole = new ArmConsole(armConfig, fakeArm);
+
+    ClimbConsole.Config climbConfig = new ClimbConsole.Config();
+    ClimbConsole.FakeClimber fakeClimber = new ClimbConsole.FakeClimber();
+    ClimbConsole m_climbConsole = new ClimbConsole(climbConfig, fakeClimber);
 
     public RobotContainer() {
         // m_joystick = new Joystick(0);

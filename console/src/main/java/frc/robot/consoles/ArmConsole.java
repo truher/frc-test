@@ -6,12 +6,10 @@ import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 
 public class ArmConsole extends BaseConsole {
-    private static final double EPSILON = 0.1;
-
     /**
      * Just to show how to wire things up.
      */
-    public class FakeTwoJointArm implements Subsystem {
+    public static class FakeTwoJointArm implements Subsystem {
         /**
          * Operates the arm motors completely manually; this is an override but
          * also the default command.
@@ -54,9 +52,6 @@ public class ArmConsole extends BaseConsole {
         }
     }
 
-    private final FakeTwoJointArm m_fakeArm = new FakeTwoJointArm();
-    private final Config m_config;
-
     public static class Config {
         double slowSpeed = 0.25;
         double medSpeed = 0.5;
@@ -70,9 +65,13 @@ public class ArmConsole extends BaseConsole {
         double notifierRate = 0.1;
     }
 
-    public ArmConsole(Config config) {
+    private final FakeTwoJointArm m_fakeArm;
+    private final Config m_config;
+
+    public ArmConsole(Config config, FakeTwoJointArm fakeArm) {
         super(portFromName("Arm"));
         m_config = config;
+        m_fakeArm = fakeArm;
 
         // manual control knobs
         m_fakeArm.setDefaultCommand(
@@ -175,7 +174,6 @@ public class ArmConsole extends BaseConsole {
     }
 
     private boolean almostEqual(double a, double b) {
-        return Math.abs(a - b) < EPSILON;
+        return Math.abs(a - b) < 0.1;
     }
-
 }
