@@ -23,6 +23,7 @@ public:
     bool atGoal : 1;
     uint8_t speed : 3;
     // extra bits below
+    uint16_t extra: 12;
     // bool i5 : 1;
     // bool i6 : 1;
     // bool i7 : 1;
