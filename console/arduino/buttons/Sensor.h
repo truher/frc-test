@@ -10,30 +10,16 @@
 
 /**
  * Reads physical state: buttons, joysticks, etc. 
- * TODO: more channels
  *
  * See https://github.com/adafruit/Adafruit_Seesaw
  */
 class Sensor {
 public:
-  /* Unpacks the uint32_t from digitalReadBulk without bit twiddling.  :-) */
-  struct Keys {
-    uint8_t : 4;
-    bool a : 1;
-    bool b : 1;
-    bool c : 1;
-    bool d : 1;
-    uint32_t : 24;
-  };
-
-  Adafruit_NeoKey_1x4 neokey0;
-  Adafruit_NeoKey_1x4 neokey1;
-  Adafruit_NeoKey_1x4 neokey2;
-
-  ReportRx prev;
-
-  bool initialized{};
-
+  /**
+   * Start all the neokeys.
+   *
+   * TODO: do something in the case where this fails.
+   */
   void initialize() {
     if (!neokey0.begin(0x30)) {
       return;
@@ -44,17 +30,16 @@ public:
     if (!neokey2.begin(0x32)) {
       return;
     }
-
     initialized = true;
   }
 
-  void lite(Adafruit_NeoKey_1x4& key, int i, uint32_t color, bool state, bool previousState) {
-    if (state == previousState) {
-      return;
-    }
-    key.pixels.setPixelColor(i, state ? color : 0x000000);
-  }
-
+  /**
+   * Lights the keys as specified in ReportRx.
+   *
+   * The key mapping here matches the one in sense(), as a demo.
+   * In general, these outputs might be more useful if they represented
+   * more than just a keypress.
+   */
   void indicate(ReportRx rpt) {
     if (rpt == prev) {  // speed up the common case
       return;
@@ -80,13 +65,32 @@ public:
     prev = rpt;
   }
 
+  /**
+   * Unpacks the uint32_t from digitalReadBulk without bit twiddling.  :-) 
+   */
+  struct Keys {
+    uint8_t : 4;
+    bool a : 1;
+    bool b : 1;
+    bool c : 1;
+    bool d : 1;
+    uint32_t : 24;
+  };
+
+  /**
+   * Reads all the keys and writes the values into reportTx.
+   *
+   * The mapping here matches the legacy "Button Board".
+   */
   void sense(ReportTx& reportTx) {
     uint32_t buttons0 = ~neokey0.digitalReadBulk(NEOKEY_1X4_BUTTONMASK);
-    Keys k0 = *(Keys*)&buttons0;
     uint32_t buttons1 = ~neokey1.digitalReadBulk(NEOKEY_1X4_BUTTONMASK);
-    Keys k1 = *(Keys*)&buttons1;
     uint32_t buttons2 = ~neokey2.digitalReadBulk(NEOKEY_1X4_BUTTONMASK);
+
+    Keys k0 = *(Keys*)&buttons0;
+    Keys k1 = *(Keys*)&buttons1;
     Keys k2 = *(Keys*)&buttons2;
+
     reportTx.b12 = k0.a;  // climb low
     reportTx.b15 = k0.b;  // down
     reportTx.b16 = k0.c;  // next
@@ -103,7 +107,9 @@ public:
     reportTx.b4 = k2.d;   // stop
   }
 
-  /* A little light show to show it's working. */
+  /**
+   * A little light show to show it's working.
+   */
   void splash() {
     for (int i = 0; i < 4; i++) {
       neokey0.pixels.setPixelColor(i, 0xffffff);
@@ -155,6 +161,24 @@ public:
     neokey0.pixels.show();
     neokey1.pixels.show();
     neokey2.pixels.show();
+  }
+
+private:
+  Adafruit_NeoKey_1x4 neokey0;
+  Adafruit_NeoKey_1x4 neokey1;
+  Adafruit_NeoKey_1x4 neokey2;
+  ReportRx prev;
+  // TODO: do something with initialized (e.g. report an error if it's false)
+  bool initialized{};
+
+  /**
+   * Changes the state of one key, if the new state is different.
+   */
+  void lite(Adafruit_NeoKey_1x4& key, int i, uint32_t color, bool state, bool previousState) {
+    if (state == previousState) {
+      return;
+    }
+    key.pixels.setPixelColor(i, state ? color : 0x000000);
   }
 };
 #endif  // SENSOR_H

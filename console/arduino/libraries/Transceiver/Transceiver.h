@@ -80,7 +80,8 @@ public:
     PILOT = 3,
     AUTOPILOT = 4,
     CLIMB = 5,
-    ARM = 6
+    ARM = 6,
+    BUTTONS = 7
   };
 
   /**
@@ -92,12 +93,12 @@ public:
       case SubConsole::AUTOPILOT: return "Autopilot";
       case SubConsole::CLIMB: return "Climb";
       case SubConsole::ARM: return "Arm";
+      case SubConsole::BUTTONS: return "Button Board";
       default: return "Unassigned";
     }
   }
 
-    Transceiver(SubConsole subConsole, ReportRx &reportRx)
-
+  Transceiver(SubConsole subConsole, ReportRx &reportRx)
     : PluggableUSBModule(1, 1, epType),
       subConsole_(subConsole),
       reportRx_(reportRx) {
@@ -112,7 +113,7 @@ public:
     if (reportTx == previousReportTx_) {
       return;
     }
-    SendReport((const void *)&reportTx, sizeof(reportTx));
+    USB_Send(pluggedEndpoint | TRANSFER_RELEASE, (const void *)&reportTx, sizeof(reportTx));
     previousReportTx_ = reportTx;
   }
 
@@ -279,9 +280,5 @@ private:
   ReportRx &reportRx_;
   ReportTx previousReportTx_;
   SubConsole subConsole_;
-
-  int SendReport(const void *data, int len) {
-    USB_Send(pluggedEndpoint | TRANSFER_RELEASE, data, len);
-  }
 };
 #endif  // TRANSCEIVER_H
