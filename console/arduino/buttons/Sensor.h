@@ -8,11 +8,6 @@
 #include "Adafruit_NeoKey_1x4.h"
 #include "seesaw_neopixel.h"
 
-#define RED 0xFF0000
-#define GREEN 0x00FF00
-#define BLUE 0x0000FF
-#define WHITE 0xFFFFFF
-
 /**
  * Reads physical state: buttons, joysticks, etc. 
  * TODO: more channels
