@@ -8,6 +8,11 @@
 #include "Adafruit_NeoKey_1x4.h"
 #include "seesaw_neopixel.h"
 
+#define RED 0xFF0000
+#define GREEN 0x00FF00
+#define BLUE 0x0000FF
+#define WHITE 0xFFFFFF
+
 /**
  * Reads physical state: buttons, joysticks, etc. 
  * TODO: more channels
@@ -48,31 +53,31 @@ public:
     initialized = true;
   }
 
-  void lite(Adafruit_NeoKey_1x4& key, int i, bool state, bool previousState) {
+  void lite(Adafruit_NeoKey_1x4& key, int i, uint32_t color, bool state, bool previousState) {
     if (state == previousState) {
       return;
     }
-    key.pixels.setPixelColor(i, state ? 0xffffff : 0x000000);
+    key.pixels.setPixelColor(i, state ? color : 0x000000);
   }
 
   void indicate(ReportRx rpt) {
     if (rpt == prev) {  // speed up the common case
       return;
     }
-    lite(neokey0, 0, rpt.i1, prev.i1);
-    lite(neokey0, 1, rpt.i2, prev.i2);
-    lite(neokey0, 2, rpt.i3, prev.i3);
-    lite(neokey0, 3, rpt.i4, prev.i4);
+    lite(neokey0, 0, 0x00ffff, rpt.i12, prev.i12);  // climb low
+    lite(neokey0, 1, 0x00ffff, rpt.i15, prev.i15);  // down
+    lite(neokey0, 2, 0x00ffff, rpt.i16, prev.i16);  // next
+    lite(neokey0, 3, 0x00ffff, rpt.i1, prev.i1);    // lock
 
-    lite(neokey1, 0, rpt.i5, prev.i5);
-    lite(neokey1, 1, rpt.i6, prev.i6);
-    lite(neokey1, 2, rpt.i7, prev.i7);
-    lite(neokey1, 3, rpt.i8, prev.i8);
+    lite(neokey1, 0, 0x0000ff, rpt.i11, prev.i11);  // empty
+    lite(neokey1, 1, 0x00ff00, rpt.i13, prev.i13);  // shoot low
+    lite(neokey1, 2, 0x00ff00, rpt.i14, prev.i14);  // high
+    lite(neokey1, 3, 0x00ff00, rpt.i5, prev.i5);    // eject
 
-    lite(neokey2, 0, rpt.i9, prev.i9);
-    lite(neokey2, 1, rpt.i10, prev.i10);
-    lite(neokey2, 2, rpt.i11, prev.i11);
-    lite(neokey2, 3, rpt.i12, prev.i12);
+    lite(neokey2, 0, 0x0000ff, rpt.i10, prev.i10);  // empty
+    lite(neokey2, 1, 0x0000ff, rpt.i9, prev.i9);    // empty
+    lite(neokey2, 2, 0x00ff00, rpt.i2, prev.i2);    // index
+    lite(neokey2, 3, 0xff0000, rpt.i4, prev.i4);    // stop
 
     neokey0.pixels.show();
     neokey1.pixels.show();
@@ -87,18 +92,20 @@ public:
     Keys k1 = *(Keys*)&buttons1;
     uint32_t buttons2 = ~neokey2.digitalReadBulk(NEOKEY_1X4_BUTTONMASK);
     Keys k2 = *(Keys*)&buttons2;
-    reportTx.b1 = k0.a;
-    reportTx.b2 = k0.b;
-    reportTx.b3 = k0.c;
-    reportTx.b4 = k0.d;
-    reportTx.b5 = k1.a;
-    reportTx.b6 = k1.b;
-    reportTx.b7 = k1.c;
-    reportTx.b8 = k1.d;
-    reportTx.b9 = k2.a;
-    reportTx.b10 = k2.b;
-    reportTx.b11 = k2.c;
-    reportTx.b12 = k2.d;
+    reportTx.b12 = k0.a;  // climb low
+    reportTx.b15 = k0.b;  // down
+    reportTx.b16 = k0.c;  // next
+    reportTx.b1 = k0.d;   // lock
+
+    reportTx.b11 = k1.a;  // empty
+    reportTx.b13 = k1.b;  // shoot low
+    reportTx.b14 = k1.c;  // high
+    reportTx.b5 = k1.d;   // eject
+
+    reportTx.b10 = k2.a;  // empty
+    reportTx.b9 = k2.b;   // empty
+    reportTx.b2 = k2.c;   // index
+    reportTx.b4 = k2.d;   // stop
   }
 
   /* A little light show to show it's working. */
