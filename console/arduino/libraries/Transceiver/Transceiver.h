@@ -9,7 +9,7 @@
 /**
  * HID Report Descriptor
  *
- * This layout must match the struct in Data.
+ * This layout must match the struct in ReportTx.
  *
  * Configuring the 9th axis ("wheel") confuses the DS, so skip it.
  *
@@ -96,34 +96,24 @@ public:
     }
   }
 
-  Transceiver(SubConsole subConsole, Data &data)
-    : PluggableUSBModule(1, 1, epType), subConsole_(subConsole), data_(data) {
+    Transceiver(SubConsole subConsole, ReportRx &reportRx)
+
+    : PluggableUSBModule(1, 1, epType),
+      subConsole_(subConsole),
+      reportRx_(reportRx) {
     epType[0] = 0xc1;  // endpoint type = interrupt in
-    dataAvailable = 0;
     PluggableUSB().plug(this);
-    send();  // send a baseline report (of zeroes)
   }
 
   /** 
    * Sends the data as a HID Report.
    */
-  void send() {
-    SendReport((const void *)&data_.reportTx_, sizeof(data_.reportTx_));
-  }
-
-  /**
-   * Checks to see if the data has been updated.
-   *
-   * TODO: Actual updates happen asynchronously and overwrite the data
-   * without warning, which might not be great.  Instead make a read buffer
-   * and make this method compare it to the old values.
-   */
-  bool recv() {
-    if (dataAvailable) {
-      dataAvailable = 0;
-      return true;
+  void send(const ReportTx &reportTx) {
+    if (reportTx == previousReportTx_) {
+      return;
     }
-    return false;
+    SendReport((const void *)&reportTx, sizeof(reportTx));
+    previousReportTx_ = reportTx;
   }
 
 protected:
@@ -147,9 +137,8 @@ protected:
         && setup.bRequest == 0x09            // request = SET_REPORT
         && setup.wValueH == 0x02             // report type = OUTPUT
         && setup.wIndex == pluggedInterface  // The message is addressed to this interface.
-        && setup.wLength == sizeof(data_.reportRx_)) {
-      USB_RecvControl((uint8_t *)&(data_.reportRx_), setup.wLength);
-      dataAvailable = setup.wLength;
+        && setup.wLength == sizeof(reportRx_)) {
+      USB_RecvControl((uint8_t *)&(reportRx_), setup.wLength);
       return true;
     }
     // Returning false indicates we're not listening, doesn't seem to hurt anything.
@@ -287,8 +276,8 @@ protected:
 
 private:
   uint8_t epType[1];
-  Data &data_;
-  int dataAvailable;
+  ReportRx &reportRx_;
+  ReportTx previousReportTx_;
   SubConsole subConsole_;
 
   int SendReport(const void *data, int len) {

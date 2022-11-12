@@ -16,121 +16,143 @@
  */
 class Sensor {
 public:
-  Adafruit_NeoKey_1x4 neokey_array[3];
-  Data& data_;
+  /* Unpacks the uint32_t from digitalReadBulk without bit twiddling.  :-) */
+  struct Keys {
+    uint8_t : 4;
+    bool a : 1;
+    bool b : 1;
+    bool c : 1;
+    bool d : 1;
+    uint32_t : 24;
+  };
 
-  Sensor(Data& data)
-    : neokey_array{
-        Adafruit_NeoKey_1x4(0x30),
-        Adafruit_NeoKey_1x4(0x31),
-        Adafruit_NeoKey_1x4(0x32)
-      },
-      data_(data) {
+  Adafruit_NeoKey_1x4 neokey0;
+  Adafruit_NeoKey_1x4 neokey1;
+  Adafruit_NeoKey_1x4 neokey2;
 
-    for (int i = 0; i < 3; ++i) {
-      if (neokey_array[i].begin()) {
-        while (1) delay(10);  // TODO: complain via USB
-      }
+  ReportRx prev;
+
+  bool initialized{};
+
+  void initialize() {
+    if (!neokey0.begin(0x30)) {
+      return;
+    }
+    if (!neokey1.begin(0x31)) {
+      return;
+    }
+    if (!neokey2.begin(0x32)) {
+      return;
     }
 
-    // Pulse all the LEDs on to show we're working
-    for (int j = 0; j < 3; ++j) {
-      for (uint16_t i = 0; i < 4; i++) {
-        neokey_array[j].pixels.setPixelColor(i, 0xffffff);
-        neokey_array[j].pixels.show();
-        delay(50);
-      }
-    }
-    for (int j = 0; j < 3; ++j) {
-      for (uint16_t i = 0; i < 4; i++) {
-        neokey_array[j].pixels.setPixelColor(i, 0x000000);
-        neokey_array[j].pixels.show();
-        delay(50);
-      }
-    }
+    initialized = true;
   }
 
-  /** 
-   * Updates state with inputs, return true if anything changed.
-   */
-  bool sense() {
+  void lite(Adafruit_NeoKey_1x4& key, int i, bool state, bool previousState) {
+    if (state == previousState) {
+      return;
+    }
+    key.pixels.setPixelColor(i, state ? 0xffffff : 0x000000);
+  }
 
-    bool updated = false;
-    bool readValue = false;
-    uint32_t buttons = 0;
+  void indicate(ReportRx rpt) {
+    if (rpt == prev) {  // speed up the common case
+      return;
+    }
+    lite(neokey0, 0, rpt.i1, prev.i1);
+    lite(neokey0, 1, rpt.i2, prev.i2);
+    lite(neokey0, 2, rpt.i3, prev.i3);
+    lite(neokey0, 3, rpt.i4, prev.i4);
 
-    buttons = neokey_array[0].digitalReadBulk(NEOKEY_1X4_BUTTONMASK);
-    buttons ^= NEOKEY_1X4_BUTTONMASK;
+    lite(neokey1, 0, rpt.i5, prev.i5);
+    lite(neokey1, 1, rpt.i6, prev.i6);
+    lite(neokey1, 2, rpt.i7, prev.i7);
+    lite(neokey1, 3, rpt.i8, prev.i8);
 
-    readValue = buttons & 0x00010000;
-    if (readValue != data_.reportTx_.b1) {
-      data_.reportTx_.b1 = readValue;
-      updated = true;
-    }
-    readValue = buttons & 0x00100000;
-    if (readValue != data_.reportTx_.b2) {
-      data_.reportTx_.b2 = readValue;
-      updated = true;
-    }
-    readValue = buttons & 0x01000000;
-    if (readValue != data_.reportTx_.b3) {
-      data_.reportTx_.b3 = readValue;
-      updated = true;
-    }
-    readValue = buttons & 0x10000000;
-    if (readValue != data_.reportTx_.b4) {
-      data_.reportTx_.b4 = readValue;
-      updated = true;
-    }
+    lite(neokey2, 0, rpt.i9, prev.i9);
+    lite(neokey2, 1, rpt.i10, prev.i10);
+    lite(neokey2, 2, rpt.i11, prev.i11);
+    lite(neokey2, 3, rpt.i12, prev.i12);
 
-    buttons = neokey_array[1].digitalReadBulk(NEOKEY_1X4_BUTTONMASK);
-    buttons ^= NEOKEY_1X4_BUTTONMASK;
- 
-    readValue = buttons & 0x00010000;
-    if (readValue != data_.reportTx_.b5) {
-      data_.reportTx_.b5 = readValue;
-      updated = true;
-    }
-    readValue = buttons & 0x00100000;
-    if (readValue != data_.reportTx_.b6) {
-      data_.reportTx_.b6 = readValue;
-      updated = true;
-    }
-    readValue = buttons & 0x01000000;
-    if (readValue != data_.reportTx_.b7) {
-      data_.reportTx_.b7 = readValue;
-      updated = true;
-    }
-    readValue = buttons & 0x10000000;
-    if (readValue != data_.reportTx_.b8) {
-      data_.reportTx_.b8 = readValue;
-      updated = true;
-    }
+    neokey0.pixels.show();
+    neokey1.pixels.show();
+    neokey2.pixels.show();
+    prev = rpt;
+  }
 
-    buttons = neokey_array[2].digitalReadBulk(NEOKEY_1X4_BUTTONMASK);
-    buttons ^= NEOKEY_1X4_BUTTONMASK;
+  void sense(ReportTx& reportTx) {
+    uint32_t buttons0 = ~neokey0.digitalReadBulk(NEOKEY_1X4_BUTTONMASK);
+    Keys k0 = *(Keys*)&buttons0;
+    uint32_t buttons1 = ~neokey1.digitalReadBulk(NEOKEY_1X4_BUTTONMASK);
+    Keys k1 = *(Keys*)&buttons1;
+    uint32_t buttons2 = ~neokey2.digitalReadBulk(NEOKEY_1X4_BUTTONMASK);
+    Keys k2 = *(Keys*)&buttons2;
+    reportTx.b1 = k0.a;
+    reportTx.b2 = k0.b;
+    reportTx.b3 = k0.c;
+    reportTx.b4 = k0.d;
+    reportTx.b5 = k1.a;
+    reportTx.b6 = k1.b;
+    reportTx.b7 = k1.c;
+    reportTx.b8 = k1.d;
+    reportTx.b9 = k2.a;
+    reportTx.b10 = k2.b;
+    reportTx.b11 = k2.c;
+    reportTx.b12 = k2.d;
+  }
 
-    readValue = buttons & 0x00010000;
-    if (readValue != data_.reportTx_.b9) {
-      data_.reportTx_.b9 = readValue;
-      updated = true;
+  /* A little light show to show it's working. */
+  void splash() {
+    for (int i = 0; i < 4; i++) {
+      neokey0.pixels.setPixelColor(i, 0xffffff);
+      neokey0.pixels.show();
+      delay(25);
     }
-    readValue = buttons & 0x00100000;
-    if (readValue != data_.reportTx_.b10) {
-      data_.reportTx_.b10 = readValue;
-      updated = true;
+    for (int i = 0; i < 4; i++) {
+      neokey1.pixels.setPixelColor(i, 0xffffff);
+      neokey1.pixels.show();
+      delay(25);
     }
-    readValue = buttons & 0x01000000;
-    if (readValue != data_.reportTx_.b11) {
-      data_.reportTx_.b11 = readValue;
-      updated = true;
+    for (int i = 0; i < 4; i++) {
+      neokey2.pixels.setPixelColor(i, 0xffffff);
+      neokey2.pixels.show();
+      delay(25);
     }
-    readValue = buttons & 0x10000000;
-    if (readValue != data_.reportTx_.b12) {
-      data_.reportTx_.b12 = readValue;
-      updated = true;
+    for (int i = 0; i < 4; i++) {
+      neokey0.pixels.setPixelColor(i, 0x000000);
+      neokey0.pixels.show();
+      delay(25);
     }
-    return updated;
+    for (int i = 0; i < 4; i++) {
+      neokey1.pixels.setPixelColor(i, 0x000000);
+      neokey1.pixels.show();
+      delay(25);
+    }
+    for (int i = 0; i < 4; i++) {
+      neokey2.pixels.setPixelColor(i, 0x000000);
+      neokey2.pixels.show();
+      delay(25);
+    }
+    for (int i = 0; i < 256; i += 16) {
+      for (int k = 0; k < 4; ++k) {
+        neokey0.pixels.setPixelColor(k, i, 0, 0);
+        neokey1.pixels.setPixelColor(k, i, 0, 0);
+        neokey2.pixels.setPixelColor(k, i, 0, 0);
+      }
+      neokey0.pixels.show();
+      neokey1.pixels.show();
+      neokey2.pixels.show();
+      delay(25);
+    }
+    delay(750);
+    for (int i = 0; i < 4; i++) {
+      neokey0.pixels.setPixelColor(i, 0x000000);
+      neokey1.pixels.setPixelColor(i, 0x000000);
+      neokey2.pixels.setPixelColor(i, 0x000000);
+    }
+    neokey0.pixels.show();
+    neokey1.pixels.show();
+    neokey2.pixels.show();
   }
 };
 #endif  // SENSOR_H
