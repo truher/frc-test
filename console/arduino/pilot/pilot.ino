@@ -1,17 +1,18 @@
 #include "Data.h"
 #include "Transceiver.h"
 #include "Sensor.h"
-#include "Indicator.h"
 
-Data data_;
-Transceiver transceiver_(Transceiver::SubConsole::PILOT, data_);
-Sensor sensor_(data_);
-Indicator indicator_(data_);
+ReportRx reportRx_;  // transceiver writes received data here, indicator displays it.
+ReportTx reportTx_;  // sensor writes data here, transceiver sends it.
+Transceiver transceiver_(Transceiver::SubConsole::PILOT, reportRx_);
+Sensor sensor_;
 
 void setup() {
+  sensor_.initialize();
 }
 
+/** Ignores outputs, there's nowhere to display them */
 void loop() {
-  if (sensor_.sense()) transceiver_.send();
-  if (transceiver_.recv()) indicator_.indicate();
+  sensor_.sense(reportTx_);
+  transceiver_.send(reportTx_);
 }

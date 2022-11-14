@@ -11,6 +11,8 @@
 /**
  * Reads physical state: buttons, joysticks, etc. 
  *
+ * See https://www.adafruit.com/product/4980
+ * See https://learn.adafruit.com/neokey-1x4-qt-i2c
  * See https://github.com/adafruit/Adafruit_Seesaw
  */
 class Sensor {
