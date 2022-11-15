@@ -3,7 +3,7 @@
 #include "Data.h"
 
 #include <Arduino.h>
-#include <Wire.h>
+//#include <Wire.h>
 
 #include "Adafruit_NeoKey_1x4.h"
 #include "Adafruit_seesaw.h"
@@ -11,9 +11,16 @@
 
 #include <SparkFun_ADS1015_Arduino_Library.h>
 
-#include <ams_as5048b.h>
+//#include <ams_as5048b.h>
 
 #define SS_SWITCH 24
+
+static const int16_t xOffset = 815;
+static const int16_t xRangePositive = 59;
+static const int16_t xRangeNegative = 59;
+static const int16_t yOffset = 884;
+static const int16_t yRangePositive = 63;
+static const int16_t yRangeNegative = 59;
 
 /**
  * Reads physical state: buttons, joysticks, etc. 
@@ -49,36 +56,36 @@ public:
     // if (!neokey0.begin(0x30)) {
     //   return;
     // }
-    if (!encoder0.begin(0x36)) {
+    if (!initOne(encoder0, 0x36)) {
       return;
     }
-    if (!encoder1.begin(0x37)) {
+    if (!initOne(encoder1, 0x37)) {
       return;
     }
-    if (!encoder2.begin(0x38)) {
+    if (!initOne(encoder2, 0x38)) {
       return;
     }
-    encoder0.pinMode(SS_SWITCH, INPUT_PULLUP);
-    encoder1.pinMode(SS_SWITCH, INPUT_PULLUP);
-    encoder2.pinMode(SS_SWITCH, INPUT_PULLUP);
 
-    // // TODO: is this necessary?
-    encoder0.setGPIOInterrupts((uint32_t)1 << SS_SWITCH, 1);
-    encoder1.setGPIOInterrupts((uint32_t)1 << SS_SWITCH, 1);
-    encoder2.setGPIOInterrupts((uint32_t)1 << SS_SWITCH, 1);
-
-    encoder0.enableEncoderInterrupt();
-    encoder1.enableEncoderInterrupt();
-    encoder2.enableEncoderInterrupt();
-
-    // if (!adcSensor.begin(0x48)) {
-    //   return;
-    // }
+    if (!adcSensor.begin(0x48)) {
+      return;
+    }
+    adcSensor.setGain(ADS1015_CONFIG_PGA_1); // 4.096 volts, which will contain the 3.3v signal.
 
     // mysensor.begin();
     // mysensor.setZeroReg();
 
     initialized = true;
+  }
+
+  // TODO: make this a library function
+  bool initOne(Adafruit_seesaw& encoder, uint8_t addr) {
+    if (!encoder.begin(addr)) {
+      return false;
+    }
+    encoder.pinMode(SS_SWITCH, INPUT_PULLUP);
+    encoder.setGPIOInterrupts((uint32_t)1 << SS_SWITCH, 1);
+    encoder.enableEncoderInterrupt();
+    return true;
   }
 
   /**
@@ -97,6 +104,7 @@ public:
    * Reads all the sensors and writes the values into reportTx.
    */
   void sense(ReportTx& reportTx) {
+    //Serial.println("sense");
     // uint32_t buttons0 = ~neokey0.digitalReadBulk(NEOKEY_1X4_BUTTONMASK);
     // Keys k0 = *(Keys*)&buttons0;
     // reportTx.b1 = k0.a;
@@ -112,12 +120,29 @@ public:
     // // note the axes are int16_t, the encoder is int32_t,
     // // but overflow would require >1000 revolutions, will
     // // never happen.
-    reportTx.rz = encoder0.getEncoderPosition();
-    reportTx.slider = encoder1.getEncoderPosition();
-    reportTx.dial = encoder2.getEncoderPosition();
+    reportTx.rz = encoder0.getEncoderPosition() << 8;
+    reportTx.slider = encoder1.getEncoderPosition() << 8;
+    reportTx.dial = encoder2.getEncoderPosition() << 8;
 
-    // reportTx.x = adcSensor.getSingleEnded(0);
-    // reportTx.y = adcSensor.getSingleEnded(1);
+    reportTx.x = adcSensor.getSingleEndedSigned(0);
+    reportTx.y = adcSensor.getSingleEndedSigned(1);
+    reportTx.x -= xOffset;
+    reportTx.y -= yOffset;
+    if (reportTx.x > 0) {
+      reportTx.x *= xRangePositive;
+    } else {
+      reportTx.x *= xRangeNegative;
+    }
+        if (reportTx.y > 0) {
+      reportTx.y *= yRangePositive;
+    } else {
+      reportTx.y *= yRangeNegative;
+    }
+
+
+    Serial.print(reportTx.x, DEC);
+    Serial.print(" ");
+    Serial.println(reportTx.y, DEC);
 
     // reportTx.rz = mysensor.angleR(U_TRN, true);  // turns
   }
@@ -168,26 +193,26 @@ public:
     // }
     // neokey0.pixels.show();
   }
-
+  bool initialized{};
 private:
   //Adafruit_NeoKey_1x4 neokey0; // broken?  get another one
   //ReportRx prev;
   Adafruit_seesaw encoder0;
   Adafruit_seesaw encoder1;
   Adafruit_seesaw encoder2;
-  //ADS1015 adcSensor;
+  ADS1015 adcSensor;
   //AMS_AS5048B mysensor{ 0x40 };
   // TODO: do something with initialized (e.g. report an error if it's false)
-  bool initialized{};
+
 
   /**
    * Changes the state of one key, if the new state is different.
    */
-  void lite(Adafruit_NeoKey_1x4& key, int i, uint32_t color, bool state, bool previousState) {
-    if (state == previousState) {
-      return;
-    }
-    key.pixels.setPixelColor(i, state ? color : 0x000000);
-  }
+  // void lite(Adafruit_NeoKey_1x4& key, int i, uint32_t color, bool state, bool previousState) {
+  //   if (state == previousState) {
+  //     return;
+  //   }
+  //   key.pixels.setPixelColor(i, state ? color : 0x000000);
+  // }
 };
 #endif  // SENSOR_H

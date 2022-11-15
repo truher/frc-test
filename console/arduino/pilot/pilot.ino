@@ -2,38 +2,49 @@
 #include "Transceiver.h"
 #include "Sensor.h"
 
-ReportRx reportRx_;  // transceiver writes received data here, indicator displays it.
-ReportTx reportTx_;  // sensor writes data here, transceiver sends it.
-Transceiver transceiver_(Transceiver::SubConsole::PILOT, reportRx_);
-Sensor sensor_;
+const static uint32_t LONG = 500;
+const static uint32_t SHORT = 50;
+const static uint8_t LED_PIN = 17;
+uint8_t ledState = LOW;
+uint32_t prevTime = 0;
+
+ReportRx reportRx;  // transceiver writes received data here, indicator displays it.
+ReportTx reportTx;  // sensor writes data here, transceiver sends it.
+Transceiver transceiver(Transceiver::SubConsole::PILOT, reportRx);
+Sensor sensor;
 
 void setup() {
   Serial.begin(115200);
-while (! Serial) delay(10);
-  Serial.println("init");
-  sensor_.initialize();
-  Serial.println("init done");
-  sensor_.splash();
- pinMode(17, OUTPUT);
+  while(!Serial) {
+    delay(10);
+  }
+  pinMode(LED_PIN, OUTPUT);
+  sensor.initialize();
+  //sensor.splash();
 }
 
 
 void loop() {
-  // Serial.println("loop");
-  // delay(100);
-  //   digitalWrite(17, HIGH);   // turn the LED on (HIGH is the voltage level)
-  // delay(1000);                       // wait for a second
-  // digitalWrite(17, LOW);    // turn the LED off by making the voltage LOW
-  // delay(1000); 
-  sensor_.sense(reportTx_);
-  transceiver_.send(reportTx_);
+  //Serial.println("loop");
+  delay(100);
+  // TODO: make the pattern flasher a library
+  uint32_t curTime = millis();
+  uint32_t interval = sensor.initialized ? LONG : SHORT;
+  if (curTime - prevTime >= interval) {
+    prevTime = curTime;
+    ledState = (ledState == LOW)? HIGH : LOW;
+    digitalWrite(LED_PIN, ledState);
+  }
+
+  sensor.sense(reportTx);
+  transceiver.send(reportTx);
   ///////////////////////
   // for this demo we loop back.
   // TODO: take this out, do it in the RIO.
   ///////////////////////
- // reportRx_ = *(ReportRx*)((char*)(&reportTx_) + 16);
+  // reportRx_ = *(ReportRx*)((char*)(&reportTx_) + 16);
   ///////////////////////
   // TODO: remove the above line
   ///////////////////////
- // sensor_.indicate(reportRx_);
+  // sensor_.indicate(reportRx_);
 }
