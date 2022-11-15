@@ -27,6 +27,7 @@ void loop() {
     ledState = (ledState == LOW)? HIGH : LOW;
     digitalWrite(LED_PIN, ledState);
   }
+  
   sensor.sense(reportTx);
   transceiver.send(reportTx);
   //sensor.indicate(reportRx);
