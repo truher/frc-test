@@ -81,7 +81,8 @@ public:
     AUTOPILOT = 4,
     CLIMB = 5,
     ARM = 6,
-    BUTTONS = 7
+    BUTTONS = 7,
+    DEBUG = 8
   };
 
   /**
@@ -94,6 +95,7 @@ public:
       case SubConsole::CLIMB: return "Climb";
       case SubConsole::ARM: return "Arm";
       case SubConsole::BUTTONS: return "Button Board";
+      case SubConsole::DEBUG: return "Debug";
       default: return "Unassigned";
     }
   }
