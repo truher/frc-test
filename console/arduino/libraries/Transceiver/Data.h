@@ -56,8 +56,27 @@ struct ReportTx {
   ReportTx() {
     memset(this, 0, sizeof(ReportTx));
   };
+  /**
+   * True if every bit is the same.
+   *
+   * Strict equality results in many extraneous reports.
+   */
   bool operator==(const ReportTx& other) const {
     return memcmp(this, &other, sizeof(ReportTx)) == 0;
+  }
+  /**
+   * True if buttons are the same and if axes are within the tolerance.
+   */
+  bool approxEquals(const ReportTx& other, int16_t tolerance) const {
+    if (abs(this->x - other.x) > tolerance) return false;
+    if (abs(this->y - other.y) > tolerance) return false;
+    if (abs(this->z - other.z) > tolerance) return false;
+    if (abs(this->rx - other.rx) > tolerance) return false;
+    if (abs(this->ry - other.ry) > tolerance) return false;
+    if (abs(this->rz - other.rz) > tolerance) return false;
+    if (abs(this->slider - other.slider) > tolerance) return false;
+    if (abs(this->dial - other.dial) > tolerance) return false;
+    return memcmp(((char*)this) + 16, ((char*)&other) + 16, 4) == 0;
   }
 };
 

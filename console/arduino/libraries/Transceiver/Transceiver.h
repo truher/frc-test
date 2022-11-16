@@ -112,7 +112,10 @@ public:
    * Sends the data as a HID Report.
    */
   void send(const ReportTx &reportTx) {
-    if (reportTx == previousReportTx_) {
+    // Ignore changes < 0.1%.
+    // TODO: the proper tolerance depends on what these axes actually measure,
+    // so let the caller decide.
+    if (reportTx.approxEquals(previousReportTx_, 60)) {
       return;
     }
     USB_Send(pluggedEndpoint | TRANSFER_RELEASE, (const void *)&reportTx, sizeof(reportTx));
