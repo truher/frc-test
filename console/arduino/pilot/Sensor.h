@@ -16,17 +16,22 @@
 #define SS_SWITCH 24
 
 // Joystick Offsets
-
-// using the supplied 3.3v vref, the signal from the joystick ranges from about 0.6v to about 2.7v,
-// with the center around 1.65v.
-// To see the upper end we need to use gain setting PGA_1 which is +/-4.096 full range
-// or 2mV LSB so the center should be about 825.  The offsets below are the observed values.
-// the range is set so that we get pretty close to full output range, even though the sensor
-// doesn't come close to full voltage range.
+//
+// Using the supplied 3.3v vref, the signal from the joystick ranges from
+// about 0.6v to about 2.7v, with the center around 1.65v.  To see the upper
+// end we need to use gain setting PGA_1 which is +/-4.096 full range
+// or 2mV LSB so the center should be about 825.  The offsets below are
+// the observed values.  The range is set so that we get pretty close
+// to full output range, even though the sensor doesn't come close
+// to full voltage range.
 static const int16_t xOffset = 815;
 static const int16_t yOffset = 884;
 static const int16_t range = 59;
-static const int16_t angleOffset = 28880;
+
+// Rotary sensor offset
+//
+// It's just randomly oriented; I eyeballed it.
+static const int16_t angleOffset = 25828;
 
 /**
  * Reads physical state: buttons, joysticks, etc. 
@@ -59,6 +64,7 @@ public:
    * TODO: do something in the case where this fails.
    */
   void initialize() {
+    // TODO: get a new neokey
     // if (!neokey0.begin(0x30)) {
     //   return;
     // }
@@ -75,11 +81,9 @@ public:
     if (!adcSensor.begin(0x48)) {
       return;
     }
-    adcSensor.setGain(ADS1015_CONFIG_PGA_1);  // 4.096 volts, which will contain the 3.3v signal.
-
+    // PGA_1 == +/-4.096 volts, which will contain the 0-3.3v signal.
+    adcSensor.setGain(ADS1015_CONFIG_PGA_1);
     mysensor.begin();
-    //mysensor.setZeroReg(); // don't need to zero it
-
     initialized = true;
   }
 
@@ -110,7 +114,6 @@ public:
    * Reads all the sensors and writes the values into reportTx.
    */
   void sense(ReportTx& reportTx) {
-    //Serial.println("sense");
     // uint32_t buttons0 = ~neokey0.digitalReadBulk(NEOKEY_1X4_BUTTONMASK);
     // Keys k0 = *(Keys*)&buttons0;
     // reportTx.b1 = k0.a;
@@ -122,32 +125,27 @@ public:
     reportTx.b6 = not encoder1.digitalRead(SS_SWITCH);
     reportTx.b7 = not encoder2.digitalRead(SS_SWITCH);
 
-    // use "spare" axes for the encoders.
-    // note the axes are int16_t, the encoder is int32_t,
+    // Use "spare" axes for the encoders.
+    // Note the axes are int16_t, the encoder is int32_t,
     // but overflow would require >1000 revolutions, will
     // never happen.
-    // expand these to make them easier to see; probably scale down for real.
+    // For now, expand (<< 8) these to make them easier to see.
     reportTx.ry = encoder0.getEncoderPosition() << 8;
     reportTx.slider = encoder1.getEncoderPosition() << 8;
     reportTx.dial = encoder2.getEncoderPosition() << 8;
 
-    // remove two LSBs of noise, so 10b, 0.06 degree stick resolution.
-    reportTx.x = adcSensor.getSingleEndedSigned(0) & 0b1111111111111100;
-    reportTx.y = adcSensor.getSingleEndedSigned(1) & 0b1111111111111100;
-    // use offsets because the center isn't exactly the center
+    reportTx.x = adcSensor.getSingleEndedSigned(0);
+    reportTx.y = adcSensor.getSingleEndedSigned(1);
+    // Use offsets because the center isn't exactly the center
     reportTx.x -= xOffset;
     reportTx.y -= yOffset;
-    // multiply instead of shifting because the full range is mechanically limited
+    // Multiply instead of shifting because the full range is mechanically limited
     reportTx.x *= range;
     reportTx.y *= range;
 
-    // filtering does not seem to reduce chattiness very much
-    // mysensor.updateMovingAvgExp();
-    // reportTx.rz = (mysensor.getMovingAvgExp() * 4) - angleOffset;
-
-    // remove four (!) LSBs of noise, 0.3 degree resolution, and shift 14b to 16b
-    reportTx.rz = ((mysensor.angleRegR() & 0b1111111111110000) << 2) - angleOffset;
-    // Serial.println(reportTx.rz, DEC);
+    // Shift 14b to 16b
+    // this is ENU counterclockwise-positive.
+    reportTx.rz = (mysensor.angleRegR() << 2) - angleOffset;
   }
 
   /**
