@@ -14,10 +14,10 @@ Transceiver transceiver(Transceiver::SubConsole::PILOT, reportRx);
 Sensor sensor;
 
 void setup() {
-  Serial.begin(115200);
-  while(!Serial) {
-    delay(10);
-  }
+ // Serial.begin(115200);
+ // while(!Serial) {
+ //   delay(10);
+ // }
   pinMode(LED_PIN, OUTPUT);
   sensor.initialize();
   //sensor.splash();
@@ -26,7 +26,7 @@ void setup() {
 
 void loop() {
   //Serial.println("loop");
-  delay(100);
+  //delay(100);
   // TODO: make the pattern flasher a library
   uint32_t curTime = millis();
   uint32_t interval = sensor.initialized ? LONG : SHORT;
