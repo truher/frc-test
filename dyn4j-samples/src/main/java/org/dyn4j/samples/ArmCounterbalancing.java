@@ -9,6 +9,10 @@ import org.dyn4j.geometry.Vector2;
 import org.dyn4j.samples.framework.SimulationBody;
 import org.dyn4j.samples.framework.SimulationFrame;
 
+/**
+ * Shows two ways to do arm counterbalancing: one that works and one that
+ * doesn't.
+ */
 public class ArmCounterbalancing {
 	/* this only works with a spring of zero resting length */
 	public static class SpringVersion extends ArmBase {
@@ -30,6 +34,7 @@ public class ArmCounterbalancing {
 			super.initializeWorld();
 
 			SimulationBody junction = new SimulationBody();
+			junction.setColor(java.awt.Color.RED);
 			junction.addFixture(Geometry.createCircle(0.25), 1.0, 0.0, 0.0);
 			junction.translate(new Vector2(0.0, 10.0));
 			junction.setMass(MassType.NORMAL);
@@ -81,12 +86,6 @@ public class ArmCounterbalancing {
 			pivot = new RevoluteJoint<SimulationBody>(frame, arm,
 					new Vector2(0.0, 0.0));
 			world.addJoint(pivot);
-		}
-
-		@Override
-		protected void handleEvents() {
-			super.handleEvents();
-			// System.out.println("hi");
 		}
 	}
 

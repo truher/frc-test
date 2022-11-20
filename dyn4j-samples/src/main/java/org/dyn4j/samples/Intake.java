@@ -1,5 +1,6 @@
 package org.dyn4j.samples;
 
+import org.dyn4j.dynamics.joint.DistanceJoint;
 import org.dyn4j.dynamics.joint.RevoluteJoint;
 import org.dyn4j.geometry.Geometry;
 import org.dyn4j.geometry.MassType;
@@ -7,6 +8,9 @@ import org.dyn4j.geometry.Vector2;
 import org.dyn4j.samples.framework.SimulationBody;
 import org.dyn4j.samples.framework.SimulationFrame;
 
+/**
+ * Demonstrates a four-bar intake linkage with a roller.
+ */
 public class Intake extends SimulationFrame {
 
 	public Intake() {
@@ -17,47 +21,65 @@ public class Intake extends SimulationFrame {
 	protected void initializeWorld() {
 
 		SimulationBody ground = new SimulationBody();
-		ground.addFixture(Geometry.createRectangle(10, 0.1));
-		ground.translate(new Vector2(0.0, 0.0));
+		ground.addFixture(Geometry.createRectangle(50, 0.1));
+		ground.translate(new Vector2(0.0, -5.0));
 		ground.setMass(MassType.INFINITE);
 		world.addBody(ground);
 
-		SimulationBody frame = new SimulationBody();
-		frame.addFixture(Geometry.createRectangle(0.5, 5.0));
-		frame.translate(new Vector2(-2.50, 2.5));
-		frame.setMass(MassType.NORMAL);
-		world.addBody(frame);
+		// (2.5, 2.5) to (2.5, 7.5)
+		SimulationBody right = new SimulationBody();
+		right.addFixture(Geometry.createRectangle(0.5, 5));
+		right.translate(new Vector2(2.5, 5));
+		right.setMass(MassType.NORMAL);
+		world.addBody(right);
 
-		SimulationBody arm = new SimulationBody();
-		arm.addFixture(Geometry.createRectangle(0.5, 5.0), 2.0, 0.0, 0.0);
-		arm.translate(new Vector2(2.5, 2.5));
-		arm.setMass(MassType.NORMAL);
-		world.addBody(arm);
+		SimulationBody lowerLink = new SimulationBody();
+		lowerLink.addFixture(Geometry.createRectangle(0.5, 5));
+		lowerLink.translate(new Vector2(2.5, 0));
+		lowerLink.setMass(MassType.NORMAL);
+		world.addBody(lowerLink);
 
-		SimulationBody link3 = new SimulationBody();
-		link3.addFixture(Geometry.createRectangle(5.0, 0.5));
-		link3.translate(new Vector2(0.0, 5.0));
-		link3.setMass(MassType.NORMAL);
-		world.addBody(link3);
+		RevoluteJoint<SimulationBody> lowerPivot = new RevoluteJoint<SimulationBody>(
+				lowerLink, right, new Vector2(2.5, 2.5));
+		world.addJoint(lowerPivot);
 
-		RevoluteJoint<SimulationBody> pivot = new RevoluteJoint<SimulationBody>(arm, ground,new Vector2(1.0, 1.0));
-		world.addJoint(pivot);
+		RevoluteJoint<SimulationBody> lowerInnerPivot = new RevoluteJoint<SimulationBody>(
+				lowerLink, ground, new Vector2(2.5, -2.5));
+		lowerInnerPivot.setLimits(-Math.PI / 2, 0);
+		lowerInnerPivot.setLimitEnabled(true);
+		world.addJoint(lowerInnerPivot);
 
-		RevoluteJoint<SimulationBody> pivot4 = new RevoluteJoint<SimulationBody>(frame, ground,new Vector2(-1.0, 1.0));
-		world.addJoint(pivot4);
+		// A distance joint is easier than diagonal rectangle. :-)
+		DistanceJoint<SimulationBody> upper = new DistanceJoint<SimulationBody>(
+				ground, right, new Vector2(-2, 2.5), new Vector2(2.5, 7.5));
+		upper.setFrequency(0);
+		world.addJoint(upper);
 
-		RevoluteJoint<SimulationBody> pivot2 = new RevoluteJoint<SimulationBody>(link3, arm, new Vector2(0, 5));
-		world.addJoint(pivot2);
+		// this is the simple bad kind of spring
+		// TODO: use the pulley kind
+		DistanceJoint<SimulationBody> spring = new DistanceJoint<SimulationBody>(
+				ground, right, new Vector2(-2, 2.5), new Vector2(2.5, 2.5));
+		spring.setFrequency(0.25);
+		world.addJoint(spring);
 
-		RevoluteJoint<SimulationBody> pivot3 = new RevoluteJoint<SimulationBody>(link3, frame, new Vector2(3, 5));
-		world.addJoint(pivot3);
+		SimulationBody ball = new SimulationBody();
+		ball.addFixture(Geometry.createCircle(1));
+		ball.translate(new Vector2(5, 5));
+		ball.setMass(MassType.NORMAL);
+		world.addBody(ball);
 
-	}
+		SimulationBody roller = new SimulationBody();
+		roller.addFixture(Geometry.createCircle(1));
+		roller.translate(new Vector2(2.5, 2.5));
+		roller.setMass(MassType.NORMAL);
+		world.addBody(roller);
 
-	@Override
-	protected void handleEvents() {
-		super.handleEvents();
-		// System.out.println("hi");
+		RevoluteJoint<SimulationBody> rollerJoint = new RevoluteJoint<SimulationBody>(
+				right, roller, new Vector2(2.5, 2.5));
+		rollerJoint.setMotorEnabled(true);
+		rollerJoint.setMotorSpeed(50);
+		rollerJoint.setMaximumMotorTorque(100);
+		world.addJoint(rollerJoint);
 	}
 
 	public static void main(String[] args) {
