@@ -4,7 +4,7 @@ import java.awt.Component;
 
 import org.dyn4j.samples.framework.Camera;
 
-public class MouseZoomInputHandler extends AbstractMouseInputHandler implements InputHandler {
+public class MouseZoomInputHandler extends AbstractMouseInputHandler {
 
 	public MouseZoomInputHandler(Component component, Camera camera, int button) {
 		super(component, camera, button);

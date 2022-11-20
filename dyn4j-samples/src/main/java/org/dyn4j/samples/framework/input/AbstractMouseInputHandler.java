@@ -9,7 +9,7 @@ import java.awt.event.MouseWheelEvent;
 import org.dyn4j.geometry.Vector2;
 import org.dyn4j.samples.framework.Camera;
 
-public abstract class AbstractMouseInputHandler extends AbstractInputHandler implements InputHandler {
+public abstract class AbstractMouseInputHandler extends AbstractInputHandler {
 	
 	protected final Component component;
 	protected final Camera camera;

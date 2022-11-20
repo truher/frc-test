@@ -15,7 +15,7 @@ import org.dyn4j.samples.framework.SimulationBody;
 import org.dyn4j.world.World;
 import org.dyn4j.world.result.DetectResult;
 
-public class MousePickingInputHandler extends AbstractMouseInputHandler implements InputHandler {
+public class MousePickingInputHandler extends AbstractMouseInputHandler {
 
 	private final World<SimulationBody> world;
 	

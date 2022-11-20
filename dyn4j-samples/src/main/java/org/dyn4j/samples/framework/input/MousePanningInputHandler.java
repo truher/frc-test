@@ -6,7 +6,7 @@ import java.awt.event.MouseEvent;
 
 import org.dyn4j.samples.framework.Camera;
 
-public class MousePanningInputHandler extends AbstractMouseInputHandler implements InputHandler {
+public class MousePanningInputHandler extends AbstractMouseInputHandler {
 	private boolean panning;
 	private Point start;
 	
