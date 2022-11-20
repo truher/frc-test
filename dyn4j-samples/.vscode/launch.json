@@ -1,0 +1,196 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Launch ArmCounterbalancingBad",
+            "request": "launch",
+            "mainClass": "org.dyn4j.samples.ArmCounterbalancingBad",
+            "projectName": "dyn4j-samples"
+        },
+        {
+            "type": "java",
+            "name": "Launch ArmCounterbalancing",
+            "request": "launch",
+            "mainClass": "org.dyn4j.samples.ArmCounterbalancing",
+            "projectName": "dyn4j-samples"
+        },
+        {
+            "type": "java",
+            "name": "Launch Current File",
+            "request": "launch",
+            "mainClass": "${file}"
+        },
+        {
+            "type": "java",
+            "name": "Launch BasketBall",
+            "request": "launch",
+            "mainClass": "org.dyn4j.samples.BasketBall",
+            "projectName": "dyn4j-samples"
+        },
+        {
+            "type": "java",
+            "name": "Launch Billiards",
+            "request": "launch",
+            "mainClass": "org.dyn4j.samples.Billiards",
+            "projectName": "dyn4j-samples"
+        },
+        {
+            "type": "java",
+            "name": "Launch Bowling",
+            "request": "launch",
+            "mainClass": "org.dyn4j.samples.Bowling",
+            "projectName": "dyn4j-samples"
+        },
+        {
+            "type": "java",
+            "name": "Launch Bridge",
+            "request": "launch",
+            "mainClass": "org.dyn4j.samples.Bridge",
+            "projectName": "dyn4j-samples"
+        },
+        {
+            "type": "java",
+            "name": "Launch Bucket",
+            "request": "launch",
+            "mainClass": "org.dyn4j.samples.Bucket",
+            "projectName": "dyn4j-samples"
+        },
+        {
+            "type": "java",
+            "name": "Launch Concave",
+            "request": "launch",
+            "mainClass": "org.dyn4j.samples.Concave",
+            "projectName": "dyn4j-samples"
+        },
+        {
+            "type": "java",
+            "name": "Launch Crank",
+            "request": "launch",
+            "mainClass": "org.dyn4j.samples.Crank",
+            "projectName": "dyn4j-samples"
+        },
+        {
+            "type": "java",
+            "name": "Launch Decomposition",
+            "request": "launch",
+            "mainClass": "org.dyn4j.samples.Decomposition",
+            "projectName": "dyn4j-samples"
+        },
+        {
+            "type": "java",
+            "name": "Launch Destructible",
+            "request": "launch",
+            "mainClass": "org.dyn4j.samples.Destructible",
+            "projectName": "dyn4j-samples"
+        },
+        {
+            "type": "java",
+            "name": "Launch Example",
+            "request": "launch",
+            "mainClass": "org.dyn4j.samples.Example",
+            "projectName": "dyn4j-samples"
+        },
+        {
+            "type": "java",
+            "name": "Launch Images",
+            "request": "launch",
+            "mainClass": "org.dyn4j.samples.Images",
+            "projectName": "dyn4j-samples"
+        },
+        {
+            "type": "java",
+            "name": "Launch LinkTerrain",
+            "request": "launch",
+            "mainClass": "org.dyn4j.samples.LinkTerrain",
+            "projectName": "dyn4j-samples"
+        },
+        {
+            "type": "java",
+            "name": "Launch Maze",
+            "request": "launch",
+            "mainClass": "org.dyn4j.samples.Maze",
+            "projectName": "dyn4j-samples"
+        },
+        {
+            "type": "java",
+            "name": "Launch Organize",
+            "request": "launch",
+            "mainClass": "org.dyn4j.samples.Organize",
+            "projectName": "dyn4j-samples"
+        },
+        {
+            "type": "java",
+            "name": "Launch Platformer",
+            "request": "launch",
+            "mainClass": "org.dyn4j.samples.Platformer",
+            "projectName": "dyn4j-samples"
+        },
+        {
+            "type": "java",
+            "name": "Launch Pyramid",
+            "request": "launch",
+            "mainClass": "org.dyn4j.samples.Pyramid",
+            "projectName": "dyn4j-samples"
+        },
+        {
+            "type": "java",
+            "name": "Launch Ragdoll",
+            "request": "launch",
+            "mainClass": "org.dyn4j.samples.Ragdoll",
+            "projectName": "dyn4j-samples"
+        },
+        {
+            "type": "java",
+            "name": "Launch Stacking",
+            "request": "launch",
+            "mainClass": "org.dyn4j.samples.Stacking",
+            "projectName": "dyn4j-samples"
+        },
+        {
+            "type": "java",
+            "name": "Launch Tank",
+            "request": "launch",
+            "mainClass": "org.dyn4j.samples.Tank",
+            "projectName": "dyn4j-samples"
+        },
+        {
+            "type": "java",
+            "name": "Launch Thrust",
+            "request": "launch",
+            "mainClass": "org.dyn4j.samples.Thrust",
+            "projectName": "dyn4j-samples"
+        },
+        {
+            "type": "java",
+            "name": "Launch Tracking",
+            "request": "launch",
+            "mainClass": "org.dyn4j.samples.Tracking",
+            "projectName": "dyn4j-samples"
+        },
+        {
+            "type": "java",
+            "name": "Launch Truck",
+            "request": "launch",
+            "mainClass": "org.dyn4j.samples.Truck",
+            "projectName": "dyn4j-samples"
+        },
+        {
+            "type": "java",
+            "name": "Launch UsingGraphics2D",
+            "request": "launch",
+            "mainClass": "org.dyn4j.samples.UsingGraphics2D",
+            "projectName": "dyn4j-samples"
+        },
+        {
+            "type": "java",
+            "name": "Launch UsingJogl",
+            "request": "launch",
+            "mainClass": "org.dyn4j.samples.UsingJogl",
+            "projectName": "dyn4j-samples"
+        }
+    ]
+}
