@@ -11,7 +11,7 @@ import org.dyn4j.samples.framework.SimulationFrame;
 
 public class ArmCounterbalancing {
 	/* this only works with a spring of zero resting length */
-	public static class SpringVersion extends Foo {
+	public static class SpringVersion extends ArmBase {
 		protected void initializeWorld() {
 			super.initializeWorld();
 
@@ -25,7 +25,7 @@ public class ArmCounterbalancing {
 	}
 
 	/* this is the pulley way with realistic spring extension */
-	public static class PulleyVersion extends Foo {
+	public static class PulleyVersion extends ArmBase {
 		protected void initializeWorld() {
 			super.initializeWorld();
 
@@ -54,12 +54,12 @@ public class ArmCounterbalancing {
 		}
 	}
 
-	public static class Foo extends SimulationFrame {
+	public static class ArmBase extends SimulationFrame {
 		SimulationBody frame;
 		SimulationBody arm;
 		RevoluteJoint<SimulationBody> pivot;
 
-		public Foo() {
+		public ArmBase() {
 			super("Example", 32.0);
 			this.setOffsetY(-200);
 		}
