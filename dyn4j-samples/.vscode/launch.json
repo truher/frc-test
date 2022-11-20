@@ -6,6 +6,13 @@
     "configurations": [
         {
             "type": "java",
+            "name": "Launch Intake",
+            "request": "launch",
+            "mainClass": "org.dyn4j.samples.Intake",
+            "projectName": "dyn4j-samples"
+        },
+        {
+            "type": "java",
             "name": "Launch ArmCounterbalancingBad",
             "request": "launch",
             "mainClass": "org.dyn4j.samples.ArmCounterbalancingBad",
