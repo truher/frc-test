@@ -1,0 +1,28 @@
+{
+  "NTProvider": {
+    "types": {
+      "/FMSInfo": "FMSInfo",
+      "/SmartDashboard/Arm Sim": "Mechanism2d"
+    },
+    "windows": {
+      "/SmartDashboard/Arm Sim": {
+        "window": {
+          "visible": true
+        }
+      }
+    }
+  },
+  "NetworkTables": {
+    "transitory": {
+      "SmartDashboard": {
+        "Arm Sim": {
+          "ArmPivot": {
+            "open": true
+          },
+          "open": true
+        },
+        "open": true
+      }
+    }
+  }
+}
