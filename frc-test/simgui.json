@@ -1,8 +1,7 @@
 {
   "NTProvider": {
     "types": {
-      "/FMSInfo": "FMSInfo",
-      "/LiveWindow/Ungrouped/PWMSparkMax[0]": "Motor Controller"
+      "/FMSInfo": "FMSInfo"
     }
   }
 }
