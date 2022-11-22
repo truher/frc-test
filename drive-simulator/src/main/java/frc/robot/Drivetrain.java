@@ -56,8 +56,8 @@ public class Drivetrain {
 
   private final DifferentialDriveKinematics m_kinematics =
       new DifferentialDriveKinematics(kTrackWidth);
-  private final DifferentialDriveOdometry m_odometry =
-      new DifferentialDriveOdometry(m_gyro.getRotation2d());
+  private final DifferentialDriveOdometry m_odometry = new DifferentialDriveOdometry(
+      m_gyro.getRotation2d(), 0, 0, new Pose2d());
 
   // Gains are for example purposes only - must be determined for your own
   // robot!
@@ -129,7 +129,7 @@ public class Drivetrain {
     m_leftEncoder.reset();
     m_rightEncoder.reset();
     m_drivetrainSimulator.setPose(pose);
-    m_odometry.resetPosition(pose, m_gyro.getRotation2d());
+    m_odometry.resetPosition(m_gyro.getRotation2d(), 0, 0, pose);
   }
 
   /** Check the current robot pose. */
