@@ -1,5 +1,6 @@
 package frc.robot.consoles;
 
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.NotifierCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.Subsystem;
@@ -37,8 +38,8 @@ public class ClimbConsole extends BaseConsole {
                         () -> m_fakeClimber.manual(upKnob(), tiltKnob()), m_fakeClimber));
 
         // goal setting button
-        new Trigger(() -> goalOneButton()).whileActiveContinuous(
-                () -> m_fakeClimber.toGoalOne(), m_fakeClimber);
+        new Trigger(() -> goalOneButton()).whileTrue(new InstantCommand(
+                () -> m_fakeClimber.toGoalOne(), m_fakeClimber));
 
         // indicator light notifier
         new NotifierCommand(

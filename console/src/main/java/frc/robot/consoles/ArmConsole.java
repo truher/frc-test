@@ -1,5 +1,6 @@
 package frc.robot.consoles;
 
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.NotifierCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.Subsystem;
@@ -79,22 +80,22 @@ public class ArmConsole extends BaseConsole {
                         () -> m_fakeArm.manual(boomKnob(), stickKnob()), m_fakeArm));
 
         // speed buttons
-        new Trigger(() -> stopButton()).whileActiveContinuous(
-                () -> m_fakeArm.stop(), m_fakeArm);
-        new Trigger(() -> slowButton()).whenActive(
-                () -> m_fakeArm.setSpeed(config.slowSpeed), m_fakeArm);
-        new Trigger(() -> medButton()).whenActive(
-                () -> m_fakeArm.setSpeed(config.medSpeed), m_fakeArm);
-        new Trigger(() -> fastButton()).whenActive(
-                () -> m_fakeArm.setSpeed(config.fastSpeed), m_fakeArm);
+        new Trigger(() -> stopButton()).whileTrue(new InstantCommand(
+                () -> m_fakeArm.stop(), m_fakeArm));
+        new Trigger(() -> slowButton()).onTrue(new InstantCommand(
+                () -> m_fakeArm.setSpeed(config.slowSpeed), m_fakeArm));
+        new Trigger(() -> medButton()).onTrue(new InstantCommand(
+                () -> m_fakeArm.setSpeed(config.medSpeed), m_fakeArm));
+        new Trigger(() -> fastButton()).onTrue(new InstantCommand(
+                () -> m_fakeArm.setSpeed(config.fastSpeed), m_fakeArm));
 
         // goal setting buttons
-        new Trigger(() -> highGoalButton()).whileActiveContinuous(
-                () -> m_fakeArm.toGoal(config.highGoalHeight, config.highGoalDistance), m_fakeArm);
-        new Trigger(() -> lowGoalButton()).whileActiveContinuous(
-                () -> m_fakeArm.toGoal(config.lowGoalHeight, config.lowGoalDistance), m_fakeArm);
-        new Trigger(() -> farGoalButton()).whileActiveContinuous(
-                () -> m_fakeArm.toGoal(config.farGoalHeight, config.farGoalDistance), m_fakeArm);
+        new Trigger(() -> highGoalButton()).whileTrue(new InstantCommand(
+                () -> m_fakeArm.toGoal(config.highGoalHeight, config.highGoalDistance), m_fakeArm));
+        new Trigger(() -> lowGoalButton()).whileTrue(new InstantCommand(
+                () -> m_fakeArm.toGoal(config.lowGoalHeight, config.lowGoalDistance), m_fakeArm));
+        new Trigger(() -> farGoalButton()).whileTrue(new InstantCommand(
+                () -> m_fakeArm.toGoal(config.farGoalHeight, config.farGoalDistance), m_fakeArm));
 
         // observer for indicator lights
         new NotifierCommand(

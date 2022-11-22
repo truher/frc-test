@@ -1,6 +1,6 @@
 package frc.robot.consoles;
 
-import edu.wpi.first.hal.HAL;
+import edu.wpi.first.hal.DriverStationJNI;
 import edu.wpi.first.wpilibj.DriverStation;
 
 public class BaseConsole {
@@ -48,7 +48,7 @@ public class BaseConsole {
             return;
         synchronized (this) {
             if (m_outputs != m_outputs_sent) {
-                HAL.setJoystickOutputs((byte) m_port, m_outputs, (short) 0, (short) 0);
+                DriverStationJNI.setJoystickOutputs((byte) m_port, m_outputs, (short) 0, (short) 0);
                 m_outputs_sent = m_outputs;
             }
         }

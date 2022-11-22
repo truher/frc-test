@@ -1,16 +1,7 @@
 {
-  "HALProvider": {
-    "RoboRIO": {
-      "RoboRIO Input": {
-        "open": true
-      }
-    }
-  },
   "NTProvider": {
     "types": {
-      "/FMSInfo": "FMSInfo",
-      "/LiveWindow/Nothing": "Subsystem",
-      "/LiveWindow/Ungrouped/Scheduler": "Scheduler"
+      "/FMSInfo": "FMSInfo"
     }
   }
 }

@@ -1,5 +1,6 @@
 package frc.robot.consoles;
 
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.NotifierCommand;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.consoles.PilotConsole.FakeDrivetrain;
@@ -20,8 +21,8 @@ public class AutopilotConsole extends BaseConsole {
         m_fakeDrivetrain = fakeDrivetrain;
 
         // goal setting button
-        new Trigger(() -> goalOneButton()).whileActiveContinuous(
-                () -> m_fakeDrivetrain.toGoalOne(), m_fakeDrivetrain);
+        new Trigger(() -> goalOneButton()).whileTrue(new InstantCommand(
+                () -> m_fakeDrivetrain.toGoalOne(), m_fakeDrivetrain));
 
         // indicator light notifier
         new NotifierCommand(

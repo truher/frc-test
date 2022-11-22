@@ -1,5 +1,6 @@
 package frc.robot.consoles;
 
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.NotifierCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
 import edu.wpi.first.wpilibj2.command.Subsystem;
@@ -31,9 +32,9 @@ public class PilotConsole extends BaseConsole {
         m_fakeDrivetrain.setDefaultCommand(new RunCommand(
             () -> m_fakeDrivetrain.drive(xAxis(), yAxis(), rotation()), m_fakeDrivetrain));
         
-        new Trigger(() -> fastButton()).whenActive(
+        new Trigger(() -> fastButton()).onTrue(new InstantCommand(
             ()->m_fakeDrivetrain.setSpeed(config.fastSpeed), m_fakeDrivetrain
-        );
+        ));
 
         // indicator light notifier
         new NotifierCommand(
