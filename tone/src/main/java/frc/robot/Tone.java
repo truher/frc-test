@@ -2,15 +2,15 @@ package frc.robot;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
+import java.util.EnumSet;
 
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.UnsupportedAudioFileException;
 
-import edu.wpi.first.networktables.EntryListenerFlags;
-import edu.wpi.first.networktables.EntryNotification;
 import edu.wpi.first.networktables.NetworkTable;
+import edu.wpi.first.networktables.NetworkTableEvent;
 import edu.wpi.first.networktables.NetworkTableInstance;
 
 /**
@@ -62,13 +62,17 @@ public final class Tone {
 
     NetworkTableInstance inst = NetworkTableInstance.getDefault();
     NetworkTable table = inst.getTable("tone");
-    
-    table.getEntry("search").addListener((event) -> play(event, searchClip),
-        EntryListenerFlags.kNew | EntryListenerFlags.kUpdate);
-    table.getEntry("lock").addListener((event) -> play(event, lockClip),
-        EntryListenerFlags.kNew | EntryListenerFlags.kUpdate);
 
-    inst.startClient("localhost");
+    inst.addListener(
+        table.getEntry("search"),
+        EnumSet.of(NetworkTableEvent.Kind.kValueAll),
+        (event) -> play(event, searchClip));
+    inst.addListener(
+        table.getEntry("lock"),
+        EnumSet.of(NetworkTableEvent.Kind.kValueAll),
+        (event) -> play(event, lockClip));
+
+    inst.startClient4("localhost");
 
     while (true) {
       try {
@@ -80,12 +84,12 @@ public final class Tone {
   }
 
   /** Plays a clip or stops it, depending on the event. */
-  private static void play(EntryNotification event, Clip clip) {
-    if (event.getEntry().getBoolean(false)) {
-      System.out.println(event.name + " on");
+  private static void play(NetworkTableEvent event, Clip clip) {
+    if (event.valueData.value.getBoolean()) {
+      System.out.println(event.topicInfo.name + " on");
       clip.loop(Clip.LOOP_CONTINUOUSLY);
     } else {
-      System.out.println(event.name + " off");
+      System.out.println(event.topicInfo.name + " off");
       clip.stop();
     }
   }
