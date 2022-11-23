@@ -1,7 +1,6 @@
 #include "Data.h"
 #include "Transceiver.h"
 #include "Sensor.h"
-#include "Indicator.h"
 
 #include <NonBlockingRtttl.h>
 // see https://github.com/end2endzone/NonBlockingRTTTL
@@ -15,13 +14,15 @@ const char * tetris = "tetris:d=4,o=5,b=160:e6,8b,8c6,8d6,16e6,16d6,8c6,8b,a,8a,
 
 TPA2016D2 amp;
 
-Data data_;
-Transceiver transceiver_(Transceiver::SubConsole::AUTOPILOT, data_);
-Sensor sensor_(data_);
-Indicator indicator_(data_);
+ReportRx reportRx;  // transceiver writes received data here, indicator displays it.
+ReportTx reportTx;  // sensor writes data here, transceiver sends it.
+Transceiver transceiver(Transceiver::SubConsole::AUTOPILOT, reportRx);
+Sensor sensor;
 
 void setup() {
   pinMode(BUZZER_PIN, OUTPUT);
+
+  sensor.initialize();
 
   Wire.begin();
   if (amp.begin() == false) {
@@ -46,6 +47,7 @@ void loop() {
   } else {
     rtttl::begin(BUZZER_PIN, tetris);
   }
-  if (sensor_.sense()) transceiver_.send();
-  if (transceiver_.recv()) indicator_.indicate();
+  sensor.sense(reportTx);
+  transceiver.send(reportTx);
+  sensor.indicate(reportRx);
 }
