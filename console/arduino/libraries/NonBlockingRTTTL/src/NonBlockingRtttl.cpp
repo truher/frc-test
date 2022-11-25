@@ -85,7 +85,9 @@ void begin(byte iPin, const char * iSongBuffer)
   #endif
   
   //stop current note
-  noTone(pin);
+  ////////////////////////////////////////////
+  // TODO add some sort of tone output here
+  // noTone(pin);
 
   //read buffer until first note
   int num;
@@ -158,7 +160,9 @@ void nextnote()
   byte scale;
 
   //stop current note
-  noTone(pin);
+  ////////////////////////////////////////////
+  // TODO add some sort of tone output here
+  // noTone(pin);
 
   // first, get note duration, if available
   int num = 0;
@@ -255,7 +259,10 @@ void nextnote()
     Serial.println(duration, 10);
     #endif
     
-    tone(pin, notes[(scale - 4) * 12 + note], duration);
+    ////////////////////////////////////////////
+    // TODO add some sort of tone output here
+    // tone(pin, notes[(scale - 4) * 12 + note], duration);
+    ////////////////////////////////////////////
     
     noteDelay = millis() + (duration+1);
   }
@@ -333,7 +340,9 @@ void stop()
 
     //issue #6: Bug for ESP8266 environment - noTone() not called at end of sound.
     //disable sound if one abort playback using the stop() command.
-    noTone(pin);
+    ////////////////////////////////////////////
+    // TODO add some sort of tone output here
+    // noTone(pin);
 
     playing = false;
   }
