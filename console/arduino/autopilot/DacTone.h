@@ -1,62 +1,42 @@
 #ifndef DACTONE_H
 #define DACTONE_H
-
-// cribbed from arduino Tone lib
-
-// i kinda like real classes but the tone lib is, like, not a class
-// and interrupts need to be global/static.
-
-// to make "private static" fields, make them global to this file?
-// nope, it's a header file.
-
-// the timer itself is a singleton, so the rest of the state is too?
-
 #include <Arduino.h>
-
-// see https://github.com/adafruit/Adafruit_MCP4725
 #include <Adafruit_MCP4725.h>
 
+/**
+ * Cribbed from arduino/Tone.cpp, just for the ATmega32U4, using the 16-bit timer3.
+ * Aiming for simple and lightweight, not too much DAC traffic, not a full synthesizer/sequencer.
+ *
+ * See https://cdn.sparkfun.com/datasheets/Dev/Arduino/Boards/ATMega32U4.pdf
+ * See https://github.com/adafruit/Adafruit_MCP4725
+ */
 class DacTone {
 public:
   static void begin() {
-    dac.begin(0x62);  // TODO: correct address
-    dacstate = false;
-    TCCR3A = 0;
-    TCCR3B = 0;
-    bitWrite(TCCR3B, WGM32, 1);
-    bitWrite(TCCR3B, CS30, 1);
+    dac.begin(0x62);      // TODO: correct address
+    TCCR3A = 0b00000000;  // no output pin, normal waveform (count up)
+    TCCR3B = 0b00001010;  // CS31 = clk_io/8 prescaled, and WGM32 = clear timer on match
+    stop();
   }
 
-  static void tone() {
-    uint8_t prescalarbits = 0b001;
-    long toggle_count = 0;
-    uint32_t ocr = 0;
-    int8_t _timer;
-    TCCR3B = (TCCR3B & 0b11111000) | prescalarbits;
-    OCR3A = ocr;
-    timer3_toggle_count = toggle_count;
-    bitWrite(TIMSK3, OCIE3A, 1);
+  static void start(uint16_t frequency_hz) {
+    OCR3A = (F_CPU >> 4) / frequency_hz;  // 8:1 scale * 2 for toggling, ok for 20-20khz
+    TIMSK3 = 0b00000010;                  // OCIE3A = enable interrupt "A" for output compare match
   }
 
-  static void noTone() {
-    bitWrite(TIMSK3, OCIE3A, 0);  // stop the timer
+  static void stop() {
+    TIMSK3 = 0b00000000;       // disable all interrupts
+    dac.setVoltage(0, false);  // zero the output
   }
 
   static void DacToneISR() {
-    if (timer3_toggle_count == 0) {
-      bitWrite(TIMSK3, OCIE3A, 0);  // stop the timer
-      dac.setVoltage(0, false);     // zero the output
-      return;
-    }
-    dacstate = not dacstate;
-    dac.setVoltage(dacstate ? 4095 : 0, false);
-    if (timer3_toggle_count > 0)
-      timer3_toggle_count--;
+    dac.setVoltage(state ? 4095 : 0, false);  // 12b
+    state ^= 1;
   }
+
 private:
-  inline static volatile long timer3_toggle_count;
   inline static Adafruit_MCP4725 dac;
-  inline static volatile bool dacstate;  // TODO: multiple voices, waveforms
+  inline static volatile bool state;
 };
 
 ISR(TIMER3_COMPA_vect) {
