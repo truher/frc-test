@@ -61,7 +61,13 @@ public final class Tone {
     System.out.println("running");
 
     NetworkTableInstance inst = NetworkTableInstance.getDefault();
+    inst.startClient4("Tone App");
+    inst.setServer("localhost");
     NetworkTable table = inst.getTable("tone");
+
+    // You need to set initial values; the glass instance can't create them.
+    table.getEntry("search").setBoolean(false);
+    table.getEntry("lock").setBoolean(false);
 
     inst.addListener(
         table.getEntry("search"),
@@ -72,10 +78,16 @@ public final class Tone {
         EnumSet.of(NetworkTableEvent.Kind.kValueAll),
         (event) -> play(event, lockClip));
 
-    inst.startClient4("localhost");
 
+
+    System.out.println("entering loop");
     while (true) {
       try {
+        if (inst.isConnected()) {
+          System.out.println("connected");
+        } else {
+          System.out.println("not connected");
+        }
         Thread.sleep(2000);
       } catch (InterruptedException e) {
         e.printStackTrace();
@@ -86,10 +98,10 @@ public final class Tone {
   /** Plays a clip or stops it, depending on the event. */
   private static void play(NetworkTableEvent event, Clip clip) {
     if (event.valueData.value.getBoolean()) {
-      System.out.println(event.topicInfo.name + " on");
+      System.out.println(event.valueData.getTopic().getName() + " on");
       clip.loop(Clip.LOOP_CONTINUOUSLY);
     } else {
-      System.out.println(event.topicInfo.name + " off");
+      System.out.println(event.valueData.getTopic().getName() + " off");
       clip.stop();
     }
   }
