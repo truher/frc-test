@@ -5,6 +5,4 @@ pluginManagement {
     }
 }
 
-include 'fakeRobot'
-
 rootProject.name = "SmartDashboard"
