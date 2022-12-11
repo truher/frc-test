@@ -24,7 +24,7 @@ dependencies {
     implementation "com.fasterxml.jackson.core:jackson-databind:2.10.0"
 }
 
-ext.projectMainClass = "edu.wpi.first.smartdashboard.SmartDashboard"
+ext.projectMainClass = "org.truher.SmartDashboard"
 
 pmdMain {
     pmdMain.enabled = false

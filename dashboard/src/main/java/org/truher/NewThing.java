@@ -1,4 +1,4 @@
-package edu.wpi.first.smartdashboard;
+package org.truher;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
@@ -17,6 +17,7 @@ public class NewThing extends JPanel {
     private static final int WINDOW_WIDTH = 1000;
 
     public NewThing() {
+        System.out.println("newthing");
         JFrame frame = new JFrame("demo");
         frame.add(this);
         frame.setSize(WINDOW_WIDTH, WINDOW_HEIGHT);
@@ -37,7 +38,7 @@ public class NewThing extends JPanel {
 
         graphic2d.drawRect(WINDOW_WIDTH / 2 + (x - BOX_WIDTH / 2),
                 WINDOW_HEIGHT / 2 + (y - BOX_HEIGHT / 2), BOX_WIDTH, BOX_HEIGHT);
-        String label = "squarg";
+        String label = "sssquarg";
         graphic2d.drawString(label,
                 WINDOW_WIDTH / 2 + x - fm.stringWidth(label) / 2,
                 WINDOW_HEIGHT / 2 + y + fm.getAscent() / 2);
