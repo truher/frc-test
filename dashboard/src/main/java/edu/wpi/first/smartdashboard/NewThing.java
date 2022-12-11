@@ -37,7 +37,7 @@ public class NewThing extends JPanel {
 
         graphic2d.drawRect(WINDOW_WIDTH / 2 + (x - BOX_WIDTH / 2),
                 WINDOW_HEIGHT / 2 + (y - BOX_HEIGHT / 2), BOX_WIDTH, BOX_HEIGHT);
-        String label = "arg";
+        String label = "squarg";
         graphic2d.drawString(label,
                 WINDOW_WIDTH / 2 + x - fm.stringWidth(label) / 2,
                 WINDOW_HEIGHT / 2 + y + fm.getAscent() / 2);
