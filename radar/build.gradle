@@ -1,0 +1,224 @@
+import com.github.spotbugs.snom.SpotBugsTask
+
+plugins {
+    id 'base'
+    id 'com.github.johnrengelman.shadow' version '7.1.1' apply false
+    id "com.jfrog.artifactory" version "4.25.2"
+    id 'edu.wpi.first.wpilib.versioning.WPILibVersioningPlugin' version '4.1.0'
+    id 'edu.wpi.first.wpilib.repositories.WPILibRepositoriesPlugin' version '2020.2'
+
+    id 'com.github.spotbugs' version '5.0.4'
+    id 'edu.wpi.first.WpilibTools' version '1.0.0'
+}
+
+wpilibVersioning.buildServerMode = project.hasProperty('buildServer')
+wpilibVersioning.releaseMode = project.hasProperty('releaseMode')
+
+allprojects {
+    repositories {
+        mavenCentral()
+    }
+    if (project.hasProperty('releaseMode')) {
+        wpilibRepositories.addAllReleaseRepositories(it)
+    } else {
+        wpilibRepositories.addAllDevelopmentRepositories(it)
+    }
+}
+
+wpilibVersioning.version.finalizeValue()
+version = wpilibVersioning.version.get()
+
+def projectVersion = version
+
+def outputsFolder = file("$buildDir/allOutputs")
+
+task copyAllOutputs(type: Copy) {
+    destinationDir outputsFolder
+}
+
+build.dependsOn copyAllOutputs
+
+ext.addTaskToCopyAllOutputs = { task ->
+    copyAllOutputs.dependsOn task
+    copyAllOutputs.inputs.file task.archivePath
+    copyAllOutputs.from task.archivePath
+}
+
+//TODO: Remove when we upgrade to Java 12
+final JAVADOC_FIX_SEARCH_STR = '\n\n' +
+        'getURLPrefix = function(ui) {\n' +
+        '    return \'\';\n' +
+        '};\n'
+
+allprojects {
+    apply plugin: 'java'
+    apply plugin: 'maven-publish'
+
+    apply plugin: 'edu.wpi.first.WpilibTools'
+    apply plugin: 'com.jfrog.artifactory'
+
+    def publishingFromAllOutputs = false
+    if (project.hasProperty('prCombinePublish')) {
+        publishingFromAllOutputs = true
+    }
+
+    if (System.getenv()['RUN_AZURE_ARTIFACTORY_RELEASE'] != null) {
+        publishingFromAllOutputs = true
+        artifactory {
+            contextUrl = 'https://frcmaven.wpi.edu/artifactory' // base artifactory url
+            publish {
+                repository {
+                if (project.hasProperty('releaseMode')) {
+                    repoKey = 'release'
+                } else {
+                    repoKey = 'development'
+                }
+                    username = System.getenv()["ARTIFACTORY_PUBLISH_USERNAME"]
+                    password = System.getenv()["ARTIFACTORY_PUBLISH_PASSWORD"]
+                    maven = true
+                }
+            }
+            clientConfig.info.setBuildName("Shuffleboard")
+        }
+        publish.dependsOn artifactoryPublish
+    }
+
+    if (project.name == 'app') {
+        afterEvaluate {
+            publishing {
+                publications {
+                    maven(MavenPublication) {
+                    if (publishingFromAllOutputs) {
+                        outputsFolder.eachFile {
+                            def dashSplit = it.name.split('-')
+                            def clfr = dashSplit[dashSplit.length - 1].split('\\.')[0]
+                            artifact(it) {
+                                classifier = clfr
+                            }
+                        }
+                    } else {
+                        artifact(project.shadowJar)
+                    }
+                    groupId 'edu.wpi.first.tools'
+                    artifactId = 'Shuffleboard'
+                    version project.version
+                    }
+                }
+            }
+            if (System.getenv()["RUN_AZURE_ARTIFACTORY_RELEASE"] != null) {
+                artifactory {
+                    publish {
+                        defaults {
+                            publications('maven')
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    version = projectVersion
+
+    // Note: plugins should override this
+    tasks.withType(Jar).configureEach {
+        manifest {
+            attributes["Implementation-Version"] = project.version as String
+            attributes["Built-Date"] = Instant.now().toString()
+        }
+    }
+
+
+
+    configurations {
+        javaFxDeps
+    }
+
+    configurations.compileOnly.extendsFrom(configurations.javaFxDeps)
+    // configurations.testImplementation.extendsFrom(configurations.javaFxDeps)
+
+    dependencies {
+        javaFxDeps wpilibTools.deps.javafx("base")
+        javaFxDeps wpilibTools.deps.javafx("controls")
+        javaFxDeps wpilibTools.deps.javafx("fxml")
+        javaFxDeps wpilibTools.deps.javafx("graphics")
+
+        def junitJupiter = { name ->
+            create group: 'org.junit.jupiter', name: name, version: '5.6.1'
+        }
+
+
+        compileOnly create(group: 'com.google.code.findbugs', name: 'annotations', version: '3.0.1')
+
+
+    }
+
+    tasks.withType(JavaCompile) {
+        // UTF-8 characters are used in menus
+        options.encoding = "UTF-8"
+    }
+
+ 
+
+    tasks.withType(Javadoc) {
+        options.encoding = "UTF-8"
+        options.links 'https://docs.oracle.com/en/java/javase/11/docs/api/'
+        options.tags(
+                'implSpec:a:Implementation Requirements:',
+                'implNote:a:Implementation Note:'
+        )
+
+        doLast {
+            // Append the fix to the file
+            def searchScript = new File(destinationDir.getAbsolutePath() + '/search.js')
+            searchScript.append JAVADOC_FIX_SEARCH_STR
+        }
+    }
+
+    tasks.withType(GenerateModuleMetadata) {
+        enabled = false
+    }
+}
+
+allprojects {
+
+
+
+
+
+}
+
+project(":api") {
+    apply plugin: 'maven-publish'
+    def sourceJar = tasks.register("sourceJar", Jar) {
+        description = "Creates a JAR that contains the source code."
+        from(sourceSets["main"].allSource)
+        classifier = "sources"
+    }
+    def javadocJar = tasks.register("javadocJar", Jar) {
+        dependsOn("javadoc")
+        description = "Creates a JAR that contains the javadocs."
+        from(docsDir)
+        classifier = "javadoc"
+    }
+
+
+
+    publishing {
+        publications {
+            api(MavenPublication) {
+                groupId = "edu.wpi.first.shuffleboard"
+                artifactId = "api"
+                version = project.version.toString()
+                afterEvaluate {
+                    from(components["java"])
+                }
+                artifact(sourceJar.get())
+                artifact(javadocJar.get())
+            }
+        }
+    }
+}
+
+wrapper {
+    gradleVersion = '7.5.1'
+}
