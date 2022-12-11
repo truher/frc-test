@@ -55,6 +55,8 @@ public class SmartDashboard {
    * @see SmartDashboard#inCompetition() inCompetition()
    */
   public static void main(final String[] args) throws IOException {
+    NewThing n = new NewThing();
+    n.run();
     WPIUtilJNI.Helper.setExtractOnStaticLoad(false);
     NetworkTablesJNI.Helper.setExtractOnStaticLoad(false);
     CombinedRuntimeLoader.loadLibraries(SmartDashboard.class, "wpiutiljni", "ntcorejni");
