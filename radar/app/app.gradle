@@ -36,14 +36,14 @@ dependencies {
     }
     javaFxDeps wpilibTools.deps.javafx("web")
 
-    implementation project(':api')
-    implementation project(':plugins:base')
 
     implementation project(':plugins:networktables')
 
     api group: "de.huxhorn.lilith", name: "de.huxhorn.lilith.3rdparty.junique", version: "1.0.4"
     implementation group: "org.apache.commons", name: "commons-csv", version: "1.5"
-
+    api "com.fasterxml.jackson.core:jackson-annotations:2.10.0"
+    api "com.fasterxml.jackson.core:jackson-core:2.10.0"
+    api "com.fasterxml.jackson.core:jackson-databind:2.10.0"
 }
 
 def theMainClassName = "edu.wpi.first.shuffleboard.app.Main"

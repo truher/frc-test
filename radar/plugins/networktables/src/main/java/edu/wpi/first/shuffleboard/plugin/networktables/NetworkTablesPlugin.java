@@ -1,57 +1,41 @@
 package edu.wpi.first.shuffleboard.plugin.networktables;
 
-
-import edu.wpi.first.shuffleboard.api.plugin.Plugin;
-import edu.wpi.first.shuffleboard.plugin.networktables.util.NetworkTableUtils;
 import edu.wpi.first.util.CombinedRuntimeLoader;
 
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.NetworkTablesJNI;
 
 import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
 import javafx.beans.value.ChangeListener;
 
+public class NetworkTablesPlugin {
 
-public class NetworkTablesPlugin extends Plugin {
-
-  private int recorderUid = -1;
-  private static final Logger log = Logger.getLogger(NetworkTablesPlugin.class.getName());
   private final NetworkTableInstance inst;
 
   private final StringProperty serverId = new SimpleStringProperty(this, "server", "localhost");
-  
-
-
-
-
-
 
   private final HostParser hostParser = new HostParser();
 
   private final ChangeListener<String> serverChangeListener;
 
-  private static NetworkTableInstance getDefaultInstance() {
+  private static NetworkTableInstance getDefaultInstance() throws IOException {
     NetworkTablesJNI.Helper.setExtractOnStaticLoad(false);
-    try {
-      var files = CombinedRuntimeLoader.extractLibraries(NetworkTablesPlugin.class,
-          "/ResourceInformation-NetworkTables.json");
-      CombinedRuntimeLoader.loadLibrary("ntcorejni", files);
-    } catch (IOException ex) {
-      log.log(Level.SEVERE, "Failed to load NT Core Libraries", ex);
-    }
+
+    var files = CombinedRuntimeLoader.extractLibraries(NetworkTablesPlugin.class,
+        "/ResourceInformation-NetworkTables.json");
+    CombinedRuntimeLoader.loadLibrary("ntcorejni", files);
 
     return NetworkTableInstance.getDefault();
   }
 
   /**
    * Constructs the NetworkTables plugin.
+   * 
+   * @throws IOException
    */
-  public NetworkTablesPlugin() {
+  public NetworkTablesPlugin() throws IOException {
     this(getDefaultInstance());
   }
 
@@ -60,11 +44,6 @@ public class NetworkTablesPlugin extends Plugin {
    */
   public NetworkTablesPlugin(NetworkTableInstance inst) {
     this.inst = inst;
-  
-  
-
-
-
 
     serverChangeListener = (observable, oldValue, newValue) -> {
       var hostInfoOpt = hostParser.parse(newValue);
@@ -77,7 +56,9 @@ public class NetworkTablesPlugin extends Plugin {
 
       var hostInfo = hostInfoOpt.get();
 
-      NetworkTableUtils.shutdown(inst);
+      inst.stopDSClient();
+      inst.stopClient();
+      inst.stopServer();
 
       if (hostInfo.getTeam().isPresent()) {
         inst.setServerTeam(hostInfo.getTeam().getAsInt(), hostInfo.getPort());
@@ -91,39 +72,17 @@ public class NetworkTablesPlugin extends Plugin {
     };
   }
 
-  @Override
   public void onLoad() {
-
-
-
-
-
-   
-
 
     serverChangeListener.changed(null, null, serverId.get());
     serverId.addListener(serverChangeListener);
   }
 
-  @Override
   public void onUnload() {
-  
-
-
-    NetworkTablesJNI.removeListener(recorderUid);
-    NetworkTableUtils.shutdown(inst);
-   
+    inst.stopDSClient();
+    inst.stopClient();
+    inst.stopServer();
   }
-
-
-
-
-
-
-
-
-
-
 
   public String getServerId() {
     return serverId.get();

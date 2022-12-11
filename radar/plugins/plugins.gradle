@@ -4,7 +4,7 @@ subprojects {
         apply plugin: 'maven-publish'
         dependencies {
             compileOnly group: "com.google.code.findbugs", name: "annotations", version: "+"
-            implementation project(":api")
+
         }
 
         if (project.hasProperty('platformSpecSkipPublishing')) return

@@ -5,8 +5,8 @@ import com.sun.javafx.application.LauncherImpl;
 import edu.wpi.first.networktables.BooleanPublisher;
 import edu.wpi.first.networktables.BooleanTopic;
 import edu.wpi.first.networktables.NetworkTable;
+import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.shuffleboard.plugin.networktables.NetworkTablesPlugin;
-import edu.wpi.first.shuffleboard.plugin.networktables.util.NetworkTableUtils;
 import edu.wpi.first.util.CombinedRuntimeLoader;
 import edu.wpi.first.util.WPIUtilJNI;
 
@@ -33,7 +33,7 @@ public final class Main {
 
 
     NetworkTablesPlugin ntp = new NetworkTablesPlugin(); // side-effect = loads ntcore
-    NetworkTable t = NetworkTableUtils.rootTable;
+    NetworkTable t = NetworkTableInstance.getDefault().getTable("");
     BooleanTopic  b = t.getBooleanTopic("blarg2");
     BooleanPublisher p = b.publish();
     p.set(true);

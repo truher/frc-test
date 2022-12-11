@@ -187,37 +187,6 @@ allprojects {
 
 }
 
-project(":api") {
-    apply plugin: 'maven-publish'
-    def sourceJar = tasks.register("sourceJar", Jar) {
-        description = "Creates a JAR that contains the source code."
-        from(sourceSets["main"].allSource)
-        classifier = "sources"
-    }
-    def javadocJar = tasks.register("javadocJar", Jar) {
-        dependsOn("javadoc")
-        description = "Creates a JAR that contains the javadocs."
-        from(docsDir)
-        classifier = "javadoc"
-    }
-
-
-
-    publishing {
-        publications {
-            api(MavenPublication) {
-                groupId = "edu.wpi.first.shuffleboard"
-                artifactId = "api"
-                version = project.version.toString()
-                afterEvaluate {
-                    from(components["java"])
-                }
-                artifact(sourceJar.get())
-                artifact(javadocJar.get())
-            }
-        }
-    }
-}
 
 wrapper {
     gradleVersion = '7.5.1'
