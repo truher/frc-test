@@ -5,7 +5,7 @@ import edu.wpi.first.wpiutil.CombinedRuntimeLoader;
 import edu.wpi.first.wpiutil.WPIUtilJNI;
 import java.io.IOException;
 
-public class SmartDashboard {
+public class Radar {
 
   public static void main(final String[] args) throws IOException {
     System.out.println("main");
@@ -13,7 +13,7 @@ public class SmartDashboard {
     n.run();
     WPIUtilJNI.Helper.setExtractOnStaticLoad(false);
     NetworkTablesJNI.Helper.setExtractOnStaticLoad(false);
-    CombinedRuntimeLoader.loadLibraries(SmartDashboard.class, "wpiutiljni", "ntcorejni");
+    CombinedRuntimeLoader.loadLibraries(Radar.class, "wpiutiljni", "ntcorejni");
     NetworkTablesJNI.getDefaultInstance();
 
   }
