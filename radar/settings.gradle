@@ -6,11 +6,11 @@ pluginManagement {
 }
 
 
-include ":app"
+// include ":app"
 
 
 
-include ":plugins:networktables"
+//include ":networktables"
 
 
 rootProject.children.each {
