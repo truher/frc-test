@@ -1,28 +1,31 @@
 package org.truher.radar;
 
-import edu.wpi.first.networktables.BooleanPublisher;
-import edu.wpi.first.networktables.BooleanTopic;
-import edu.wpi.first.networktables.NetworkTable;
+import java.io.IOException;
+
+import edu.wpi.first.math.WPIMathJNI;
+import edu.wpi.first.net.WPINetJNI;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.NetworkTablesJNI;
 import edu.wpi.first.util.CombinedRuntimeLoader;
 import edu.wpi.first.util.WPIUtilJNI;
 
-import java.io.IOException;
-
 public final class Main {
 
   public static void main(String[] args) throws IOException, InterruptedException {
-
-    WPIUtilJNI.Helper.setExtractOnStaticLoad(false);
-    CombinedRuntimeLoader.loadLibraries(Main.class, "wpiutiljni");
-
+    // Turns off the native loaders in static initializers, which only work
+    // if the cache is already populated.
     NetworkTablesJNI.Helper.setExtractOnStaticLoad(false);
-    // json filename matches build.gradle
-    var files = CombinedRuntimeLoader.extractLibraries(Main.class, "/ResourceInformation-NetworkTables.json"); 
-    CombinedRuntimeLoader.loadLibrary("ntcorejni", files);
+    WPIMathJNI.Helper.setExtractOnStaticLoad(false);
+    WPINetJNI.Helper.setExtractOnStaticLoad(false);
+    WPIUtilJNI.Helper.setExtractOnStaticLoad(false);
 
-    NetworkTableInstance inst =  NetworkTableInstance.getDefault(); 
+    // Extracts specified dlls from the jar if they're listed in
+    // ResourceInformation.json, and loads them. Note: ntcore depends on wpinet and
+    // wpiutil; loadLibraries sets the DLL directory so that windows can find them
+    // if they don't happen to be listed in dependency order.
+    CombinedRuntimeLoader.loadLibraries(Main.class, "wpinetjni", "ntcorejni", "wpiutiljni", "wpimathjni");
+
+    NetworkTableInstance inst = NetworkTableInstance.getDefault();
     inst.setServer("localhost", NetworkTableInstance.kDefaultPort4);
     inst.startClient4("radar");
     inst.startDSClient();

@@ -13,40 +13,33 @@ repositories {
 }
 wpilibRepositories.addAllDevelopmentRepositories(project)
 
-
-
 def nativeConfigName = 'wpilibNatives'
 def nativeTasks = wpilibTools.createExtractionTasks {
     configurationName = nativeConfigName
-    resourceFileName = "ResourceInformation-NetworkTables.json"
+    // Uses default resourceFileName, "ResourceInformation.json"
 }
 nativeTasks.addToSourceSetResources(sourceSets.main)
 
 wpilibTools.deps.wpilibVersion = "2023.+"
-//wpilibTools.deps.wpilibVersion = "2023.1.1-beta-6"
+
 def nativeConfig = configurations.create(nativeConfigName)
 nativeConfig.dependencies.add wpilibTools.deps.wpilib('ntcore')
-//nativeConfig.dependencies.add wpilibTools.deps.wpilib("wpinet")
+nativeConfig.dependencies.add wpilibTools.deps.wpilib("wpinet") // used by ntcore
 nativeConfig.dependencies.add wpilibTools.deps.wpilib("wpiutil")
 nativeConfig.dependencies.add wpilibTools.deps.wpilib("wpimath")
-nativeTasks.extractConfiguration.configure {
-    it.skipWindowsHelperLibrary = true
-}
 
 dependencies {
-    api "org.ejml:ejml-simple:0.41" // wpimath needs this
-
+    api "org.ejml:ejml-simple:0.41" // for wpimath
     api "org.msgpack:msgpack-core:0.9.3"
     api "org.msgpack:jackson-dataformat-msgpack:0.9.3"
-
     api "com.fasterxml.jackson.core:jackson-annotations:2.10.0"
     api "com.fasterxml.jackson.core:jackson-core:2.10.0"
     api "com.fasterxml.jackson.core:jackson-databind:2.10.0"
     api wpilibTools.deps.wpilibJava("ntcore")
+    api wpilibTools.deps.wpilibJava("wpinet") // used by ntcore
     api wpilibTools.deps.wpilibJava("wpiutil")
     api wpilibTools.deps.wpilibJava("wpimath")
 }
-
 
 def theMainClassName = "org.truher.radar.Main"
 application {
