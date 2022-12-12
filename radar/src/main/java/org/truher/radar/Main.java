@@ -16,11 +16,7 @@ public final class Main {
     WPIUtilJNI.Helper.setExtractOnStaticLoad(false);
     CombinedRuntimeLoader.loadLibraries(Main.class, "wpiutiljni");
 
-    System.out.println("##############################################################################");
-    System.out.println("##############################################################################");
-    System.out.println("##############################################################################");
-    System.out.println("##############################################################################");
-    System.out.println("##############################################################################");
+    System.out.println("START ##############################################################################");
 
     NetworkTablesPlugin ntp = new NetworkTablesPlugin();
     ntp.onLoad();
@@ -29,11 +25,11 @@ public final class Main {
     BooleanPublisher p = b.publish();
     p.set(true);
 
-    System.out.println("##############################################################################");
-    System.out.println("##############################################################################");
-    System.out.println("##############################################################################");
-    System.out.println("##############################################################################");
-    System.out.println("##############################################################################");
+    TargetSubscriber r = new TargetSubscriber();
+    r.run();
+    new TargetPublisher().run();
+
+    System.out.println("END ##############################################################################");
 
     Thread.sleep(30000);
   }
