@@ -16,7 +16,7 @@ import edu.wpi.first.networktables.RawPublisher;
 /**
  * Publishes the target list.
  * 
- * Imagine this is the camera-based localizer.
+ * Imagine these are AprilTag poses derived from a camera.
  */
 public class TargetPublisher {
     TargetList publisherTargetList = new TargetList();
@@ -56,8 +56,9 @@ public class TargetPublisher {
         inst.startClient4("Radar Publisher");
         inst.setServer("localhost");
         NetworkTable table = inst.getTable("radar");
-
-        targetListPublisher = table.getRawTopic("targets").publish("msgpack"); // the string "msgpack" is magic to glass
+        
+        // The type "msgpack" is known to glass
+        targetListPublisher = table.getRawTopic("targets").publish("msgpack");
 
         publish();
 
