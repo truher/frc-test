@@ -20,6 +20,11 @@
       "Column 0  Width": "130",
       "Column 1  Weight": "1.0000",
       "RefScale": "13"
+    },
+    "0x965B9C9E,2": {
+      "Column 0  Width": "130",
+      "Column 1  Weight": "1.0000",
+      "RefScale": "13"
     }
   },
   "Window": {

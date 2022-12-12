@@ -4,7 +4,6 @@ plugins {
     id 'java-library'
     id 'application'
     id 'com.github.johnrengelman.shadow' version '7.1.1'
-    id "com.jfrog.artifactory" version "4.25.2"
     id 'edu.wpi.first.wpilib.repositories.WPILibRepositoriesPlugin' version '2020.2'
     id 'edu.wpi.first.WpilibTools' version '1.0.0'
 }
