@@ -29,9 +29,11 @@ public final class Main {
     inst.setServer("localhost", NetworkTableInstance.kDefaultPort4);
     inst.startClient4("radar");
     inst.startDSClient();
-
-    TargetSubscriber r = new TargetSubscriber();
+    TargetSubscriber r = new TargetSubscriber("targets");
     r.run();
+    TargetSubscriber rm = new TargetSubscriber("map");
+    rm.run();
+
     new TargetPublisher().run();
 
     Thread.sleep(30000);

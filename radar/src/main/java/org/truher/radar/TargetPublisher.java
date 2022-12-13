@@ -7,8 +7,10 @@ import org.msgpack.jackson.dataformat.MessagePackFactory;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import edu.wpi.first.math.geometry.Pose3d;
-import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Transform2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.RawPublisher;
@@ -17,65 +19,71 @@ import edu.wpi.first.networktables.RawPublisher;
  * Publishes the target list.
  * 
  * Imagine these are AprilTag poses derived from a camera.
+ * 
+ * Targets are fixed to the earth; observer goes back and forth.
  */
 public class TargetPublisher {
+    // positions relative to the earth
+    TargetList targetMap = new TargetList();
+    RawPublisher mapPublisher;
+    Target observer = new Target(Target.Type.SELF, 0, new Pose2d());
+
+    // positions relative to the robot
     TargetList publisherTargetList = new TargetList();
     RawPublisher targetListPublisher;
     Random rand = new Random();
     private static final int walkPerStep = 10;
-    private static final double radPerStep = 0.25;
-
-    public TargetPublisher() {
-        System.out.println("publisher ctor start");
-        Target t = new Target();
-        t.id = 0;
-        t.pose = new Pose3d(-100, -100, 0, new Rotation3d());
-        publisherTargetList.targets.add(t);
-        t = new Target();
-        t.id = 1;
-        t.pose = new Pose3d(100, -100, 0, new Rotation3d());
-        publisherTargetList.targets.add(t);
-        t = new Target();
-        t.id = 2;
-        t.pose = new Pose3d(100, 100, 0, new Rotation3d());
-        publisherTargetList.targets.add(t);
-        t = new Target();
-        t.id = 3;
-        t.pose = new Pose3d(-100, 100, 350, new Rotation3d());
-        publisherTargetList.targets.add(t);
-        System.out.println("publisher ctor done");
-    }
+    int steps = 0;
 
     /**
-     * Moves the targets a little.
+     * Drive around and publish targets.
      */
     public void run() {
-        System.out.println("publisher run start");
+        targetMap.targets.add(new Target(Target.Type.TAG, 0, new Pose2d(0, -200, Rotation2d.fromDegrees(-90))));
+        targetMap.targets.add(new Target(Target.Type.TAG, 1, new Pose2d(200, -200, Rotation2d.fromDegrees(-90))));
+        targetMap.targets.add(new Target(Target.Type.TAG, 2, new Pose2d(200, 200, Rotation2d.fromDegrees(90))));
+        targetMap.targets.add(new Target(Target.Type.TAG, 3, new Pose2d(0, 200, Rotation2d.fromDegrees(90))));
+        targetMap.targets.add(new Target(Target.Type.ALLY, 4, new Pose2d(-100, 0, new Rotation2d())));
+        targetMap.targets.add(new Target(Target.Type.OPPONENT, 5, new Pose2d(300, 0, new Rotation2d())));
+        targetMap.targets.add(observer);
 
         NetworkTableInstance inst = NetworkTableInstance.getDefault();
         inst.startClient4("Radar Publisher");
         inst.setServer("localhost");
         NetworkTable table = inst.getTable("radar");
-        
+
         // The type "msgpack" is known to glass
         targetListPublisher = table.getRawTopic("targets").publish("msgpack");
+        mapPublisher = table.getRawTopic("map").publish("msgpack");
 
         publish();
 
         while (true) {
             try {
-                Thread.sleep(100);
-                System.out.println("publish");
-                for (int i = 0; i < publisherTargetList.targets.size(); ++i) {
-                    Pose3d oldPose = publisherTargetList.targets.get(i).pose;
-                    int dx = rand.nextInt(2 * walkPerStep - 1) - walkPerStep;
-                    int dy = rand.nextInt(2 * walkPerStep - 1) - walkPerStep;
-                    double drot = rand.nextDouble(-radPerStep, radPerStep);
-                    publisherTargetList.targets.get(i).pose = new Pose3d(
-                            oldPose.getX() + dx,
-                            oldPose.getY() + dy,
-                            oldPose.getZ(),
-                            oldPose.getRotation().plus(new Rotation3d(0, 0, drot)));
+                steps += 1;
+                int phase = steps % 80;
+                if (phase < 20) {
+                    // walking
+                    observer.pose = observer.pose
+                            .plus(new Transform2d(new Translation2d(walkPerStep, 0), new Rotation2d()));
+                } else if (phase < 40) {
+                    // turning
+                    observer.pose = observer.pose
+                            .plus(new Transform2d(new Translation2d(walkPerStep, 0), Rotation2d.fromDegrees(180 / 20)));
+                } else if (phase < 60) {
+                    // walking
+                    observer.pose = observer.pose
+                            .plus(new Transform2d(new Translation2d(walkPerStep, 0), new Rotation2d()));
+                } else {
+                    // turning
+                    observer.pose = observer.pose
+                            .plus(new Transform2d(new Translation2d(walkPerStep, 0), Rotation2d.fromDegrees(180 / 20)));
+                }
+                Thread.sleep(50);
+                publisherTargetList.targets.clear();
+                for (Target mapTarget : targetMap.targets) {
+                    publisherTargetList.targets
+                            .add(new Target(mapTarget.type, mapTarget.id, mapTarget.pose.relativeTo(observer.pose)));
                 }
                 publish();
             } catch (InterruptedException e) {
@@ -87,10 +95,10 @@ public class TargetPublisher {
     private void publish() {
         ObjectMapper objectMapper = new ObjectMapper(new MessagePackFactory());
         try {
-            byte[] bytes = objectMapper.writeValueAsBytes(publisherTargetList);
-            targetListPublisher.set(bytes);
+            targetListPublisher.set(objectMapper.writeValueAsBytes(publisherTargetList));
+            mapPublisher.set(objectMapper.writeValueAsBytes(targetMap));
         } catch (JsonProcessingException e) {
-            System.out.println("publisher exception");
+            e.printStackTrace();
         }
     }
 }
