@@ -1,6 +1,10 @@
 package org.truher.radar;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 import edu.wpi.first.math.WPIMathJNI;
 import edu.wpi.first.net.WPINetJNI;
@@ -10,8 +14,23 @@ import edu.wpi.first.util.CombinedRuntimeLoader;
 import edu.wpi.first.util.WPIUtilJNI;
 
 public final class Main {
-
   public static void main(String[] args) throws IOException, InterruptedException {
+    System.out.println("""
+        Radar: NT4 example dashboard app.
+
+        Usage: java -jar Radar-winx64.jar          NT server, publish fake data to 'targets' and 'map'
+           or: java -jar Radar-winx64.jar [topic]  NT client, display targets from specified topic
+        """);
+
+    String topicName = null;
+    if (args.length > 0) {
+      topicName = args[0]; // currently "targets" or "map"
+    }
+    if (args.length > 1) {
+      System.out.printf("ignoring extra arguments: %s\n",
+          String.join(" ", Arrays.copyOfRange(args, 1, args.length)));
+    }
+
     // Turns off the native loaders in static initializers, which only work
     // if the cache is already populated.
     NetworkTablesJNI.Helper.setExtractOnStaticLoad(false);
@@ -25,17 +44,21 @@ public final class Main {
     // if they don't happen to be listed in dependency order.
     CombinedRuntimeLoader.loadLibraries(Main.class, "wpinetjni", "ntcorejni", "wpiutiljni", "wpimathjni");
 
-    NetworkTableInstance inst = NetworkTableInstance.getDefault();
-    inst.setServer("localhost", NetworkTableInstance.kDefaultPort4);
-    inst.startClient4("radar");
-    inst.startDSClient();
-    TargetSubscriber r = new TargetSubscriber("targets");
-    r.run();
-    TargetSubscriber rm = new TargetSubscriber("map");
-    rm.run();
+    // NetworkTableInstance inst = NetworkTableInstance.getDefault();
+    // inst.setServer("localhost", NetworkTableInstance.kDefaultPort4);
+    // inst.startClient4("radar");
+    // inst.startDSClient();
 
-    new TargetPublisher().run();
+    if (topicName == null) {
+      System.out.println("running publisher");
+      new TargetPublisher().run();
+    } else {
+      System.out.printf("subscribing to topic %s\n", topicName);
+      new TargetSubscriber(topicName).run();
+    }
 
-    Thread.sleep(30000);
+    while (true) {
+      Thread.sleep(1000);
+    }
   }
 }

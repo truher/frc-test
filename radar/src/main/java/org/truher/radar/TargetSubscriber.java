@@ -65,14 +65,15 @@ public class TargetSubscriber extends JPanel {
     public void run() {
         NetworkTableInstance inst = NetworkTableInstance.getDefault();
         inst.startClient4("Radar Subscriber");
-        inst.setServer("localhost");
+        inst.setServer("localhost", NetworkTableInstance.kDefaultPort4);
+        inst.startDSClient(); // use the DS addr if it exists
+
         NetworkTable table = inst.getTable("radar");
+        
         inst.addListener(
                 table.getEntry(topicName),
                 EnumSet.of(NetworkTableEvent.Kind.kValueAll),
                 (event) -> render(event));
-
-        inst.startClient4("localhost");
     }
 
     /**

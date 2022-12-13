@@ -35,10 +35,7 @@ public class TargetPublisher {
     private static final int walkPerStep = 10;
     int steps = 0;
 
-    /**
-     * Drive around and publish targets.
-     */
-    public void run() {
+    public TargetPublisher() {
         targetMap.targets.add(new Target(Target.Type.TAG, 0, new Pose2d(0, -200, Rotation2d.fromDegrees(-90))));
         targetMap.targets.add(new Target(Target.Type.TAG, 1, new Pose2d(200, -200, Rotation2d.fromDegrees(-90))));
         targetMap.targets.add(new Target(Target.Type.TAG, 2, new Pose2d(200, 200, Rotation2d.fromDegrees(90))));
@@ -46,10 +43,14 @@ public class TargetPublisher {
         targetMap.targets.add(new Target(Target.Type.ALLY, 4, new Pose2d(-100, 0, new Rotation2d())));
         targetMap.targets.add(new Target(Target.Type.OPPONENT, 5, new Pose2d(300, 0, new Rotation2d())));
         targetMap.targets.add(observer);
+    }
 
+    /**
+     * Drive around and publish targets.
+     */
+    public void run() {
         NetworkTableInstance inst = NetworkTableInstance.getDefault();
-        inst.startClient4("Radar Publisher");
-        inst.setServer("localhost");
+        inst.startServer("Radar Publisher");
         NetworkTable table = inst.getTable("radar");
 
         // The type "msgpack" is known to glass
