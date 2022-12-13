@@ -23,8 +23,10 @@ nativeTasks.addToSourceSetResources(sourceSets.main)
 wpilibTools.deps.wpilibVersion = "2023.+"
 
 def nativeConfig = configurations.create(nativeConfigName)
+// ntcore uses wpinet and wpiutil.
+// wpimath uses wpiutil.
 nativeConfig.dependencies.add wpilibTools.deps.wpilib('ntcore')
-nativeConfig.dependencies.add wpilibTools.deps.wpilib("wpinet") // used by ntcore
+nativeConfig.dependencies.add wpilibTools.deps.wpilib("wpinet")
 nativeConfig.dependencies.add wpilibTools.deps.wpilib("wpiutil")
 nativeConfig.dependencies.add wpilibTools.deps.wpilib("wpimath")
 
@@ -36,7 +38,7 @@ dependencies {
     api "com.fasterxml.jackson.core:jackson-core:2.10.0"
     api "com.fasterxml.jackson.core:jackson-databind:2.10.0"
     api wpilibTools.deps.wpilibJava("ntcore")
-    api wpilibTools.deps.wpilibJava("wpinet") // used by ntcore
+    api wpilibTools.deps.wpilibJava("wpinet")
     api wpilibTools.deps.wpilibJava("wpiutil")
     api wpilibTools.deps.wpilibJava("wpimath")
 }

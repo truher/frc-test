@@ -1,4 +1,6 @@
-package org.truher.radar;
+package org.truher.radar.model;
+
+import org.truher.radar.detector.MathSetup;
 
 import edu.wpi.first.math.geometry.Pose2d;
 
@@ -8,7 +10,10 @@ import edu.wpi.first.math.geometry.Pose2d;
  * fields are final.
  */
 public class Target {
-    enum Type {
+    static {
+        new MathSetup();
+    }
+    public enum Type {
         TAG, ALLY, OPPONENT, SELF, DEFAULT
     }
 

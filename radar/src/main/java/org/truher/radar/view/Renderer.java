@@ -1,4 +1,4 @@
-package org.truher.radar;
+package org.truher.radar.view;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
@@ -11,32 +11,20 @@ import java.awt.geom.Ellipse2D;
 import java.awt.geom.Line2D;
 import java.awt.geom.Path2D;
 import java.awt.geom.Point2D;
-import java.io.IOException;
-import java.util.EnumSet;
+import java.util.function.Consumer;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 
-import org.msgpack.jackson.dataformat.MessagePackFactory;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import edu.wpi.first.networktables.NetworkTable;
-import edu.wpi.first.networktables.NetworkTableEvent;
-import edu.wpi.first.networktables.NetworkTableInstance;
+import org.truher.radar.model.Target;
+import org.truher.radar.model.TargetList;
 
 /**
- * Listens for updates to the target list and renders them.
+ * Accepts target lists and renders them.
  * 
- * There are both robot-relative "head up" and field-relative "north up"
- * displays, using
- * two different NetworkTable topics. Both use x-up and y-left. Symbols come
- * from NATO APP-6.
- * 
- * TODO: split the thing i'm actually trying to illustrate, which is the NT4
- * part, from the rendering part.
+ * Display orientation is x-up asnd y-left. Symbols are from NATO APP-6.
  */
-public class TargetSubscriber extends JPanel {
+public class Renderer extends JPanel implements Consumer<TargetList> {
     private static final Color FRAME_COLOR = new Color(0, 0, 0); // black
     private static final Color TAG_COLOR = new Color(170, 255, 170); // light green
     private static final Color ALLY_COLOR = new Color(0, 255, 255); // cyan
@@ -45,53 +33,36 @@ public class TargetSubscriber extends JPanel {
     private static final int WINDOW_HEIGHT = 800;
     private static final int WINDOW_WIDTH = 800;
     private static final int RADIUS = 350;
-    TargetList subscriberTargetList;
-    private final String topicName;
+    private final TargetList subscriberTargetList;
+    private final JFrame frame;
 
-    public TargetSubscriber(String topicName) {
-        JFrame frame = new JFrame("demo");
+    public Renderer(String topicName, int position) {
+        subscriberTargetList = new TargetList();
+        frame = new JFrame(String.format("Radar for %s", topicName));
         frame.add(this);
-        // TODO: account for title bar and borders correctly
-        // also allow resizing etc.
         frame.setSize(WINDOW_WIDTH + 30, WINDOW_HEIGHT + 60);
+        frame.setLocation(position * (WINDOW_WIDTH + 30), 0);
         frame.setVisible(true);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        this.topicName = topicName;
     }
 
     /**
-     * Registers update listener and returns.
+     * Update the target list.
+     * 
+     * Synchronized to avoid updating while painting.
      */
-    public void run() {
-        NetworkTableInstance inst = NetworkTableInstance.getDefault();
-        inst.startClient4("Radar Subscriber");
-        inst.setServer("localhost", NetworkTableInstance.kDefaultPort4);
-        inst.startDSClient(); // use the DS addr if it exists
-
-        NetworkTable table = inst.getTable("radar");
-        
-        inst.addListener(
-                table.getEntry(topicName),
-                EnumSet.of(NetworkTableEvent.Kind.kValueAll),
-                (event) -> render(event));
+    public synchronized void accept(TargetList update) {
+        subscriberTargetList.update(update);
+        repaint();
     }
 
     /**
-     * Deserializes the target list to a member, and asks for repainting
+     * Render the target list.
+     * 
+     * Synchronized to avoid updating while painting.
      */
-    private void render(NetworkTableEvent event) {
-        byte[] newBytes = event.valueData.value.getRaw();
-        ObjectMapper objectMapper = new ObjectMapper(new MessagePackFactory());
-        try {
-            subscriberTargetList = objectMapper.readValue(newBytes, TargetList.class);
-            repaint();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
     @Override
-    public void paintComponent(Graphics g) {
+    public synchronized void paintComponent(Graphics g) {
         super.paintComponent(g);
         Graphics2D graphic2d = (Graphics2D) g;
         drawCrosshairs(graphic2d);
@@ -118,6 +89,9 @@ public class TargetSubscriber extends JPanel {
         }
     }
 
+    /**
+     * Large crosshair and circle.
+     */
     private void drawCrosshairs(Graphics2D graphic2d) {
         graphic2d.setColor(Color.BLACK);
         graphic2d.setStroke(new BasicStroke(1));

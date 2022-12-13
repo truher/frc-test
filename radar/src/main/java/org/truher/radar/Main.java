@@ -1,64 +1,92 @@
 package org.truher.radar;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 
-import edu.wpi.first.math.WPIMathJNI;
-import edu.wpi.first.net.WPINetJNI;
-import edu.wpi.first.networktables.NetworkTableInstance;
-import edu.wpi.first.networktables.NetworkTablesJNI;
-import edu.wpi.first.util.CombinedRuntimeLoader;
-import edu.wpi.first.util.WPIUtilJNI;
+import org.truher.radar.detector.Producer;
+import org.truher.radar.net.Publisher;
+import org.truher.radar.net.Server;
+import org.truher.radar.net.Subscriber;
+import org.truher.radar.view.Renderer;
 
 public final class Main {
+  public static class Publish {
+    private final Server server;
+    private final Publisher targetPublisher;
+    private final Producer producer;
+
+    public Publish() {
+      server = new Server();
+      targetPublisher = new Publisher();
+      producer = new Producer(targetPublisher);
+      Runtime.getRuntime().addShutdownHook(new Thread(() -> shutdown()));
+    }
+
+    public void run() {
+      server.start();
+      targetPublisher.start();
+      producer.start();
+    }
+
+    private void shutdown() {
+      server.close();
+      targetPublisher.close();
+    }
+  }
+
+  public static class Render {
+    private final List<Subscriber> subscribers;
+
+    public Render(String[] args) {
+      subscribers = new ArrayList<Subscriber>();
+      for (int i = 0; i < args.length; ++i) {
+        String topicName = args[i];
+        System.out.printf("subscribing to topic %s\n", topicName);
+        subscribers.add(
+            new Subscriber(topicName, new Renderer(topicName, i)));
+      }
+      Runtime.getRuntime().addShutdownHook(new Thread(() -> shutdown()));
+    }
+
+    public void run() {
+      System.out.println("starting subscribers");
+      for (Subscriber s : subscribers) {
+        s.start();
+      }
+    }
+
+    private void shutdown() {
+      System.out.println("closing subscribers");
+      for (Subscriber s : subscribers) {
+        s.close();
+      }
+    }
+  }
+
   public static void main(String[] args) throws IOException, InterruptedException {
     System.out.println("""
         Radar: NT4 example dashboard app.
 
-        Usage: java -jar Radar-winx64.jar          NT server, publish fake data to 'targets' and 'map'
-           or: java -jar Radar-winx64.jar [topic]  NT client, display targets from specified topic
+        Usage: java -jar Radar-winx64.jar             NT server, publish fake data to 'targets' and 'map'
+           or: java -jar Radar-winx64.jar [topic ..]  NT client, one display per topic
         """);
 
-    String topicName = null;
-    if (args.length > 0) {
-      topicName = args[0]; // currently "targets" or "map"
-    }
-    if (args.length > 1) {
-      System.out.printf("ignoring extra arguments: %s\n",
-          String.join(" ", Arrays.copyOfRange(args, 1, args.length)));
-    }
-
-    // Turns off the native loaders in static initializers, which only work
-    // if the cache is already populated.
-    NetworkTablesJNI.Helper.setExtractOnStaticLoad(false);
-    WPIMathJNI.Helper.setExtractOnStaticLoad(false);
-    WPINetJNI.Helper.setExtractOnStaticLoad(false);
-    WPIUtilJNI.Helper.setExtractOnStaticLoad(false);
-
-    // Extracts specified dlls from the jar if they're listed in
-    // ResourceInformation.json, and loads them. Note: ntcore depends on wpinet and
-    // wpiutil; loadLibraries sets the DLL directory so that windows can find them
-    // if they don't happen to be listed in dependency order.
-    CombinedRuntimeLoader.loadLibraries(Main.class, "wpinetjni", "ntcorejni", "wpiutiljni", "wpimathjni");
-
-    // NetworkTableInstance inst = NetworkTableInstance.getDefault();
-    // inst.setServer("localhost", NetworkTableInstance.kDefaultPort4);
-    // inst.startClient4("radar");
-    // inst.startDSClient();
-
-    if (topicName == null) {
+    if (args.length == 0) {
       System.out.println("running publisher");
-      new TargetPublisher().run();
+      Publish p = new Publish();
+      p.run();
+      while (true) {
+        Thread.sleep(1000);
+      }
     } else {
-      System.out.printf("subscribing to topic %s\n", topicName);
-      new TargetSubscriber(topicName).run();
-    }
-
-    while (true) {
-      Thread.sleep(1000);
+      System.out.println("running renderers");
+      Render r = new Render(args);
+      r.run();
+      while (true) {
+        Thread.sleep(1000);
+      }
     }
   }
+
 }
