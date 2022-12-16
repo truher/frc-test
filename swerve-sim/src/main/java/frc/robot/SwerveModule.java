@@ -18,8 +18,8 @@ import edu.wpi.first.wpilibj.motorcontrol.PWMSparkMax;
 public class SwerveModule {
   public static final double TURN_KV = 0.5;
   public static final double DRIVE_KV = 3;
-  public static final double TURN_KS = 1;
-  public static final double DRIVE_KS = 1;
+  public static final double TURN_KS = 0.001;
+  public static final double DRIVE_KS = 0.001;
   private static final double kWheelRadius = 0.0508;
   private static final int kEncoderResolution = 4096;
 
@@ -34,12 +34,12 @@ public class SwerveModule {
   private final Encoder m_turningEncoder;
 
   // Gains are for example purposes only - must be determined for your own robot!
-  private final PIDController m_drivePIDController = new PIDController(1, 0, 0);
+  private final PIDController m_drivePIDController = new PIDController(0.01, 0, 0);
 
   // Gains are for example purposes only - must be determined for your own robot!
   private final ProfiledPIDController m_turningPIDController =
       new ProfiledPIDController(
-          1,
+          0.01,
           0,
           0,
           new TrapezoidProfile.Constraints(

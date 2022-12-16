@@ -48,13 +48,124 @@
       "/LiveWindow/Ungrouped/PWMSparkMax[6]": "Motor Controller",
       "/LiveWindow/Ungrouped/PWMSparkMax[7]": "Motor Controller",
       "/LiveWindow/Ungrouped/PWMSparkMax[8]": "Motor Controller",
-      "/SmartDashboard/Field": "Field2d"
+      "/SmartDashboard/Field": "Field2d",
+      "/blarb": "Field2d"
     },
     "windows": {
-      "/SmartDashboard/Field": {
+      "/blarb": {
         "window": {
           "visible": true
         }
+      }
+    }
+  },
+  "NetworkTables": {
+    "transitory": {
+      "BackLeft": {
+        "open": true
+      },
+      "BackRight": {
+        "open": true
+      },
+      "FrontLeft": {
+        "open": true
+      },
+      "FrontRight": {
+        "open": true
+      },
+      "SmartDashboard": {
+        "Field": {
+          "open": true
+        },
+        "open": true
+      },
+      "bloorg": {
+        "open": true
+      },
+      "desired": {
+        "open": true
+      },
+      "desiredV": {
+        "BackLeft": {
+          "drive": {
+            "open": true
+          },
+          "turn": {
+            "open": true
+          }
+        },
+        "BackRight": {
+          "drive": {
+            "open": true
+          },
+          "turn": {
+            "open": true
+          }
+        },
+        "FrontLeft": {
+          "turn": {
+            "open": true
+          }
+        },
+        "FrontRight": {
+          "turn": {
+            "open": true
+          }
+        },
+        "open": true
+      },
+      "encoder": {
+        "BackLeft": {
+          "drive": {
+            "open": true
+          },
+          "turn": {
+            "open": true
+          }
+        },
+        "BackRight": {
+          "drive": {
+            "open": true
+          },
+          "turn": {
+            "open": true
+          }
+        },
+        "FrontLeft": {
+          "open": true,
+          "turn": {
+            "open": true
+          }
+        },
+        "open": true
+      },
+      "encoderBackLeft": {
+        "drive": {
+          "open": true
+        },
+        "turn": {
+          "open": true
+        }
+      },
+      "encoderBackRight": {
+        "open": true
+      },
+      "pwm": {
+        "BackLeft": {
+          "drive": {
+            "open": true
+          },
+          "turn": {
+            "open": true
+          }
+        },
+        "FrontLeft": {
+          "open": true,
+          "turn": {
+            "open": true
+          }
+        },
+        "open": true
       }
     }
   },
@@ -65,8 +176,5 @@
     "Server": {
       "open": true
     }
-  },
-  "NetworkTables View": {
-    "visible": false
   }
 }
