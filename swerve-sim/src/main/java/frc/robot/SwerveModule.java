@@ -16,6 +16,10 @@ import edu.wpi.first.wpilibj.motorcontrol.MotorController;
 import edu.wpi.first.wpilibj.motorcontrol.PWMSparkMax;
 
 public class SwerveModule {
+  public static final double TURN_KV = 0.5;
+  public static final double DRIVE_KV = 3;
+  public static final double TURN_KS = 1;
+  public static final double DRIVE_KS = 1;
   private static final double kWheelRadius = 0.0508;
   private static final int kEncoderResolution = 4096;
 
@@ -42,8 +46,8 @@ public class SwerveModule {
               kModuleMaxAngularVelocity, kModuleMaxAngularAcceleration));
 
   // Gains are for example purposes only - must be determined for your own robot!
-  private final SimpleMotorFeedforward m_driveFeedforward = new SimpleMotorFeedforward(1, 3);
-  private final SimpleMotorFeedforward m_turnFeedforward = new SimpleMotorFeedforward(1, 0.5);
+  private final SimpleMotorFeedforward m_driveFeedforward = new SimpleMotorFeedforward(DRIVE_KS, DRIVE_KV);
+  private final SimpleMotorFeedforward m_turnFeedforward = new SimpleMotorFeedforward(TURN_KS, TURN_KV);
 
   /**
    * Constructs a SwerveModule with a drive motor, turning motor, drive encoder and turning encoder.
