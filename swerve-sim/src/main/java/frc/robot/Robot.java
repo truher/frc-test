@@ -62,4 +62,9 @@ public class Robot extends TimedRobot {
   public void robotPeriodic() {
    // m_swerve.updateOdometry();
   }
+
+  @Override
+  public void testPeriodic() {
+    m_swerve.test(m_controller.getLeftX(), m_controller.getRightX());
+  }
 }
