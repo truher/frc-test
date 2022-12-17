@@ -31,9 +31,10 @@ import edu.wpi.first.wpilibj.simulation.AnalogGyroSim;
 import edu.wpi.first.wpilibj.simulation.CallbackStore;
 import edu.wpi.first.wpilibj.simulation.EncoderSim;
 import edu.wpi.first.wpilibj.simulation.PWMSim;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 /** Represents a swerve drive style drivetrain. */
-public class Drivetrain {
+public class Drivetrain extends SubsystemBase {
   /** 3 m/s */
   public static final double kMaxSpeed = 6.0;
   /** pi rad/s */
@@ -51,13 +52,12 @@ public class Drivetrain {
 
   private final AnalogGyro m_gyro = new AnalogGyro(0);
 
-  private final SwerveDriveKinematics m_kinematics = new SwerveDriveKinematics(
+  final SwerveDriveKinematics m_kinematics = new SwerveDriveKinematics(
       m_frontLeftLocation, m_frontRightLocation, m_backLeftLocation, m_backRightLocation);
 
   Pose2d robotPose = new Pose2d();
   private double m_prevTimeSeconds = Timer.getFPGATimestamp();
   private final double m_nominalDtS = 0.02; // Seconds
-
 
   /*
    * Here we use SwerveDrivePoseEstimator so that we can fuse odometry readings.
@@ -171,6 +171,19 @@ public class Drivetrain {
     fieldTypePub.set("Field2d");
   }
 
+  public Pose2d getPose() {
+    return m_poseEstimator.getEstimatedPosition();
+  }
+
+  public void resetOdometry(Pose2d pose) {
+    m_poseEstimator.resetPosition(m_gyro.getRotation2d(), new SwerveModulePosition[] {
+      m_frontLeft.getPosition(),
+      m_frontRight.getPosition(),
+      m_backLeft.getPosition(),
+      m_backRight.getPosition()
+    }, pose);
+  }
+
   /**
    * Method to drive the robot using joystick info.
    *
@@ -193,6 +206,10 @@ public class Drivetrain {
             ? ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, rot, m_gyro.getRotation2d())
             : new ChassisSpeeds(xSpeed, ySpeed, rot));
 
+    setModuleStates(swerveModuleStates);
+  }
+
+  public void setModuleStates(SwerveModuleState[] swerveModuleStates) {
     frontLeftDriveVInPubM_s.set(swerveModuleStates[0].speedMetersPerSecond);
     frontLeftTurnPInPubRad.set(swerveModuleStates[0].angle.getRadians());
     frontRightDriveVInPubM_s.set(swerveModuleStates[1].speedMetersPerSecond);
@@ -223,21 +240,20 @@ public class Drivetrain {
   /** Updates the field relative position of the robot. */
   public void updateOdometry() {
 
-      
-          m_poseEstimator.update(
-              m_gyro.getRotation2d(),
-              new SwerveModuleState[] {
-                  m_frontLeft.getState(),
-                  m_frontRight.getState(),
-                  m_backLeft.getState(),
-                  m_backRight.getState()
-              },
-              new SwerveModulePosition[] {
-                  m_frontLeft.getPosition(),
-                  m_frontRight.getPosition(),
-                  m_backLeft.getPosition(),
-                  m_backRight.getPosition()
-              });
+    m_poseEstimator.update(
+        m_gyro.getRotation2d(),
+        new SwerveModuleState[] {
+            m_frontLeft.getState(),
+            m_frontRight.getState(),
+            m_backLeft.getState(),
+            m_backRight.getState()
+        },
+        new SwerveModulePosition[] {
+            m_frontLeft.getPosition(),
+            m_frontRight.getPosition(),
+            m_backLeft.getPosition(),
+            m_backRight.getPosition()
+        });
 
     // Also apply vision measurements. We use 0.3 seconds in the past as an example
     // -- on a real robot, this must be calculated based either on latency or

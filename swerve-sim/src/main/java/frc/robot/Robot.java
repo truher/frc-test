@@ -4,9 +4,23 @@
 
 package frc.robot;
 
+import java.util.List;
+
+import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.filter.SlewRateLimiter;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.trajectory.Trajectory;
+import edu.wpi.first.math.trajectory.TrajectoryConfig;
+import edu.wpi.first.math.trajectory.TrajectoryGenerator;
+import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.XboxController;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import edu.wpi.first.wpilibj2.command.SwerveControllerCommand;
 
 public class Robot extends TimedRobot {
   private final XboxController m_controller = new XboxController(0);
@@ -19,8 +33,43 @@ public class Robot extends TimedRobot {
 
   @Override
   public void autonomousPeriodic() {
-    driveWithJoystick(false);
-    //m_swerve.updateOdometry();
+    // driveWithJoystick(false);
+    // m_swerve.updateOdometry();
+
+    // System.out.printf("scheduled %s\n", autoc.isScheduled()?"yes":"no");
+
+  }
+
+  Command autoc;
+
+  public void autonomousInit() {
+    autoc = auto();
+    autoc.schedule();
+  }
+
+  public void autonomousExit() {
+    if (autoc != null)
+      autoc.cancel();
+  }
+
+  public Command auto() {
+    TrajectoryConfig config = new TrajectoryConfig(1, 1).setKinematics(m_swerve.m_kinematics);
+    // make a square, kinda
+    Trajectory e = TrajectoryGenerator.generateTrajectory(
+        new Pose2d(0, 0, new Rotation2d(0)),
+        List.of(new Translation2d(6, 4), // first go out to the middle kinda
+            new Translation2d(6, 6), // then upper left
+            new Translation2d(10, 6), // then upper right
+            new Translation2d(10, 2), // lower right
+            new Translation2d(6, 2) // lower left
+        ),
+        new Pose2d(6, 4, new Rotation2d(0)), config);
+    ProfiledPIDController c = new ProfiledPIDController(1, 0, 0, new TrapezoidProfile.Constraints(5, 12));
+    SwerveControllerCommand s = new SwerveControllerCommand(e, m_swerve::getPose, m_swerve.m_kinematics,
+        new PIDController(1, 0, 0), new PIDController(1, 0, 0), c, m_swerve::setModuleStates, m_swerve);
+    System.out.printf("trajectory %s\n", e);
+    m_swerve.resetOdometry(e.getInitialPose());
+    return s.andThen(() -> m_swerve.drive(0, 0, 0, true));
   }
 
   @Override
@@ -60,7 +109,9 @@ public class Robot extends TimedRobot {
 
   @Override
   public void robotPeriodic() {
-   // m_swerve.updateOdometry();
+    // m_swerve.updateOdometry();
+    // my god if you forget this you are doomed
+    CommandScheduler.getInstance().run();
   }
 
   @Override
