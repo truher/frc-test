@@ -35,9 +35,9 @@ import edu.wpi.first.wpilibj.simulation.PWMSim;
 /** Represents a swerve drive style drivetrain. */
 public class Drivetrain {
   /** 3 m/s */
-  public static final double kMaxSpeed = 5.0;
+  public static final double kMaxSpeed = 6.0;
   /** pi rad/s */
-  public static final double kMaxAngularSpeed = 6*Math.PI;
+  public static final double kMaxAngularSpeed = 15 * Math.PI;
 
   private final Translation2d m_frontLeftLocation = new Translation2d(0.381, 0.381);
   private final Translation2d m_frontRightLocation = new Translation2d(0.381, -0.381);
@@ -57,6 +57,7 @@ public class Drivetrain {
   Pose2d robotPose = new Pose2d();
   private double m_prevTimeSeconds = Timer.getFPGATimestamp();
   private final double m_nominalDtS = 0.02; // Seconds
+
 
   /*
    * Here we use SwerveDrivePoseEstimator so that we can fuse odometry readings.
@@ -78,7 +79,7 @@ public class Drivetrain {
       m_kinematics,
       VecBuilder.fill(0.05, 0.05, Units.degreesToRadians(5), 0.05, 0.05, 0.05, 0.05),
       VecBuilder.fill(Units.degreesToRadians(0.01), 0.01, 0.01, 0.01, 0.01),
-      VecBuilder.fill(0.5, 0.5, Units.degreesToRadians(30)));
+      VecBuilder.fill(0.05, 0.05, Units.degreesToRadians(3)));
 
   NetworkTableInstance inst = NetworkTableInstance.getDefault();
 
@@ -117,15 +118,15 @@ public class Drivetrain {
   DoublePublisher backRightDrivePWMPub1_1 = backRight.getDoubleTopic("drivePWMOutput1_1").publish();
   DoublePublisher backRightTurnPWMPub1_1 = backRight.getDoubleTopic("turnPWMOutput1_1").publish();
 
-  // desired velocity from input.
+  // desired velocity or position from input.
   DoublePublisher frontLeftDriveVInPubM_s = frontLeft.getDoubleTopic("driveInputSpeedM_s").publish();
-  DoublePublisher frontLeftTurnVInPubRad_s = frontLeft.getDoubleTopic("turnInputSpeedRad_s").publish();
+  DoublePublisher frontLeftTurnPInPubRad = frontLeft.getDoubleTopic("turnInputRad").publish();
   DoublePublisher frontRightDriveVInPubM_s = frontRight.getDoubleTopic("driveInputSpeedM_s").publish();
-  DoublePublisher frontRightTurnVInPubRad_s = frontRight.getDoubleTopic("turnInputSpeedRad_s").publish();
+  DoublePublisher frontRightTurnPInPubRad = frontRight.getDoubleTopic("turnInputRad").publish();
   DoublePublisher backLeftDriveVInPubM_s = backLeft.getDoubleTopic("driveInputSpeedM_s").publish();
-  DoublePublisher backLeftTurnVInPubRad_s = backLeft.getDoubleTopic("turnDInputSpeedRad_s").publish();
+  DoublePublisher backLeftTurnPInPubRad = backLeft.getDoubleTopic("turnDInputRad").publish();
   DoublePublisher backRightDriveVInPubM_s = backRight.getDoubleTopic("driveInputSpeedM_s").publish();
-  DoublePublisher backRightTurnVInPubRad_s = backRight.getDoubleTopic("turnInputSpeedRad_s").publish();
+  DoublePublisher backRightTurnPInPubRad = backRight.getDoubleTopic("turnInputSRad").publish();
 
   // desired velocity from "inverse feed forward", should be m/s or rad/s.
   DoublePublisher frontLeftDriveVPubM_s = frontLeft.getDoubleTopic("driveDesiredSpeedM_s").publish();
@@ -193,13 +194,13 @@ public class Drivetrain {
             : new ChassisSpeeds(xSpeed, ySpeed, rot));
 
     frontLeftDriveVInPubM_s.set(swerveModuleStates[0].speedMetersPerSecond);
-    frontLeftTurnVInPubRad_s.set(swerveModuleStates[0].angle.getRadians());
+    frontLeftTurnPInPubRad.set(swerveModuleStates[0].angle.getRadians());
     frontRightDriveVInPubM_s.set(swerveModuleStates[1].speedMetersPerSecond);
-    frontRightTurnVInPubRad_s.set(swerveModuleStates[1].angle.getRadians());
+    frontRightTurnPInPubRad.set(swerveModuleStates[1].angle.getRadians());
     backLeftDriveVInPubM_s.set(swerveModuleStates[2].speedMetersPerSecond);
-    backLeftTurnVInPubRad_s.set(swerveModuleStates[2].angle.getRadians());
+    backLeftTurnPInPubRad.set(swerveModuleStates[2].angle.getRadians());
     backRightDriveVInPubM_s.set(swerveModuleStates[3].speedMetersPerSecond);
-    backRightTurnVInPubRad_s.set(swerveModuleStates[3].angle.getRadians());
+    backRightTurnPInPubRad.set(swerveModuleStates[3].angle.getRadians());
 
     SwerveDriveKinematics.desaturateWheelSpeeds(swerveModuleStates, kMaxSpeed); // 3m/s max
 
@@ -211,8 +212,9 @@ public class Drivetrain {
 
   /**
    * drive one module directly
+   * 
    * @param drive desired speed m/s
-   * @param turn desired rotation rad
+   * @param turn  desired rotation rad
    */
   public void test(double drive, double turn) {
     m_frontLeft.setDesiredState(new SwerveModuleState(drive, new Rotation2d(turn)));
@@ -220,20 +222,22 @@ public class Drivetrain {
 
   /** Updates the field relative position of the robot. */
   public void updateOdometry() {
-    m_poseEstimator.update(
-        m_gyro.getRotation2d(),
-        new SwerveModuleState[] {
-            m_frontLeft.getState(),
-            m_frontRight.getState(),
-            m_backLeft.getState(),
-            m_backRight.getState()
-        },
-        new SwerveModulePosition[] {
-            m_frontLeft.getPosition(),
-            m_frontRight.getPosition(),
-            m_backLeft.getPosition(),
-            m_backRight.getPosition()
-        });
+
+      
+          m_poseEstimator.update(
+              m_gyro.getRotation2d(),
+              new SwerveModuleState[] {
+                  m_frontLeft.getState(),
+                  m_frontRight.getState(),
+                  m_backLeft.getState(),
+                  m_backRight.getState()
+              },
+              new SwerveModulePosition[] {
+                  m_frontLeft.getPosition(),
+                  m_frontRight.getPosition(),
+                  m_backLeft.getPosition(),
+                  m_backRight.getPosition()
+              });
 
     // Also apply vision measurements. We use 0.3 seconds in the past as an example
     // -- on a real robot, this must be calculated based either on latency or
@@ -276,9 +280,9 @@ public class Drivetrain {
    * @param output [-1,1]
    */
   public double vFromOutput(double output, double ks, double kv) {
-    //System.out.printf("output %f\n", output);
+    // System.out.printf("output %f\n", output);
     double result = (output - ks * Math.signum(output)) / kv;
-    //System.out.printf("result %f\n", result);
+    // System.out.printf("result %f\n", result);
     return result;
   }
 
@@ -319,6 +323,7 @@ public class Drivetrain {
     backRightDriveVPubM_s.set(backRightDriveVM_s);
     backRightTurnVPubRad_s.set(backRightTurnVRad_s);
 
+    // set the encoders
     frontLeftDriveEncoderSim.setRate(frontLeftDriveVM_s);
     frontLeftDriveEncoderSim.setDistance(frontLeftDriveEncoderSim.getDistance() + frontLeftDriveVM_s * dtS);
     frontLeftTurnEncoderSim.setDistance(frontLeftTurnEncoderSim.getDistance() + frontLeftTurnVRad_s * dtS);
@@ -368,11 +373,16 @@ public class Drivetrain {
     ChassisSpeeds speeds = m_kinematics.toChassisSpeeds(states);
 
     // finally adjust the simulator gyro.
-    gyroSim.setAngle(gyroSim.getAngle() + speeds.omegaRadiansPerSecond * dtS);
     Pose2d newPose = new Pose2d(robotPose.getX() + speeds.vxMetersPerSecond * dtS,
         robotPose.getY() + speeds.vyMetersPerSecond * dtS,
         robotPose.getRotation().plus(new Rotation2d(speeds.omegaRadiansPerSecond * dtS)));
     robotPose = newPose;
+    // gyroSim.setAngle(gyroSim.getAngle() + speeds.omegaRadiansPerSecond * dtS);
+    gyroSim.setAngle(robotPose.getRotation().getRadians());
+
+    // cheat, tell the pose estimator to use this pose.
+    // doesn't seem to do much.
+    // m_poseEstimator.addVisionMeasurement(robotPose, Timer.getFPGATimestamp());
 
     fieldPub.set(new double[] {
         newPose.getX(),

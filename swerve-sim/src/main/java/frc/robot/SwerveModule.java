@@ -17,14 +17,14 @@ import edu.wpi.first.wpilibj.motorcontrol.PWMSparkMax;
 
 public class SwerveModule {
   public static final double TURN_KV = 0.05;
-  public static final double DRIVE_KV = 0.5;
+  public static final double DRIVE_KV = 0.15;
   public static final double TURN_KS = 0.001;
   public static final double DRIVE_KS = 0.001;
   private static final double kWheelRadius = 0.0508;
   private static final int kEncoderResolution = 4096;
 
   private static final double kModuleMaxAngularVelocity = Drivetrain.kMaxAngularSpeed;
-  private static final double kModuleMaxAngularAcceleration = 12 * Math.PI; // radians per second squared
+  private static final double kModuleMaxAngularAcceleration = 50 * Math.PI; // radians per second squared
 
   private final MotorController m_driveMotor;
   private final MotorController m_turningMotor;
@@ -37,7 +37,7 @@ public class SwerveModule {
 
   // Gains are for example purposes only - must be determined for your own robot!
   private final ProfiledPIDController m_turningPIDController = new ProfiledPIDController(
-      0.1,
+      0.2,
       0,
       0,
       new TrapezoidProfile.Constraints(
