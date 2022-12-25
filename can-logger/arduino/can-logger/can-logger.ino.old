@@ -1,0 +1,240 @@
+// // CAN Logger
+// //
+// // cribbed from
+// // ArduinoPcap/examples/esp32_pcap_sd
+// // SparkFun_CAN-Bus_Arduino_Library/examples/CAN_Read_Demo
+
+// #include <SPI.h>
+#include <SdFat.h>
+// #include "sdios.h"
+#include <FlexCAN.h>
+
+// // #include <Canbus.h>
+// // #include <defaults.h>
+// // #include <global.h>
+// // #include <mcp2515.h>
+// // #include <mcp2515_defs.h>
+
+// // #include <PCAP.h>
+
+// // #include <TimeLib.h>
+// #define SD_FAT_TYPE 1  // FAT16/FAT32
+
+// #define CHIP_SELECT 4//9
+// #define SAVE_INTERVAL 30
+
+// #define SPI_SPEED SD_SCK_MHZ(1)
+
+// unsigned long lastTime = 0;
+// unsigned long lastChannelChange = 0;
+// bool fileOpen = false;
+// int counter = 0;
+
+// PCAP pcap = PCAP();
+// SdFat32 sd;
+
+// ArduinoOutStream cout(Serial);
+
+
+
+// void reformatMsg() {
+//   cout << F("Try reformatting the card.  For best results use\n");
+//   cout << F("the SdFormatter program in SdFat/examples or download\n");
+//   cout << F("and use SDFormatter from www.sdcard.org/downloads.\n");
+// }
+
+// void setup() {
+//   // just to see if it's working
+//   Serial.begin(115200);
+//   while (!Serial) {
+//     yield();
+//   }
+//   Serial.println("Serial ready!");
+
+//   pinMode(CHIP_SELECT, OUTPUT);
+//   if (!sd.begin(CHIP_SELECT, SPI_SPEED)) {
+//     Serial.println("SD failure!");
+//     if (sd.card()->errorCode()) {
+//       cout << F(
+//         "\nSD initialization failed.\n"
+//         "Do not reformat the card!\n"
+//         "Is the card correctly inserted?\n"
+//         "Is chipSelect set to the correct value?\n"
+//         "Does another SPI device need to be disabled?\n"
+//         "Is there a wiring/soldering problem?\n");
+//       cout << F("\nerrorCode: ") << hex << showbase;
+//       cout << int(sd.card()->errorCode());
+//       cout << F(", errorData: ") << int(sd.card()->errorData());
+//       cout << dec << noshowbase << endl;
+//       return;
+//     }
+//     cout << F("\nCard successfully initialized.\n");
+//     if (sd.vol()->fatType() == 0) {
+//       cout << F("Can't find a valid FAT16/FAT32 partition.\n");
+//       reformatMsg();
+//       return;
+//     }
+//     cout << F("Can't determine error type\n");
+//     return;
+//   }
+//   if (!Canbus.init(CAN_1000KBPS)) {
+//     Serial.println("CAN failure!");
+//     return;
+//   }
+
+//   File f = sd.open("/foo.txt");
+//   f.println("fooooo");
+//   f.flush();
+//   f.close();
+//   openFile();
+// }
+
+// void loop() {
+//   unsigned long currentTime = millis();
+
+//   tCAN message;
+//   if (mcp2515_check_message()) {
+//     if (mcp2515_get_message(&message)) {
+//       uint32_t timestamp = now();                                                      //current timestamp
+//       uint32_t microseconds = (unsigned int)(micros() - millis() * 1000);              //micro seconds offset (0 - 999)
+//       pcap.newPacketSD(timestamp, microseconds, message.header.length, message.data);  //write packet to file
+//     }
+//   }
+
+//   if (fileOpen && currentTime - lastTime > 1000) {
+//     pcap.flushFile();        //save file
+//     lastTime = currentTime;  //update time
+//     counter++;               //add 1 to counter
+//   }
+
+//   /* when counter > 30s interval */
+//   if (fileOpen && counter > SAVE_INTERVAL) {
+//     pcap.closeFile();  //save & close the file
+//     fileOpen = false;  //update flag
+//     openFile();        //open new file
+//   }
+// }
+
+// cribbed from SdFat/examples/TeensySdioDemo/TeensySdioDemo.ino
+// and FlexCAN_Library/examples/CANtest/CANtest.ino
+// requires Teensyduino installed as described here https://www.pjrc.com/arduino-ide-2-0-0-teensy-support/
+// on linux, requires udev rule as described here https://www.pjrc.com/teensy/loader_linux.html
+
+
+#define FILENAME "canbus"
+
+const int ledPin = 13;
+SdFat32 sd;
+File32 file;
+
+FlexCAN CANbus(1000000);
+static CAN_message_t txmsg;
+static CAN_message_t rxmsg;
+static uint8_t hex[17] = "0123456789abcdef";
+const uint8_t SD_CS_PIN = SDCARD_SS_PIN;
+
+String filename;
+
+void openFile() {
+  //searches for the next non-existent file name
+  int c = 0;
+  filename = "/" + (String)FILENAME + ".log";
+  while (file.open(filename)) {
+    filename = "/" + (String)FILENAME + "_" + (String)c + ".log";
+    c++;
+  }
+
+  //reset counter (counter for saving every X seconds)
+  counter = 0;
+}
+
+void errorHalt(const char* msg) {
+  Serial.print("Error: ");
+  Serial.println(msg);
+  if (sd.sdErrorCode()) {
+    if (sd.sdErrorCode() == SD_CARD_ERROR_ACMD41) {
+      Serial.println("Try power cycling the SD card.");
+    }
+    printSdErrorSymbol(&Serial, sd.sdErrorCode());
+    Serial.print(", ErrorData: 0X");
+    Serial.println(sd.sdErrorData(), HEX);
+  }
+  while (true) {}
+}
+
+int loopCounter = 0;
+
+void setup() {
+  loopCounter += 1;
+  pinMode(ledPin, OUTPUT);
+  Serial.begin(9600);
+  int waitcount = 10;
+  while (!Serial) {
+    waitcount--;
+    if (waitcount == 0) {
+      break;
+    }
+  }
+
+  Serial.println("Serial setup!");
+
+  //  if (!sd.begin(SdioConfig(FIFO_SDIO))) {
+  if (!sd.begin(SdSpiConfig(SD_CS_PIN, DEDICATED_SPI, SD_SCK_MHZ(50)))) {
+    errorHalt("begin failed");
+  }
+
+  Serial.println("SD setup!");
+
+  if (!file.open("testfile2", O_WRITE | O_CREAT | O_EXCL)) { // should fail if exists
+    errorHalt("open failed");
+  }
+  file.println("test content");
+  if (loopCounter > 10) {
+    Serial.println("flushing");
+    file.flush();
+    loopCounter = 0;
+  }
+  //file.close();
+  Serial.println("done writing");
+
+
+  CANbus.begin();
+
+  txmsg.len = 8;
+  txmsg.id = 0x222;
+  for (int idx = 0; idx < 8; ++idx) {
+    txmsg.buf[idx] = '0' + idx;
+  }
+}
+
+static void hexDump(uint8_t dumpLen, uint8_t* bytePtr) {
+  uint8_t working;
+  while (dumpLen--) {
+    working = *bytePtr++;
+    file.write(hex[working >> 4]);
+    file.write(hex[working & 15]);
+  }
+  file.write('\r');
+  file.write('\n');
+  file.flush();
+}
+
+void loop() {
+  digitalWrite(ledPin, HIGH);  // set the LED on
+  delay(1000);                 // wait for a second
+  digitalWrite(ledPin, LOW);   // set the LED off
+  delay(1000);                 // wait for a second
+  // write received data to sd
+  file.print(millis());
+  while (CANbus.read(rxmsg)) {
+    hexDump(sizeof(rxmsg), (uint8_t*)&rxmsg);
+    Serial.println("CAN read");
+    //Serial.write(rxmsg.buf[0]);
+    //rxCount++;
+  }
+  file.println("one loop");
+  file.flush();
+  // transmit some data
+  CANbus.write(txmsg);
+  txmsg.buf[0]++;
+}
