@@ -24,6 +24,7 @@
  */
 class SDWriter {
 
+public:
   SdFs sd;
   FsFile file;
 
@@ -61,8 +62,11 @@ class SDWriter {
    * Call this from loop().
    *
    * Returns number of bytes written.
+   *
+   * TODO: close the file when full, open a new one
    */
   size_t writeBlock() {
+    if (!ready) return 0;
     if (rb.bytesUsedIsr() < BLOCK_SIZE) return 0;  // not yet a full block
     if (file.isBusy()) return 0;                   // not yet ok to write
     return rb.writeOut(BLOCK_SIZE);
@@ -76,6 +80,7 @@ class SDWriter {
    * Returns the number of bytes written.
    */
   size_t log(const void* buf, size_t count) {
+    if (!ready) return 0;
     if (count > rb.bytesFreeIsr()) return 0;  // buffer full
     return rb.memcpyIn(buf, count);
   }
