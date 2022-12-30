@@ -37,6 +37,20 @@ manufacturers = {
   {13, 255, "Reserved" }
 }
 
+broadcast_api_indexes = {
+  [0] = "Disable",
+  [1] = "System Halt",
+  [2] = "System Reset",
+  [3] = "Device Assign",
+  [4] = "Device Query",
+  [5] = "Heartbeat",
+  [6] = "Sync",
+  [7] = "Update",
+  [8] = "Firmware Version",
+  [9] = "Enumerate",
+  [10] = "System Resume"
+}
+
 can_protocol = Proto("FRC_CAN", "FRC CAN Protocol")
 
 -- See linux/can.h for these flags
@@ -48,6 +62,7 @@ device_type_field = ProtoField.uint32("can.frc.type", "Device Type", base.RANGE_
 manufacturer_field = ProtoField.uint32("can.frc.mfr", "Manufacturer", base.RANGE_STRING, manufacturers, 0x00ff0000)
 api_class_field = ProtoField.uint32("can.frc.api_class", "API Class", base.DEC, nil, 0x0000fc00)
 api_index_field = ProtoField.uint32("can.frc.api_index", "API Index", base.DEC, nil, 0x000003c0)
+api_index_broadcast_field = ProtoField.uint32("can.frc.api_index", "API Index", base.DEC, broadcast_api_indexes, 0x000003c0)
 device_number_field = ProtoField.uint32("can.frc.device_number", "Device Number", base.DEC, nil, 0x0000003f)
 
 id_field = ProtoField.uint32("can.id", "CAN ID", base.HEX, nil, 0x1fffffff)
@@ -166,6 +181,11 @@ ctre_pdp_Energy_125mWPerUnitXTmeas_mh8_field = ProtoField.uint8("can.frc.ctre.pd
 ctre_pdp_Energy_125mWPerUnitXTmeas_ml8_field = ProtoField.uint8("can.frc.ctre.pdp.Energy_125mWPerUnitXTmeas_ml8", "PDP Energy ml8", base.DEC, nil, 0xff)
 ctre_pdp_Energy_125mWPerUnitXTmeas_l8_field = ProtoField.uint8("can.frc.ctre.pdp.Energy_125mWPerUnitXTmeas_l8", "PDP Energy l8", base.DEC, nil, 0xff)
 
+-- CTRE PDP CONTROL_1
+
+clear_sticky_faults_field = ProtoField.bool("can.frc.ctre.pdp.clear_sticky_faults", "Clear Sticky Faults", 8, nil, 0x80)
+reset_energy_field = ProtoField.bool("can.frc.ctre.pdp.reset_energy", "Reset Energy", 8, nil, 0x40)
+
 can_protocol.fields = {
   eff_field,
   rtr_field,
@@ -174,6 +194,7 @@ can_protocol.fields = {
   manufacturer_field,
   api_class_field,
   api_index_field,
+  api_index_broadcast_field,
   device_number_field,
   id_field,
   length_field,
@@ -227,8 +248,10 @@ can_protocol.fields = {
   ctre_pdp_Power_125mWperunit_l4_field,
   ctre_pdp_Energy_125mWPerUnitXTmeas_mh8_field,
   ctre_pdp_Energy_125mWPerUnitXTmeas_ml8_field,
-  ctre_pdp_Energy_125mWPerUnitXTmeas_l8_field
+  ctre_pdp_Energy_125mWPerUnitXTmeas_l8_field,
 
+  clear_sticky_faults_field,
+  reset_energy_field
 
 }
 
@@ -291,6 +314,9 @@ can_frc_ctre_pdp_Energy_125mWPerUnitXTmeas_mh8 = Field.new("can.frc.ctre.pdp.Ene
 can_frc_ctre_pdp_Energy_125mWPerUnitXTmeas_ml8 = Field.new("can.frc.ctre.pdp.Energy_125mWPerUnitXTmeas_ml8")
 can_frc_ctre_pdp_Energy_125mWPerUnitXTmeas_l8 = Field.new("can.frc.ctre.pdp.Energy_125mWPerUnitXTmeas_l8")
 
+can_frc_ctre_pdp_clear_sticky_faults = Field.new("can.frc.ctre.pdp.clear_sticky_faults")
+can_frc_ctre_pdp_reset_energy = Field.new("can.frc.ctre.pdp.reset_energy")
+
 -- See https://github.com/CrossTheRoadElec/deprecated-HERO-SDK/blob/master/CTRE/LowLevel_Pcm.cs
 -- note the delicious use of tostring() here; lua coerces the string to a number
 function voltage(x)
@@ -334,7 +360,13 @@ function can_protocol.dissector(buffer, pinfo, tree)
 
   subtree:add("can_frc_type:", can_frc_type()())
   subtree:add("can_frc_mfr:", can_frc_mfr()())
-  if can_frc_type()() == 8 then -- PDP
+  if can_frc_type()() == 0 then -- broadcast
+    if can_frc_mfr()() == 0 then -- broadcast
+      if can_frc_api_class()() == 0 then -- broadcast
+        subtree:add_le(api_index_broadcast_field, buffer:range(0,4))
+      end
+    end
+  elseif can_frc_type()() == 8 then -- PDP
     if can_frc_mfr()() == 4 then -- CTRE
       if can_frc_api_class()() == 5 then -- STATUS
         if can_frc_api_index()() == 0 then -- PDP_API_STATUS1
@@ -469,6 +501,8 @@ function can_protocol.dissector(buffer, pinfo, tree)
         end
       elseif can_frc_api_class()() == 7 then -- CONTROL
         if can_frc_api_index()() == 0 then -- CONTROL_1
+          subtree:add(clear_sticky_faults_field, buffer(8, 1))
+          subtree:add(reset_energy_field, buffer(8,1))
         end
       end
     end
