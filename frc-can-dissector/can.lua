@@ -1,20 +1,23 @@
+-- FRC CAN Dissector
+
 -- See https://docs.wpilib.org/en/stable/docs/software/can-devices/can-addressing.html
+-- See https://github.com/carlosgj/FRC-CAN-Wireshark
 
 device_types = {
-  { 0, 0, "Broadcast Messages"},
-  { 1, 1, "Robot Controller"},
-  { 2, 2, "Motor Controller"},
-  { 3, 3, "Relay Controller"},
-  { 4, 4, "Gyro Sensor"},
-  { 5, 5, "Accelerometer"},
-  { 6, 6, "Ultrasonic Sensor"},
-  { 7, 7, "Gear Tooth Sensor"},
-  { 8, 8, "Power Distribution Module"},
-  { 9, 9, "Pnuematics Controller"},
-  {10,10, "Miscellaneous"},
-  {11,11, "IO Breakout"},
-  {12,30, "Reserved"},
-  {31,31, "Firmware Update"}
+  { 0,  0, "Broadcast Messages"},
+  { 1,  1, "Robot Controller"},
+  { 2,  2, "Motor Controller"},
+  { 3,  3, "Relay Controller"},
+  { 4,  4, "Gyro Sensor"},
+  { 5,  5, "Accelerometer"},
+  { 6,  6, "Ultrasonic Sensor"},
+  { 7,  7, "Gear Tooth Sensor"},
+  { 8,  8, "Power Distribution Module"},
+  { 9,  9, "Pneumatics Controller"},
+  {10, 10, "Miscellaneous"},
+  {11, 11, "IO Breakout"},
+  {12, 30, "Reserved"},
+  {31, 31, "Firmware Update"}
 }
 
 manufacturers = {
@@ -36,21 +39,23 @@ manufacturers = {
 
 can_protocol = Proto("FRC_CAN", "FRC CAN Protocol")
 
--- see linux/can.h for these flags
-eff_field = ProtoField.bool("eff_flag", "EFF flag", 32, nil, 0x80000000, "Extended Frame Format")
-rtr_field = ProtoField.bool("rtr_flag", "RTR flag", 32, nil, 0x40000000, "Remote Frame")
-err_field = ProtoField.bool("err_flag", "ERR flag", 32, nil, 0x20000000, "Error")
+-- See linux/can.h for these flags
+eff_field = ProtoField.bool("can.eff_flag", "EFF flag", 32, nil, 0x80000000, "Extended Frame Format")
+rtr_field = ProtoField.bool("can.rtr_flag", "RTR flag", 32, nil, 0x40000000, "Remote Frame")
+err_field = ProtoField.bool("can.err_flag", "ERR flag", 32, nil, 0x20000000, "Error")
 
-device_type_field = ProtoField.uint32("device_type", "Device Type", base.RANGE_STRING, device_types, 0x1f000000, "Device Type")
-manufacturer_field = ProtoField.uint32("manufacturer", "Manufacturer", base.RANGE_STRING, manufacturers, 0x00ff0000, "Manufacturer")
-api_class_field = ProtoField.uint32("api_class", "API Class", base.DEC, nil, 0x0000fc00, "API Class")
-api_index_field = ProtoField.uint32("api_index", "API Index", base.DEC, nil, 0x000003c0, "API Index")
-device_number_field = ProtoField.uint32("device_number", "Device Number", base.DEC, nil, 0x0000003f, "Device Number")
+device_type_field = ProtoField.uint32("can.frc.type", "Device Type", base.RANGE_STRING, device_types, 0x1f000000, "Device Type")
+manufacturer_field = ProtoField.uint32("can.frc.mfr", "Manufacturer", base.RANGE_STRING, manufacturers, 0x00ff0000, "Manufacturer")
+api_class_field = ProtoField.uint32("can.frc.api_class", "API Class", base.DEC, nil, 0x0000fc00, "API Class")
+api_index_field = ProtoField.uint32("can.frc.api_index", "API Index", base.DEC, nil, 0x000003c0, "API Index")
+device_number_field = ProtoField.uint32("can.frc.device_number", "Device Number", base.DEC, nil, 0x0000003f, "Device Number")
 
-id_field = ProtoField.uint32("canid", "CAN ID", base.HEX, nil, 0x1fffffff, "CAN id")
-length_field = ProtoField.uint8("data_length", "data length", base.DEC, nil, nil, "data length")
-pad_field = ProtoField.bytes("padding", "padding", base.NONE, "padding")
-data_field = ProtoField.bytes("datafield", "data field", base.NONE, "the data field")
+id_field = ProtoField.uint32("can.id", "CAN ID", base.HEX, nil, 0x1fffffff, "CAN id")
+length_field = ProtoField.uint8("can.data_length", "data length", base.DEC, nil, nil, "data length")
+pad_field = ProtoField.bytes("can.padding", "padding", base.NONE, "padding")
+data_field = ProtoField.bytes("can.datafield", "data field", base.NONE, "the data field")
+
+ctre_pdp_battery_voltage_field = ProtoField.uint64("can.frc.ctre.pdp.voltage", "PDP Voltage", base.DEC, nil, 0x000000000000ff00, "PDP Voltage")
 
 can_protocol.fields = {
   eff_field,
@@ -64,8 +69,20 @@ can_protocol.fields = {
   id_field,
   length_field,
   pad_field,
-  data_field
+  data_field,
+  ctre_pdp_battery_voltage_field
 }
+
+can_frc_type = Field.new("can.frc.type")
+can_frc_mfr = Field.new("can.frc.mfr")
+can_frc_ctre_pdp_voltage = Field.new("can.frc.ctre.pdp.voltage")
+
+
+-- See https://github.com/CrossTheRoadElec/deprecated-HERO-SDK/blob/master/CTRE/LowLevel_Pcm.cs
+-- note the delicious use of tostring() here; lua coerces the string to a number
+function voltage(x)
+  return 0.05 * tostring(x) + 4.0
+end
 
 -- Tvb buffer, see lua_module_Tvb.html
 function can_protocol.dissector(buffer, pinfo, tree)
@@ -90,6 +107,18 @@ function can_protocol.dissector(buffer, pinfo, tree)
   subtree:add(length_field, buffer:range(4,1))
   subtree:add(pad_field, buffer:range(5,3))
   subtree:add(data_field, buffer:range(8))
+
+
+  subtree:add("can_frc_type:", can_frc_type()())
+  subtree:add("can_frc_mfr:", can_frc_mfr()())
+  if can_frc_type()() == 8 then -- PDP
+    if can_frc_mfr()() == 4 then -- CTRE
+-- TODO: add another conditional here identifying the payload
+      subtree:add(ctre_pdp_battery_voltage_field, buffer:range(8))
+      subtree:add("can_frc_ctre_pdp_voltage:", voltage(can_frc_ctre_pdp_voltage()()))
+    end
+  end
+
 end
 
 local wcap = DissectorTable.get("wtap_encap")
