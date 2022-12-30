@@ -71,6 +71,20 @@ data_field = ProtoField.bytes("can.datafield", "data field", base.NONE, "the dat
 -- reserved4:4;
 -- chan12_l4:4;
 
+ctre_pdp_chan7_h8_field = ProtoField.uint8("can.frc.ctre.pdp.chan7_h8", "PDP Chan7_h8", base.DEC, nil, 0xff)
+ctre_pdp_chan8_h6_field = ProtoField.uint8("can.frc.ctre.pdp.chan8_h6", "PDP Chan8_h6", base.DEC, nil, 0xfc)
+ctre_pdp_chan7_l2_field = ProtoField.uint8("can.frc.ctre.pdp.chan7_l2", "PDP Chan7_l2", base.DEC, nil, 0x03)
+ctre_pdp_chan9_h4_field = ProtoField.uint8("can.frc.ctre.pdp.chan9_h4", "PDP Chan9_h4", base.DEC, nil, 0xf0)
+ctre_pdp_chan8_l4_field = ProtoField.uint8("can.frc.ctre.pdp.chan8_l4", "PDP Chan8_l4", base.DEC, nil, 0x0f)
+ctre_pdp_chan10_h2_field = ProtoField.uint8("can.frc.ctre.pdp.chan10_h2", "PDP Chan10_h2", base.DEC, nil, 0xc0)
+ctre_pdp_chan9_l6_field = ProtoField.uint8("can.frc.ctre.pdp.chan9_l6", "PDP Chan9_l6", base.DEC, nil, 0x3f)
+ctre_pdp_chan10_l8_field = ProtoField.uint8("can.frc.ctre.pdp.chan10_l8", "PDP Chan10_l8", base.DEC, nil, 0xff)
+ctre_pdp_chan11_h8_field = ProtoField.uint8("can.frc.ctre.pdp.chan11_h8", "PDP Chan11_h8", base.DEC, nil, 0xff)
+ctre_pdp_chan12_h6_field = ProtoField.uint8("can.frc.ctre.pdp.chan12_h6", "PDP Chan12_h6", base.DEC, nil, 0xfc)
+ctre_pdp_chan11_l2_field = ProtoField.uint8("can.frc.ctre.pdp.chan11_l2", "PDP Chan11_l2", base.DEC, nil, 0x03)
+ctre_pdp_chan12_l4_field = ProtoField.uint8("can.frc.ctre.pdp.chan12_l4", "PDP Chan12_l4", base.DEC, nil, 0x0f)
+
+
 -- CTRE PDP STATUS3
 -- chan13_h8:8;
 -- chan14_h6:6;
@@ -110,6 +124,18 @@ can_protocol.fields = {
   length_field,
   pad_field,
   data_field,
+  ctre_pdp_chan7_h8_field,
+  ctre_pdp_chan8_h6_field,
+  ctre_pdp_chan7_l2_field,
+  ctre_pdp_chan9_h4_field,
+  ctre_pdp_chan8_l4_field,
+  ctre_pdp_chan10_h2_field,
+  ctre_pdp_chan9_l6_field,
+  ctre_pdp_chan10_l8_field,
+  ctre_pdp_chan11_h8_field,
+  ctre_pdp_chan12_h6_field,
+  ctre_pdp_chan11_l2_field,
+  ctre_pdp_chan12_l4_field,
   ctre_pdp_chan13_h8_field,
   ctre_pdp_chan14_h6_field,
   ctre_pdp_chan13_l2_field,
@@ -128,6 +154,23 @@ can_frc_type = Field.new("can.frc.type")
 can_frc_mfr = Field.new("can.frc.mfr")
 can_frc_api_class = Field.new("can.frc.api_class")
 can_frc_api_index = Field.new("can.frc.api_index")
+
+
+can_frc_ctre_pdp_chan7_h8 = Field.new("can.frc.ctre.pdp.chan7_h8")
+can_frc_ctre_pdp_chan8_h6 = Field.new("can.frc.ctre.pdp.chan8_h6")
+can_frc_ctre_pdp_chan7_l2 = Field.new("can.frc.ctre.pdp.chan7_l2")
+can_frc_ctre_pdp_chan9_h4 = Field.new("can.frc.ctre.pdp.chan9_h4")
+can_frc_ctre_pdp_chan8_l4 = Field.new("can.frc.ctre.pdp.chan8_l4")
+can_frc_ctre_pdp_chan10_h2 = Field.new("can.frc.ctre.pdp.chan10_h2")
+can_frc_ctre_pdp_chan9_l6 = Field.new("can.frc.ctre.pdp.chan9_l6")
+can_frc_ctre_pdp_chan10_l8 = Field.new("can.frc.ctre.pdp.chan10_l8")
+can_frc_ctre_pdp_chan11_h8 = Field.new("can.frc.ctre.pdp.chan11_h8")
+can_frc_ctre_pdp_chan12_h6 = Field.new("can.frc.ctre.pdp.chan12_h6")
+can_frc_ctre_pdp_chan11_l2 = Field.new("can.frc.ctre.pdp.chan11_l2")
+can_frc_ctre_pdp_chan12_l4 = Field.new("can.frc.ctre.pdp.chan12_l4")
+
+
+
 
 can_frc_ctre_pdp_chan13_h8 = Field.new("can.frc.ctre.pdp.chan13_h8")
 can_frc_ctre_pdp_chan14_h6 = Field.new("can.frc.ctre.pdp.chan14_h6")
@@ -189,6 +232,35 @@ function can_protocol.dissector(buffer, pinfo, tree)
     if can_frc_mfr()() == 4 then -- CTRE
       if can_frc_api_class()() == 5 then
         if can_frc_api_index()() == 1 then -- PDP_API_STATUS2
+
+          -- raw
+          subtree:add(ctre_pdp_chan7_h8_field, buffer:range(8,1))
+          subtree:add(ctre_pdp_chan8_h6_field, buffer:range(9,1))
+          subtree:add(ctre_pdp_chan7_l2_field, buffer:range(9,1))
+          subtree:add(ctre_pdp_chan9_h4_field, buffer:range(10,1))
+          subtree:add(ctre_pdp_chan8_l4_field, buffer:range(10,1))
+          subtree:add(ctre_pdp_chan10_h2_field, buffer:range(11,1))
+          subtree:add(ctre_pdp_chan9_l6_field, buffer:range(11,1))
+          subtree:add(ctre_pdp_chan10_l8_field, buffer:range(12,1))
+          subtree:add(ctre_pdp_chan11_h8_field, buffer:range(13,1))
+          subtree:add(ctre_pdp_chan12_h6_field, buffer:range(14,1))
+          subtree:add(ctre_pdp_chan11_l2_field, buffer:range(14,1))
+          subtree:add(ctre_pdp_chan12_l4_field, buffer:range(15,1))
+
+          -- cooked
+          subtree:add("can_frc_ctre_pdp_current_channel_7 (A):", 
+            currentA(bit.bor(bit.lshift(can_frc_ctre_pdp_chan7_h8()(), 2), can_frc_ctre_pdp_chan7_l2()())))
+          subtree:add("can_frc_ctre_pdp_current_channel_8 (A):", 
+            currentA(bit.bor(bit.lshift(can_frc_ctre_pdp_chan8_h6()(), 4), can_frc_ctre_pdp_chan8_l4()())))
+          subtree:add("can_frc_ctre_pdp_current_channel_9 (A):", 
+            currentA(bit.bor(bit.lshift(can_frc_ctre_pdp_chan9_h4()(), 6), can_frc_ctre_pdp_chan9_l6()())))
+          subtree:add("can_frc_ctre_pdp_current_channel_10 (A):", 
+            currentA(bit.bor(bit.lshift(can_frc_ctre_pdp_chan10_h2()(), 8), can_frc_ctre_pdp_chan10_l8()())))
+          subtree:add("can_frc_ctre_pdp_current_channel_11 (A):", 
+            currentA(bit.bor(bit.lshift(can_frc_ctre_pdp_chan11_h8()(), 2), can_frc_ctre_pdp_chan11_l2()())))
+          subtree:add("can_frc_ctre_pdp_current_channel_12 (A):", 
+            currentA(bit.bor(bit.lshift(can_frc_ctre_pdp_chan12_h6()(), 4), can_frc_ctre_pdp_chan12_l4()())))
+
         elseif can_frc_api_index()() == 2 then -- PDP_API_STATUS3
 
           -- raw
