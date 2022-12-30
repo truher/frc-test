@@ -40,22 +40,53 @@ manufacturers = {
 can_protocol = Proto("FRC_CAN", "FRC CAN Protocol")
 
 -- See linux/can.h for these flags
-eff_field = ProtoField.bool("can.eff_flag", "EFF flag", 32, nil, 0x80000000, "Extended Frame Format")
-rtr_field = ProtoField.bool("can.rtr_flag", "RTR flag", 32, nil, 0x40000000, "Remote Frame")
-err_field = ProtoField.bool("can.err_flag", "ERR flag", 32, nil, 0x20000000, "Error")
+eff_field = ProtoField.bool("can.eff_flag", "EFF flag", 32, nil, 0x80000000) -- extended frame (29 bit)
+rtr_field = ProtoField.bool("can.rtr_flag", "RTR flag", 32, nil, 0x40000000) -- remote frame
+err_field = ProtoField.bool("can.err_flag", "ERR flag", 32, nil, 0x20000000) -- error
 
-device_type_field = ProtoField.uint32("can.frc.type", "Device Type", base.RANGE_STRING, device_types, 0x1f000000, "Device Type")
-manufacturer_field = ProtoField.uint32("can.frc.mfr", "Manufacturer", base.RANGE_STRING, manufacturers, 0x00ff0000, "Manufacturer")
-api_class_field = ProtoField.uint32("can.frc.api_class", "API Class", base.DEC, nil, 0x0000fc00, "API Class")
-api_index_field = ProtoField.uint32("can.frc.api_index", "API Index", base.DEC, nil, 0x000003c0, "API Index")
-device_number_field = ProtoField.uint32("can.frc.device_number", "Device Number", base.DEC, nil, 0x0000003f, "Device Number")
+device_type_field = ProtoField.uint32("can.frc.type", "Device Type", base.RANGE_STRING, device_types, 0x1f000000)
+manufacturer_field = ProtoField.uint32("can.frc.mfr", "Manufacturer", base.RANGE_STRING, manufacturers, 0x00ff0000)
+api_class_field = ProtoField.uint32("can.frc.api_class", "API Class", base.DEC, nil, 0x0000fc00)
+api_index_field = ProtoField.uint32("can.frc.api_index", "API Index", base.DEC, nil, 0x000003c0)
+device_number_field = ProtoField.uint32("can.frc.device_number", "Device Number", base.DEC, nil, 0x0000003f)
 
-id_field = ProtoField.uint32("can.id", "CAN ID", base.HEX, nil, 0x1fffffff, "CAN id")
-length_field = ProtoField.uint8("can.data_length", "data length", base.DEC, nil, nil, "data length")
+id_field = ProtoField.uint32("can.id", "CAN ID", base.HEX, nil, 0x1fffffff)
+length_field = ProtoField.uint8("can.data_length", "data length", base.DEC, nil, nil)
 pad_field = ProtoField.bytes("can.padding", "padding", base.NONE, "padding")
-data_field = ProtoField.bytes("can.datafield", "data field", base.NONE, "the data field")
+data_field = ProtoField.bytes("can.datafield", "data field", base.NONE)
+
+
 
 -- See https://github.com/wpilibsuite/allwpilib/pull/1081/files
+
+-- CTRE PDP STATUS1
+-- chan1_h8:8;
+-- chan2_h6:6;
+-- chan1_l2:2;
+-- chan3_h4:4;
+-- chan2_l4:4;
+-- chan4_h2:2;
+-- chan3_l6:6;
+-- chan4_l8:8;
+-- chan5_h8:8;
+-- chan6_h6:6;
+-- chan5_l2:2;
+-- reserved4:4;
+-- chan6_l4:4;
+
+ctre_pdp_chan1_h8_field = ProtoField.uint8("can.frc.ctre.pdp.chan1_h8", "PDP Chan1_h8", base.DEC, nil, 0xff)
+ctre_pdp_chan2_h6_field = ProtoField.uint8("can.frc.ctre.pdp.chan2_h6", "PDP Chan2_h6", base.DEC, nil, 0xfc)
+ctre_pdp_chan1_l2_field = ProtoField.uint8("can.frc.ctre.pdp.chan1_l2", "PDP Chan1_l2", base.DEC, nil, 0x03)
+ctre_pdp_chan3_h4_field = ProtoField.uint8("can.frc.ctre.pdp.chan3_h4", "PDP Chan3_h4", base.DEC, nil, 0xf0)
+ctre_pdp_chan2_l4_field = ProtoField.uint8("can.frc.ctre.pdp.chan2_l4", "PDP Chan2_l4", base.DEC, nil, 0x0f)
+ctre_pdp_chan4_h2_field = ProtoField.uint8("can.frc.ctre.pdp.chan4_h2", "PDP Chan4_h2", base.DEC, nil, 0xc0)
+ctre_pdp_chan3_l6_field = ProtoField.uint8("can.frc.ctre.pdp.chan3_l6", "PDP Chan3_l6", base.DEC, nil, 0x3f)
+ctre_pdp_chan4_l8_field = ProtoField.uint8("can.frc.ctre.pdp.chan4_l8", "PDP Chan4_l8", base.DEC, nil, 0xff)
+ctre_pdp_chan5_h8_field = ProtoField.uint8("can.frc.ctre.pdp.chan5_h8", "PDP Chan5_h8", base.DEC, nil, 0xff)
+ctre_pdp_chan6_h6_field = ProtoField.uint8("can.frc.ctre.pdp.chan6_h6", "PDP Chan6_h6", base.DEC, nil, 0xfc)
+ctre_pdp_chan5_l2_field = ProtoField.uint8("can.frc.ctre.pdp.chan5_l2", "PDP Chan5_l2", base.DEC, nil, 0x03)
+ctre_pdp_chan6_l4_field = ProtoField.uint8("can.frc.ctre.pdp.chan6_l4", "PDP Chan6_l4", base.DEC, nil, 0x0f)
+
 -- CTRE PDP STATUS2
 -- chan7_h8:8;
 -- chan8_h6:6;
@@ -111,6 +142,30 @@ ctre_pdp_internalres_field = ProtoField.uint8("can.frc.ctre.pdp.internalres", "P
 ctre_pdp_bus_voltage_field = ProtoField.uint8("can.frc.ctre.pdp.voltage", "PDP Voltage", base.DEC, nil, 0xff)
 ctre_pdp_temp_field = ProtoField.uint8("can.frc.ctre.pdp.temp", "PDP Temperature", base.DEC, nil, 0xff)
 
+-- CTRE PDP STATUS_ENERGY
+
+-- TmeasMs_likelywillbe20ms_:8;
+-- TotalCurrent_125mAperunit_h8:8;
+-- Power_125mWperunit_h4:4;
+-- TotalCurrent_125mAperunit_l4:4;
+-- Power_125mWperunit_m8:8;
+-- Energy_125mWPerUnitXTmeas_h4:4;
+-- Power_125mWperunit_l4:4;
+-- Energy_125mWPerUnitXTmeas_mh8:8;
+-- Energy_125mWPerUnitXTmeas_ml8:8;
+-- Energy_125mWPerUnitXTmeas_l8:8;
+
+ctre_pdp_TmeasMs_likelywillbe20ms__field = ProtoField.uint8("can.frc.ctre.pdp.TmeasMs_likelywillbe20ms_", "PDP TmeasMs", base.DEC, nil, 0xff)
+ctre_pdp_TotalCurrent_125mAperunit_h8_field = ProtoField.uint8("can.frc.ctre.pdp.TotalCurrent_125mAperunit_h8", "PDP Total Current h8", base.DEC, nil, 0xff)
+ctre_pdp_Power_125mWperunit_h4_field = ProtoField.uint8("can.frc.ctre.pdp.Power_125mWperunit_h4", "PDP Power h4", base.DEC, nil, 0xf0)
+ctre_pdp_TotalCurrent_125mAperunit_l4_field = ProtoField.uint8("can.frc.ctre.pdp.TotalCurrent_125mAperunit_l4", "PDP Total Current l4", base.DEC, nil, 0x0f)
+ctre_pdp_Power_125mWperunit_m8_field = ProtoField.uint8("can.frc.ctre.pdp.Power_125mWperunit_m8", "PDP Power m8", base.DEC, nil, 0xff)
+ctre_pdp_Energy_125mWPerUnitXTmeas_h4_field = ProtoField.uint8("can.frc.ctre.pdp.Energy_125mWPerUnitXTmeas_h4", "PDP Energy h4", base.DEC, nil, 0xf0)
+ctre_pdp_Power_125mWperunit_l4_field = ProtoField.uint8("can.frc.ctre.pdp.Power_125mWperunit_l4", "PDP Power l4", base.DEC, nil, 0x0f)
+ctre_pdp_Energy_125mWPerUnitXTmeas_mh8_field = ProtoField.uint8("can.frc.ctre.pdp.Energy_125mWPerUnitXTmeas_mh8", "PDP Energy mh8", base.DEC, nil, 0xff)
+ctre_pdp_Energy_125mWPerUnitXTmeas_ml8_field = ProtoField.uint8("can.frc.ctre.pdp.Energy_125mWPerUnitXTmeas_ml8", "PDP Energy ml8", base.DEC, nil, 0xff)
+ctre_pdp_Energy_125mWPerUnitXTmeas_l8_field = ProtoField.uint8("can.frc.ctre.pdp.Energy_125mWPerUnitXTmeas_l8", "PDP Energy l8", base.DEC, nil, 0xff)
+
 can_protocol.fields = {
   eff_field,
   rtr_field,
@@ -124,6 +179,22 @@ can_protocol.fields = {
   length_field,
   pad_field,
   data_field,
+
+  ctre_pdp_chan1_h8_field,
+  ctre_pdp_chan2_h6_field,
+  ctre_pdp_chan1_l2_field,
+  ctre_pdp_chan3_h4_field,
+  ctre_pdp_chan2_l4_field,
+  ctre_pdp_chan4_h2_field,
+  ctre_pdp_chan3_l6_field,
+  ctre_pdp_chan4_l8_field,
+  ctre_pdp_chan5_h8_field,
+  ctre_pdp_chan6_h6_field,
+  ctre_pdp_chan5_l2_field,
+  ctre_pdp_chan6_l4_field,
+
+
+
   ctre_pdp_chan7_h8_field,
   ctre_pdp_chan8_h6_field,
   ctre_pdp_chan7_l2_field,
@@ -154,6 +225,19 @@ can_frc_type = Field.new("can.frc.type")
 can_frc_mfr = Field.new("can.frc.mfr")
 can_frc_api_class = Field.new("can.frc.api_class")
 can_frc_api_index = Field.new("can.frc.api_index")
+
+can_frc_ctre_pdp_chan1_h8 = Field.new("can.frc.ctre.pdp.chan1_h8")
+can_frc_ctre_pdp_chan2_h6 = Field.new("can.frc.ctre.pdp.chan2_h6")
+can_frc_ctre_pdp_chan1_l2 = Field.new("can.frc.ctre.pdp.chan1_l2")
+can_frc_ctre_pdp_chan3_h4 = Field.new("can.frc.ctre.pdp.chan3_h4")
+can_frc_ctre_pdp_chan2_l4 = Field.new("can.frc.ctre.pdp.chan2_l4")
+can_frc_ctre_pdp_chan4_h2 = Field.new("can.frc.ctre.pdp.chan4_h2")
+can_frc_ctre_pdp_chan3_l6 = Field.new("can.frc.ctre.pdp.chan3_l6")
+can_frc_ctre_pdp_chan4_l8 = Field.new("can.frc.ctre.pdp.chan4_l8")
+can_frc_ctre_pdp_chan5_h8 = Field.new("can.frc.ctre.pdp.chan5_h8")
+can_frc_ctre_pdp_chan6_h6 = Field.new("can.frc.ctre.pdp.chan6_h6")
+can_frc_ctre_pdp_chan5_l2 = Field.new("can.frc.ctre.pdp.chan5_l2")
+can_frc_ctre_pdp_chan6_l4 = Field.new("can.frc.ctre.pdp.chan6_l4")
 
 
 can_frc_ctre_pdp_chan7_h8 = Field.new("can.frc.ctre.pdp.chan7_h8")
@@ -230,8 +314,38 @@ function can_protocol.dissector(buffer, pinfo, tree)
   subtree:add("can_frc_mfr:", can_frc_mfr()())
   if can_frc_type()() == 8 then -- PDP
     if can_frc_mfr()() == 4 then -- CTRE
-      if can_frc_api_class()() == 5 then
-        if can_frc_api_index()() == 1 then -- PDP_API_STATUS2
+      if can_frc_api_class()() == 5 then -- STATUS
+        if can_frc_api_index()() == 0 then -- PDP_API_STATUS1
+
+          -- raw
+          subtree:add(ctre_pdp_chan1_h8_field, buffer:range(8,1))
+          subtree:add(ctre_pdp_chan2_h6_field, buffer:range(9,1))
+          subtree:add(ctre_pdp_chan1_l2_field, buffer:range(9,1))
+          subtree:add(ctre_pdp_chan3_h4_field, buffer:range(10,1))
+          subtree:add(ctre_pdp_chan2_l4_field, buffer:range(10,1))
+          subtree:add(ctre_pdp_chan4_h2_field, buffer:range(11,1))
+          subtree:add(ctre_pdp_chan3_l6_field, buffer:range(11,1))
+          subtree:add(ctre_pdp_chan4_l8_field, buffer:range(12,1))
+          subtree:add(ctre_pdp_chan5_h8_field, buffer:range(13,1))
+          subtree:add(ctre_pdp_chan6_h6_field, buffer:range(14,1))
+          subtree:add(ctre_pdp_chan5_l2_field, buffer:range(14,1))
+          subtree:add(ctre_pdp_chan6_l4_field, buffer:range(15,1))
+
+          -- cooked
+          subtree:add("can_frc_ctre_pdp_current_channel_1 (A):", 
+            currentA(bit.bor(bit.lshift(can_frc_ctre_pdp_chan1_h8()(), 2), can_frc_ctre_pdp_chan1_l2()())))
+          subtree:add("can_frc_ctre_pdp_current_channel_2 (A):", 
+            currentA(bit.bor(bit.lshift(can_frc_ctre_pdp_chan2_h6()(), 4), can_frc_ctre_pdp_chan2_l4()())))
+          subtree:add("can_frc_ctre_pdp_current_channel_3 (A):", 
+            currentA(bit.bor(bit.lshift(can_frc_ctre_pdp_chan3_h4()(), 6), can_frc_ctre_pdp_chan3_l6()())))
+          subtree:add("can_frc_ctre_pdp_current_channel_4 (A):", 
+            currentA(bit.bor(bit.lshift(can_frc_ctre_pdp_chan4_h2()(), 8), can_frc_ctre_pdp_chan4_l8()())))
+          subtree:add("can_frc_ctre_pdp_current_channel_5 (A):", 
+            currentA(bit.bor(bit.lshift(can_frc_ctre_pdp_chan5_h8()(), 2), can_frc_ctre_pdp_chan5_l2()())))
+          subtree:add("can_frc_ctre_pdp_current_channel_6 (A):", 
+            currentA(bit.bor(bit.lshift(can_frc_ctre_pdp_chan6_h6()(), 4), can_frc_ctre_pdp_chan6_l4()())))
+
+        elseif can_frc_api_index()() == 1 then -- PDP_API_STATUS2
 
           -- raw
           subtree:add(ctre_pdp_chan7_h8_field, buffer:range(8,1))
@@ -288,6 +402,11 @@ function can_protocol.dissector(buffer, pinfo, tree)
           subtree:add("can_frc_ctre_pdp_internal_resistance (mOhm):", can_frc_ctre_pdp_internalres()())
           subtree:add("can_frc_ctre_pdp_bus_voltage (V):", voltage(can_frc_ctre_pdp_voltage()()))
           subtree:add("can_frc_ctre_pdp_temperature (C):", temperatureC(can_frc_ctre_pdp_temp()()))
+
+        elseif can_frc_api_index()() == 13 then -- PDP_API_STATUS_ENERGY
+        end
+      elseif can_frc_api_class()() == 7 then -- CONTROL
+        if can_frc_api_index()() == 0 then -- CONTROL_1
         end
       end
     end
