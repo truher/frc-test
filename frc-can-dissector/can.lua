@@ -55,7 +55,47 @@ length_field = ProtoField.uint8("can.data_length", "data length", base.DEC, nil,
 pad_field = ProtoField.bytes("can.padding", "padding", base.NONE, "padding")
 data_field = ProtoField.bytes("can.datafield", "data field", base.NONE, "the data field")
 
-ctre_pdp_battery_voltage_field = ProtoField.uint64("can.frc.ctre.pdp.voltage", "PDP Voltage", base.DEC, nil, 0x000000000000ff00, "PDP Voltage")
+-- See https://github.com/wpilibsuite/allwpilib/pull/1081/files
+-- CTRE PDP STATUS2
+-- chan7_h8:8;
+-- chan8_h6:6;
+-- chan7_l2:2;
+-- chan9_h4:4;
+-- chan8_l4:4;
+-- chan10_h2:2;
+-- chan9_l6:6;
+-- chan10_l8:8;
+-- chan11_h8:8;
+-- chan12_h6:6;
+-- chan11_l2:2;
+-- reserved4:4;
+-- chan12_l4:4;
+
+-- CTRE PDP STATUS3
+-- chan13_h8:8;
+-- chan14_h6:6;
+-- chan13_l2:2;
+-- chan15_h4:4;
+-- chan14_l4:4;
+-- chan16_h2:2;
+-- chan15_l6:6;
+-- chan16_l8:8;
+-- internalResBattery_mOhms:8;
+-- busVoltage:8;
+-- temp:8;
+
+ctre_pdp_chan13_h8_field = ProtoField.uint8("can.frc.ctre.pdp.chan13_h8", "PDP Chan13_h8", base.DEC, nil, 0xff)
+ctre_pdp_chan14_h6_field = ProtoField.uint8("can.frc.ctre.pdp.chan14_h6", "PDP Chan14_h6", base.DEC, nil, 0xfc)
+ctre_pdp_chan13_l2_field = ProtoField.uint8("can.frc.ctre.pdp.chan13_l2", "PDP Chan13_l2", base.DEC, nil, 0x03)
+ctre_pdp_chan15_h4_field = ProtoField.uint8("can.frc.ctre.pdp.chan15_h4", "PDP Chan15_h4", base.DEC, nil, 0xf0)
+ctre_pdp_chan14_l4_field = ProtoField.uint8("can.frc.ctre.pdp.chan14_l4", "PDP Chan14_l4", base.DEC, nil, 0x0f)
+ctre_pdp_chan16_h2_field = ProtoField.uint8("can.frc.ctre.pdp.chan16_h2", "PDP Chan16_h2", base.DEC, nil, 0xc0)
+ctre_pdp_chan15_l6_field = ProtoField.uint8("can.frc.ctre.pdp.chan15_l6", "PDP Chan15_l6", base.DEC, nil, 0x3f)
+ctre_pdp_chan16_l8_field = ProtoField.uint8("can.frc.ctre.pdp.chan16_l8", "PDP Chan16_l8", base.DEC, nil, 0xff)
+
+ctre_pdp_internalres_field = ProtoField.uint8("can.frc.ctre.pdp.internalres", "PDP Internal Res", base.DEC, nil, 0xff)
+ctre_pdp_bus_voltage_field = ProtoField.uint8("can.frc.ctre.pdp.voltage", "PDP Voltage", base.DEC, nil, 0xff)
+ctre_pdp_temp_field = ProtoField.uint8("can.frc.ctre.pdp.temp", "PDP Temperature", base.DEC, nil, 0xff)
 
 can_protocol.fields = {
   eff_field,
@@ -70,18 +110,52 @@ can_protocol.fields = {
   length_field,
   pad_field,
   data_field,
-  ctre_pdp_battery_voltage_field
+  ctre_pdp_chan13_h8_field,
+  ctre_pdp_chan14_h6_field,
+  ctre_pdp_chan13_l2_field,
+  ctre_pdp_chan15_h4_field,
+  ctre_pdp_chan14_l4_field,
+  ctre_pdp_chan16_h2_field,
+  ctre_pdp_chan15_l6_field,
+  ctre_pdp_chan16_l8_field,
+  ctre_pdp_internalres_field,
+  ctre_pdp_bus_voltage_field,
+  ctre_pdp_temp_field
 }
 
+-- fields for the parsed values
 can_frc_type = Field.new("can.frc.type")
 can_frc_mfr = Field.new("can.frc.mfr")
+can_frc_api_class = Field.new("can.frc.api_class")
+can_frc_api_index = Field.new("can.frc.api_index")
+
+can_frc_ctre_pdp_chan13_h8 = Field.new("can.frc.ctre.pdp.chan13_h8")
+can_frc_ctre_pdp_chan14_h6 = Field.new("can.frc.ctre.pdp.chan14_h6")
+can_frc_ctre_pdp_chan13_l2 = Field.new("can.frc.ctre.pdp.chan13_l2")
+can_frc_ctre_pdp_chan15_h4 = Field.new("can.frc.ctre.pdp.chan15_h4")
+can_frc_ctre_pdp_chan14_l4 = Field.new("can.frc.ctre.pdp.chan14_l4")
+can_frc_ctre_pdp_chan16_h2 = Field.new("can.frc.ctre.pdp.chan16_h2")
+can_frc_ctre_pdp_chan15_l6 = Field.new("can.frc.ctre.pdp.chan15_l6")
+can_frc_ctre_pdp_chan16_l8 = Field.new("can.frc.ctre.pdp.chan16_l8")
+can_frc_ctre_pdp_internalres = Field.new("can.frc.ctre.pdp.internalres")
 can_frc_ctre_pdp_voltage = Field.new("can.frc.ctre.pdp.voltage")
+can_frc_ctre_pdp_temp = Field.new("can.frc.ctre.pdp.temp")
 
 
 -- See https://github.com/CrossTheRoadElec/deprecated-HERO-SDK/blob/master/CTRE/LowLevel_Pcm.cs
 -- note the delicious use of tostring() here; lua coerces the string to a number
 function voltage(x)
-  return 0.05 * tostring(x) + 4.0
+  return tostring(x) * 0.05 + 4.0
+end
+
+-- See https://github.com/wpilibsuite/allwpilib/pull/1081/files
+function temperatureC(x)
+  return tostring(x) * 1.03250836957542 - 67.8564500484966
+end
+
+-- See https://github.com/wpilibsuite/allwpilib/pull/1081/files
+function currentA(x)
+  return tostring(x) * 0.125
 end
 
 -- Tvb buffer, see lua_module_Tvb.html
@@ -113,9 +187,37 @@ function can_protocol.dissector(buffer, pinfo, tree)
   subtree:add("can_frc_mfr:", can_frc_mfr()())
   if can_frc_type()() == 8 then -- PDP
     if can_frc_mfr()() == 4 then -- CTRE
--- TODO: add another conditional here identifying the payload
-      subtree:add(ctre_pdp_battery_voltage_field, buffer:range(8))
-      subtree:add("can_frc_ctre_pdp_voltage:", voltage(can_frc_ctre_pdp_voltage()()))
+      if can_frc_api_class()() == 5 then
+        if can_frc_api_index()() == 1 then -- PDP_API_STATUS2
+        elseif can_frc_api_index()() == 2 then -- PDP_API_STATUS3
+
+          -- raw
+          subtree:add(ctre_pdp_chan13_h8_field, buffer:range(8,1))    -- ff000000 00000000
+          subtree:add(ctre_pdp_chan14_h6_field, buffer:range(9,1))    -- 00fc0000 00000000
+          subtree:add(ctre_pdp_chan13_l2_field, buffer:range(9,1))    -- 00030000 00000000
+          subtree:add(ctre_pdp_chan15_h4_field, buffer:range(10,1))   -- 0000f000 00000000
+          subtree:add(ctre_pdp_chan14_l4_field, buffer:range(10,1))   -- 00000f00 00000000
+          subtree:add(ctre_pdp_chan16_h2_field, buffer:range(11,1))   -- 000000c0 00000000
+          subtree:add(ctre_pdp_chan15_l6_field, buffer:range(11,1))   -- 0000003f 00000000
+          subtree:add(ctre_pdp_chan16_l8_field, buffer:range(12,1))   -- 00000000 ff000000
+          subtree:add(ctre_pdp_internalres_field, buffer:range(13,1)) -- 00000000 00ff0000
+          subtree:add(ctre_pdp_bus_voltage_field, buffer:range(14,1)) -- 00000000 0000ff00
+          subtree:add(ctre_pdp_temp_field, buffer:range(15,1))        -- 00000000 000000ff
+
+          -- cooked
+          subtree:add("can_frc_ctre_pdp_current_channel_13 (A):", 
+            currentA(bit.bor(bit.lshift(can_frc_ctre_pdp_chan13_h8()(), 2), can_frc_ctre_pdp_chan13_l2()())))
+          subtree:add("can_frc_ctre_pdp_current_channel_14 (A):", 
+            currentA(bit.bor(bit.lshift(can_frc_ctre_pdp_chan14_h6()(), 4), can_frc_ctre_pdp_chan14_l4()())))
+          subtree:add("can_frc_ctre_pdp_current_channel_15 (A):", 
+            currentA(bit.bor(bit.lshift(can_frc_ctre_pdp_chan15_h4()(), 6), can_frc_ctre_pdp_chan15_l6()())))
+          subtree:add("can_frc_ctre_pdp_current_channel_16 (A):", 
+            currentA(bit.bor(bit.lshift(can_frc_ctre_pdp_chan16_h2()(), 8), can_frc_ctre_pdp_chan16_l8()())))
+          subtree:add("can_frc_ctre_pdp_internal_resistance (mOhm):", can_frc_ctre_pdp_internalres()())
+          subtree:add("can_frc_ctre_pdp_bus_voltage (V):", voltage(can_frc_ctre_pdp_voltage()()))
+          subtree:add("can_frc_ctre_pdp_temperature (C):", temperatureC(can_frc_ctre_pdp_temp()()))
+        end
+      end
     end
   end
 
