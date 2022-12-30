@@ -193,8 +193,6 @@ can_protocol.fields = {
   ctre_pdp_chan5_l2_field,
   ctre_pdp_chan6_l4_field,
 
-
-
   ctre_pdp_chan7_h8_field,
   ctre_pdp_chan8_h6_field,
   ctre_pdp_chan7_l2_field,
@@ -207,6 +205,7 @@ can_protocol.fields = {
   ctre_pdp_chan12_h6_field,
   ctre_pdp_chan11_l2_field,
   ctre_pdp_chan12_l4_field,
+
   ctre_pdp_chan13_h8_field,
   ctre_pdp_chan14_h6_field,
   ctre_pdp_chan13_l2_field,
@@ -217,7 +216,20 @@ can_protocol.fields = {
   ctre_pdp_chan16_l8_field,
   ctre_pdp_internalres_field,
   ctre_pdp_bus_voltage_field,
-  ctre_pdp_temp_field
+  ctre_pdp_temp_field,
+
+  ctre_pdp_TmeasMs_likelywillbe20ms__field,
+  ctre_pdp_TotalCurrent_125mAperunit_h8_field,
+  ctre_pdp_Power_125mWperunit_h4_field,
+  ctre_pdp_TotalCurrent_125mAperunit_l4_field,
+  ctre_pdp_Power_125mWperunit_m8_field,
+  ctre_pdp_Energy_125mWPerUnitXTmeas_h4_field,
+  ctre_pdp_Power_125mWperunit_l4_field,
+  ctre_pdp_Energy_125mWPerUnitXTmeas_mh8_field,
+  ctre_pdp_Energy_125mWPerUnitXTmeas_ml8_field,
+  ctre_pdp_Energy_125mWPerUnitXTmeas_l8_field
+
+
 }
 
 -- fields for the parsed values
@@ -268,6 +280,16 @@ can_frc_ctre_pdp_internalres = Field.new("can.frc.ctre.pdp.internalres")
 can_frc_ctre_pdp_voltage = Field.new("can.frc.ctre.pdp.voltage")
 can_frc_ctre_pdp_temp = Field.new("can.frc.ctre.pdp.temp")
 
+can_frc_ctre_pdp_TmeasMs_likelywillbe20ms_ = Field.new("can.frc.ctre.pdp.TmeasMs_likelywillbe20ms_")
+can_frc_ctre_pdp_TotalCurrent_125mAperunit_h8 = Field.new("can.frc.ctre.pdp.TotalCurrent_125mAperunit_h8")
+can_frc_ctre_pdp_Power_125mWperunit_h4 = Field.new("can.frc.ctre.pdp.Power_125mWperunit_h4")
+can_frc_ctre_pdp_TotalCurrent_125mAperunit_l4 = Field.new("can.frc.ctre.pdp.TotalCurrent_125mAperunit_l4")
+can_frc_ctre_pdp_Power_125mWperunit_m8 = Field.new("can.frc.ctre.pdp.Power_125mWperunit_m8")
+can_frc_ctre_pdp_Energy_125mWPerUnitXTmeas_h4 = Field.new("can.frc.ctre.pdp.Energy_125mWPerUnitXTmeas_h4")
+can_frc_ctre_pdp_Power_125mWperunit_l4 = Field.new("can.frc.ctre.pdp.Power_125mWperunit_l4")
+can_frc_ctre_pdp_Energy_125mWPerUnitXTmeas_mh8 = Field.new("can.frc.ctre.pdp.Energy_125mWPerUnitXTmeas_mh8")
+can_frc_ctre_pdp_Energy_125mWPerUnitXTmeas_ml8 = Field.new("can.frc.ctre.pdp.Energy_125mWPerUnitXTmeas_ml8")
+can_frc_ctre_pdp_Energy_125mWPerUnitXTmeas_l8 = Field.new("can.frc.ctre.pdp.Energy_125mWPerUnitXTmeas_l8")
 
 -- See https://github.com/CrossTheRoadElec/deprecated-HERO-SDK/blob/master/CTRE/LowLevel_Pcm.cs
 -- note the delicious use of tostring() here; lua coerces the string to a number
@@ -404,6 +426,46 @@ function can_protocol.dissector(buffer, pinfo, tree)
           subtree:add("can_frc_ctre_pdp_temperature (C):", temperatureC(can_frc_ctre_pdp_temp()()))
 
         elseif can_frc_api_index()() == 13 then -- PDP_API_STATUS_ENERGY
+
+          -- raw
+          subtree:add(ctre_pdp_TmeasMs_likelywillbe20ms__field, buffer:range(8,1))
+          subtree:add(ctre_pdp_TotalCurrent_125mAperunit_h8_field, buffer:range(9,1))
+          subtree:add(ctre_pdp_Power_125mWperunit_h4_field, buffer:range(10,1))
+          subtree:add(ctre_pdp_TotalCurrent_125mAperunit_l4_field, buffer:range(10,1))
+          subtree:add(ctre_pdp_Power_125mWperunit_m8_field, buffer:range(11,1))
+          subtree:add(ctre_pdp_Energy_125mWPerUnitXTmeas_h4_field, buffer:range(12,1))
+          subtree:add(ctre_pdp_Power_125mWperunit_l4_field, buffer:range(12,1))
+          subtree:add(ctre_pdp_Energy_125mWPerUnitXTmeas_mh8_field, buffer:range(13,1))
+          subtree:add(ctre_pdp_Energy_125mWPerUnitXTmeas_ml8_field, buffer:range(14,1))
+          subtree:add(ctre_pdp_Energy_125mWPerUnitXTmeas_l8_field, buffer:range(15,1))
+
+          -- cooked
+          raw = can_frc_ctre_pdp_Energy_125mWPerUnitXTmeas_h4()()
+          raw = bit.lshift(raw, 8)
+          raw = bit.bor(raw, can_frc_ctre_pdp_Energy_125mWPerUnitXTmeas_mh8()())
+          raw = bit.lshift(raw, 8)
+          raw = bit.bor(raw, can_frc_ctre_pdp_Energy_125mWPerUnitXTmeas_ml8()())
+          raw = bit.lshift(raw, 8)
+          raw = bit.bor(raw, can_frc_ctre_pdp_Energy_125mWPerUnitXTmeas_l8()())
+          energyJoules = 0.125 * raw
+          energyJoules = energyJoules * 0.001
+          energyJoules = energyJoules * can_frc_ctre_pdp_TmeasMs_likelywillbe20ms_()()
+          subtree:add("can_frc_ctre_pdp_total_energy (J):", energyJoules)
+
+          raw = can_frc_ctre_pdp_TotalCurrent_125mAperunit_h8()()
+          raw = bit.lshift(raw, 4)
+          raw = bit.bor(raw, can_frc_ctre_pdp_TotalCurrent_125mAperunit_l4()())
+          currentAmps = 0.125 * raw
+          subtree:add("can_frc_ctre_pdp_total_current (A):", currentAmps)
+
+          raw = can_frc_ctre_pdp_Power_125mWperunit_h4()()
+          raw = bit.lshift(raw, 8)
+          raw = bit.bor(raw, can_frc_ctre_pdp_Power_125mWperunit_m8()())
+          raw = bit.lshift(raw, 8)
+          raw = bit.bor(raw, can_frc_ctre_pdp_Power_125mWperunit_l4()())
+          powerWatts = 0.125 * raw
+          subtree:add("can_frc_ctre_pdp_total_Power (W):", powerWatts)
+
         end
       elseif can_frc_api_class()() == 7 then -- CONTROL
         if can_frc_api_index()() == 0 then -- CONTROL_1
