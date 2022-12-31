@@ -1,41 +1,44 @@
+local flags = require("can.flags")
+local frc_type = require("frc.type")
+local frc_mfr = require("frc.mfr")
 -- FRC CAN Dissector
 
 -- See https://docs.wpilib.org/en/stable/docs/software/can-devices/can-addressing.html
 -- See https://github.com/carlosgj/FRC-CAN-Wireshark
 
-device_types = {
-  { 0,  0, "Broadcast Messages"},
-  { 1,  1, "Robot Controller"},
-  { 2,  2, "Motor Controller"},
-  { 3,  3, "Relay Controller"},
-  { 4,  4, "Gyro Sensor"},
-  { 5,  5, "Accelerometer"},
-  { 6,  6, "Ultrasonic Sensor"},
-  { 7,  7, "Gear Tooth Sensor"},
-  { 8,  8, "Power Distribution Module"},
-  { 9,  9, "Pneumatics Controller"},
-  {10, 10, "Miscellaneous"},
-  {11, 11, "IO Breakout"},
-  {12, 30, "Reserved"},
-  {31, 31, "Firmware Update"}
-}
+--device_types = {
+--  { 0,  0, "Broadcast Messages"},
+--  { 1,  1, "Robot Controller"},
+--  { 2,  2, "Motor Controller"},
+--  { 3,  3, "Relay Controller"},
+--  { 4,  4, "Gyro Sensor"},
+--  { 5,  5, "Accelerometer"},
+--  { 6,  6, "Ultrasonic Sensor"},
+--  { 7,  7, "Gear Tooth Sensor"},
+--  { 8,  8, "Power Distribution Module"},
+--  { 9,  9, "Pneumatics Controller"},
+--  {10, 10, "Miscellaneous"},
+--  {11, 11, "IO Breakout"},
+--  {12, 30, "Reserved"},
+--  {31, 31, "Firmware Update"}
+--}
 
-manufacturers = {
-  { 0,   0, "Broadcast" },
-  { 1,   1, "NI" },
-  { 2,   2, "Luminary Micro" },
-  { 3,   3, "DEKA" },
-  { 4,   4, "CTR Electronics" },
-  { 5,   5, "REV Robotics" },
-  { 6,   6, "Grapple" },
-  { 7,   7, "MindSensors" },
-  { 8,   8, "Team Use" },
-  { 9,   9, "Kauai Labs" },
-  {10,  10, "Copperforge" },
-  {11,  11, "Playing With Fusion" },
-  {12,  12, "Studica" },
-  {13, 255, "Reserved" }
-}
+--manufacturers = {
+--  { 0,   0, "Broadcast" },
+--  { 1,   1, "NI" },
+--  { 2,   2, "Luminary Micro" },
+--  { 3,   3, "DEKA" },
+--  { 4,   4, "CTR Electronics" },
+--  { 5,   5, "REV Robotics" },
+--  { 6,   6, "Grapple" },
+--  { 7,   7, "MindSensors" },
+--  { 8,   8, "Team Use" },
+--  { 9,   9, "Kauai Labs" },
+--  {10,  10, "Copperforge" },
+--  {11,  11, "Playing With Fusion" },
+--  {12,  12, "Studica" },
+--  {13, 255, "Reserved" }
+--}
 
 broadcast_api_indexes = {
   [0] = "Disable",
@@ -54,12 +57,12 @@ broadcast_api_indexes = {
 can_protocol = Proto("FRC_CAN", "FRC CAN Protocol")
 
 -- See linux/can.h for these flags
-eff_field = ProtoField.bool("can.eff_flag", "EFF flag", 32, nil, 0x80000000) -- extended frame (29 bit)
-rtr_field = ProtoField.bool("can.rtr_flag", "RTR flag", 32, nil, 0x40000000) -- remote frame
-err_field = ProtoField.bool("can.err_flag", "ERR flag", 32, nil, 0x20000000) -- error
+--eff_field = ProtoField.bool("can.eff_flag", "EFF flag", 32, nil, 0x80000000) -- extended frame (29 bit)
+--rtr_field = ProtoField.bool("can.rtr_flag", "RTR flag", 32, nil, 0x40000000) -- remote frame
+--err_field = ProtoField.bool("can.err_flag", "ERR flag", 32, nil, 0x20000000) -- error
 
-device_type_field = ProtoField.uint32("can.frc.type", "Device Type", base.RANGE_STRING, device_types, 0x1f000000)
-manufacturer_field = ProtoField.uint32("can.frc.mfr", "Manufacturer", base.RANGE_STRING, manufacturers, 0x00ff0000)
+--device_type_field = ProtoField.uint32("can.frc.type", "Device Type", base.RANGE_STRING, device_types, 0x1f000000)
+--manufacturer_field = ProtoField.uint32("can.frc.mfr", "Manufacturer", base.RANGE_STRING, manufacturers, 0x00ff0000)
 api_class_field = ProtoField.uint32("can.frc.api_class", "API Class", base.DEC, nil, 0x0000fc00)
 api_index_field = ProtoField.uint32("can.frc.api_index", "API Index", base.DEC, nil, 0x000003c0)
 api_index_broadcast_field = ProtoField.uint32("can.frc.api_index", "API Index", base.DEC, broadcast_api_indexes, 0x000003c0)
@@ -191,83 +194,85 @@ ctre_pdp_Energy_125mWPerUnitXTmeas_l8_field = ProtoField.uint8("can.frc.ctre.pdp
 clear_sticky_faults_field = ProtoField.bool("can.frc.ctre.pdp.clear_sticky_faults", "Clear Sticky Faults", 8, nil, 0x80)
 reset_energy_field = ProtoField.bool("can.frc.ctre.pdp.reset_energy", "Reset Energy", 8, nil, 0x40)
 
-can_protocol.fields = {
-  eff_field,
-  rtr_field,
-  err_field,
-  device_type_field,
-  manufacturer_field,
-  api_class_field,
-  api_index_field,
-  api_index_broadcast_field,
-  device_number_field,
-  id_field,
-  length_field,
-  pad_field,
-  data_field,
+can_protocol.fields = {}
 
-  ctre_talon_current_h8_field,
-  ctre_talon_current_l2_field,
-  ctre_talon_temp_field,
-  ctre_talon_voltage_field,
+flags.insert(can_protocol.fields)
+frc_type.insert(can_protocol.fields)
+frc_mfr.insert(can_protocol.fields)
 
-  ctre_pdp_chan1_h8_field,
-  ctre_pdp_chan2_h6_field,
-  ctre_pdp_chan1_l2_field,
-  ctre_pdp_chan3_h4_field,
-  ctre_pdp_chan2_l4_field,
-  ctre_pdp_chan4_h2_field,
-  ctre_pdp_chan3_l6_field,
-  ctre_pdp_chan4_l8_field,
-  ctre_pdp_chan5_h8_field,
-  ctre_pdp_chan6_h6_field,
-  ctre_pdp_chan5_l2_field,
-  ctre_pdp_chan6_l4_field,
+--table.insert(can_protocol.fields, eff_field)
+--table.insert(can_protocol.fields, rtr_field)
+--table.insert(can_protocol.fields, err_field)
+--table.insert(can_protocol.fields, device_type_field)
+--table.insert(can_protocol.fields, manufacturer_field)
+table.insert(can_protocol.fields, api_class_field)
+table.insert(can_protocol.fields, api_index_field)
+table.insert(can_protocol.fields, api_index_broadcast_field)
+table.insert(can_protocol.fields, device_number_field)
+table.insert(can_protocol.fields, id_field)
+table.insert(can_protocol.fields, length_field)
+table.insert(can_protocol.fields, pad_field)
+table.insert(can_protocol.fields, data_field)
 
-  ctre_pdp_chan7_h8_field,
-  ctre_pdp_chan8_h6_field,
-  ctre_pdp_chan7_l2_field,
-  ctre_pdp_chan9_h4_field,
-  ctre_pdp_chan8_l4_field,
-  ctre_pdp_chan10_h2_field,
-  ctre_pdp_chan9_l6_field,
-  ctre_pdp_chan10_l8_field,
-  ctre_pdp_chan11_h8_field,
-  ctre_pdp_chan12_h6_field,
-  ctre_pdp_chan11_l2_field,
-  ctre_pdp_chan12_l4_field,
+table.insert(can_protocol.fields, ctre_talon_current_h8_field)
+table.insert(can_protocol.fields, ctre_talon_current_l2_field)
+table.insert(can_protocol.fields, ctre_talon_temp_field)
+table.insert(can_protocol.fields, ctre_talon_voltage_field)
 
-  ctre_pdp_chan13_h8_field,
-  ctre_pdp_chan14_h6_field,
-  ctre_pdp_chan13_l2_field,
-  ctre_pdp_chan15_h4_field,
-  ctre_pdp_chan14_l4_field,
-  ctre_pdp_chan16_h2_field,
-  ctre_pdp_chan15_l6_field,
-  ctre_pdp_chan16_l8_field,
-  ctre_pdp_internalres_field,
-  ctre_pdp_bus_voltage_field,
-  ctre_pdp_temp_field,
+table.insert(can_protocol.fields, ctre_pdp_chan1_h8_field)
+table.insert(can_protocol.fields, ctre_pdp_chan2_h6_field)
+table.insert(can_protocol.fields, ctre_pdp_chan1_l2_field)
+table.insert(can_protocol.fields, ctre_pdp_chan3_h4_field)
+table.insert(can_protocol.fields, ctre_pdp_chan2_l4_field)
+table.insert(can_protocol.fields, ctre_pdp_chan4_h2_field)
+table.insert(can_protocol.fields, ctre_pdp_chan3_l6_field)
+table.insert(can_protocol.fields, ctre_pdp_chan4_l8_field)
+table.insert(can_protocol.fields, ctre_pdp_chan5_h8_field)
+table.insert(can_protocol.fields, ctre_pdp_chan6_h6_field)
+table.insert(can_protocol.fields, ctre_pdp_chan5_l2_field)
+table.insert(can_protocol.fields, ctre_pdp_chan6_l4_field)
 
-  ctre_pdp_TmeasMs_likelywillbe20ms__field,
-  ctre_pdp_TotalCurrent_125mAperunit_h8_field,
-  ctre_pdp_Power_125mWperunit_h4_field,
-  ctre_pdp_TotalCurrent_125mAperunit_l4_field,
-  ctre_pdp_Power_125mWperunit_m8_field,
-  ctre_pdp_Energy_125mWPerUnitXTmeas_h4_field,
-  ctre_pdp_Power_125mWperunit_l4_field,
-  ctre_pdp_Energy_125mWPerUnitXTmeas_mh8_field,
-  ctre_pdp_Energy_125mWPerUnitXTmeas_ml8_field,
-  ctre_pdp_Energy_125mWPerUnitXTmeas_l8_field,
+table.insert(can_protocol.fields, ctre_pdp_chan7_h8_field)
+table.insert(can_protocol.fields, ctre_pdp_chan8_h6_field)
+table.insert(can_protocol.fields, ctre_pdp_chan7_l2_field)
+table.insert(can_protocol.fields, ctre_pdp_chan9_h4_field)
+table.insert(can_protocol.fields, ctre_pdp_chan8_l4_field)
+table.insert(can_protocol.fields, ctre_pdp_chan10_h2_field)
+table.insert(can_protocol.fields, ctre_pdp_chan9_l6_field)
+table.insert(can_protocol.fields, ctre_pdp_chan10_l8_field)
+table.insert(can_protocol.fields, ctre_pdp_chan11_h8_field)
+table.insert(can_protocol.fields, ctre_pdp_chan12_h6_field)
+table.insert(can_protocol.fields, ctre_pdp_chan11_l2_field)
+table.insert(can_protocol.fields, ctre_pdp_chan12_l4_field)
 
-  clear_sticky_faults_field,
-  reset_energy_field
+table.insert(can_protocol.fields, ctre_pdp_chan13_h8_field)
+table.insert(can_protocol.fields, ctre_pdp_chan14_h6_field)
+table.insert(can_protocol.fields, ctre_pdp_chan13_l2_field)
+table.insert(can_protocol.fields, ctre_pdp_chan15_h4_field)
+table.insert(can_protocol.fields, ctre_pdp_chan14_l4_field)
+table.insert(can_protocol.fields, ctre_pdp_chan16_h2_field)
+table.insert(can_protocol.fields, ctre_pdp_chan15_l6_field)
+table.insert(can_protocol.fields, ctre_pdp_chan16_l8_field)
+table.insert(can_protocol.fields, ctre_pdp_internalres_field)
+table.insert(can_protocol.fields, ctre_pdp_bus_voltage_field)
+table.insert(can_protocol.fields, ctre_pdp_temp_field)
 
-}
+table.insert(can_protocol.fields, ctre_pdp_TmeasMs_likelywillbe20ms__field)
+table.insert(can_protocol.fields, ctre_pdp_TotalCurrent_125mAperunit_h8_field)
+table.insert(can_protocol.fields, ctre_pdp_Power_125mWperunit_h4_field)
+table.insert(can_protocol.fields, ctre_pdp_TotalCurrent_125mAperunit_l4_field)
+table.insert(can_protocol.fields, ctre_pdp_Power_125mWperunit_m8_field)
+table.insert(can_protocol.fields, ctre_pdp_Energy_125mWPerUnitXTmeas_h4_field)
+table.insert(can_protocol.fields, ctre_pdp_Power_125mWperunit_l4_field)
+table.insert(can_protocol.fields, ctre_pdp_Energy_125mWPerUnitXTmeas_mh8_field)
+table.insert(can_protocol.fields, ctre_pdp_Energy_125mWPerUnitXTmeas_ml8_field)
+table.insert(can_protocol.fields, ctre_pdp_Energy_125mWPerUnitXTmeas_l8_field)
+table.insert(can_protocol.fields, clear_sticky_faults_field)
+table.insert(can_protocol.fields, reset_energy_field)
 
 -- fields for the parsed values
-can_frc_type = Field.new("can.frc.type")
-can_frc_mfr = Field.new("can.frc.mfr")
+--can_frc_type = Field.new("can.frc.type")
+--can_frc_mfr = Field.new("can.frc.mfr")
 can_frc_api_class = Field.new("can.frc.api_class")
 can_frc_api_index = Field.new("can.frc.api_index")
 
@@ -363,11 +368,16 @@ function can_protocol.dissector(buffer, pinfo, tree)
   local subtree = tree:add(can_protocol, buffer(), "FRC CAN Protocol Data")
   subtree:add_le(id_field, buffer:range(0,4))
 
-  subtree:add_le(eff_field, buffer:range(0,4)) -- should always be true!
-  subtree:add_le(rtr_field, buffer:range(0,4))
-  subtree:add_le(err_field, buffer:range(0,4))
-  subtree:add_le(device_type_field, buffer:range(0,4))
-  subtree:add_le(manufacturer_field, buffer:range(0,4))
+  
+  flags.dissect(buffer, pinfo, subtree)
+  frc_type.dissect(buffer, pinfo, subtree)
+  frc_mfr.dissect(buffer, pinfo, subtree)
+
+--  subtree:add_le(eff_field, buffer:range(0,4)) -- should always be true!
+--  subtree:add_le(rtr_field, buffer:range(0,4))
+--  subtree:add_le(err_field, buffer:range(0,4))
+--  subtree:add_le(device_type_field, buffer:range(0,4))
+--  subtree:add_le(manufacturer_field, buffer:range(0,4))
   subtree:add_le(api_class_field, buffer:range(0,4))
   subtree:add_le(api_index_field, buffer:range(0,4))
   subtree:add_le(device_number_field, buffer:range(0,4))
@@ -377,18 +387,18 @@ function can_protocol.dissector(buffer, pinfo, tree)
   subtree:add(data_field, buffer:range(8))
 
 
-  subtree:add("can_frc_type:", can_frc_type()())
-  subtree:add("can_frc_mfr:", can_frc_mfr()())
+--  subtree:add("can_frc_type:", can_frc_type()())
+--  subtree:add("can_frc_mfr:", can_frc_mfr()())
 
-  if can_frc_type()() == 0 then -- broadcast
-    if can_frc_mfr()() == 0 then -- broadcast
+  if frc_type.can_frc_type()() == 0 then -- broadcast
+    if frc_mfr.can_frc_mfr()() == 0 then -- broadcast
       if can_frc_api_class()() == 0 then -- broadcast
         subtree:add_le(api_index_broadcast_field, buffer:range(0,4))
       end
     end
-  elseif can_frc_type()() == 1 then -- robot controller
-  elseif can_frc_type()() == 2 then -- motor controller
-    if can_frc_mfr()() == 4 then -- CTRE
+  elseif frc_type.can_frc_type()() == 1 then -- robot controller
+  elseif frc_type.can_frc_type()() == 2 then -- motor controller
+    if frc_mfr.can_frc_mfr()() == 4 then -- CTRE
       -- see LowLevel_TalonSrx.cs
       -- i'm not attempting to be comprehensive here.  :-)
       if can_frc_api_class()() == 0 then -- CONTROL
@@ -430,13 +440,13 @@ function can_protocol.dissector(buffer, pinfo, tree)
         end
       end
     end
-  elseif can_frc_type()() == 3 then -- relay controller
-  elseif can_frc_type()() == 4 then -- gyro sensor
-  elseif can_frc_type()() == 5 then -- accelerometer
-  elseif can_frc_type()() == 6 then -- ultrasonic sensor
-  elseif can_frc_type()() == 7 then -- gear tooth sensor
-  elseif can_frc_type()() == 8 then -- PDP
-    if can_frc_mfr()() == 4 then -- CTRE
+  elseif frc_type.can_frc_type()() == 3 then -- relay controller
+  elseif frc_type.can_frc_type()() == 4 then -- gyro sensor
+  elseif frc_type.can_frc_type()() == 5 then -- accelerometer
+  elseif frc_type.can_frc_type()() == 6 then -- ultrasonic sensor
+  elseif frc_type.can_frc_type()() == 7 then -- gear tooth sensor
+  elseif frc_type.can_frc_type()() == 8 then -- PDP
+    if frc_mfr.can_frc_mfr()() == 4 then -- CTRE
       if can_frc_api_class()() == 5 then -- STATUS
         if can_frc_api_index()() == 0 then -- PDP_API_STATUS1
 
@@ -575,10 +585,10 @@ function can_protocol.dissector(buffer, pinfo, tree)
         end
       end
     end
-  elseif can_frc_type()() == 9 then -- pneumatics controller
-  elseif can_frc_type()() == 10 then -- misc
-  elseif can_frc_type()() == 11 then -- IO Breakout
-  elseif can_frc_type()() == 31 then -- firmware update
+  elseif frc_type.can_frc_type()() == 9 then -- pneumatics controller
+  elseif frc_type.can_frc_type()() == 10 then -- misc
+  elseif frc_type.can_frc_type()() == 11 then -- IO Breakout
+  elseif frc_type.can_frc_type()() == 31 then -- firmware update
   end
 
 end
