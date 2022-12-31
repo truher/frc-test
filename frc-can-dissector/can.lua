@@ -71,6 +71,11 @@ pad_field = ProtoField.bytes("can.padding", "padding", base.NONE, "padding")
 data_field = ProtoField.bytes("can.datafield", "data field", base.NONE)
 
 
+-- See CTRE/LowLevel_TalonSrx.cs
+ctre_talon_current_h8_field = ProtoField.uint8("can.frc.ctre.talon.current_h8", "Talon Current_h8", base.DEC, nil, 0xff)
+ctre_talon_current_l2_field = ProtoField.uint8("can.frc.ctre.talon.current_l2", "Talon Current_l2", base.DEC, nil, 0xc0)
+ctre_talon_temp_field = ProtoField.uint8("can.frc.ctre.talon.temp", "Talon Temp", base.DEC, nil, 0xff)
+ctre_talon_voltage_field = ProtoField.uint8("can.frc.ctre.talon.voltage", "Talon Voltage", base.DEC, nil, 0xff)
 
 -- See https://github.com/wpilibsuite/allwpilib/pull/1081/files
 
@@ -201,6 +206,11 @@ can_protocol.fields = {
   pad_field,
   data_field,
 
+  ctre_talon_current_h8_field,
+  ctre_talon_current_l2_field,
+  ctre_talon_temp_field,
+  ctre_talon_voltage_field,
+
   ctre_pdp_chan1_h8_field,
   ctre_pdp_chan2_h6_field,
   ctre_pdp_chan1_l2_field,
@@ -260,6 +270,11 @@ can_frc_type = Field.new("can.frc.type")
 can_frc_mfr = Field.new("can.frc.mfr")
 can_frc_api_class = Field.new("can.frc.api_class")
 can_frc_api_index = Field.new("can.frc.api_index")
+
+can_frc_ctre_talon_current_h8 = Field.new("can.frc.ctre.talon.current_h8")
+can_frc_ctre_talon_current_l2 = Field.new("can.frc.ctre.talon.current_l2")
+can_frc_ctre_talon_temp = Field.new("can.frc.ctre.talon.temp")
+can_frc_ctre_talon_voltage = Field.new("can.frc.ctre.talon.voltage")
 
 can_frc_ctre_pdp_chan1_h8 = Field.new("can.frc.ctre.pdp.chan1_h8")
 can_frc_ctre_pdp_chan2_h6 = Field.new("can.frc.ctre.pdp.chan2_h6")
@@ -328,6 +343,10 @@ function temperatureC(x)
   return tostring(x) * 1.03250836957542 - 67.8564500484966
 end
 
+function talonTemp(x)
+  return tostring(x) * 0.645161290322581 - 50
+end
+
 -- See https://github.com/wpilibsuite/allwpilib/pull/1081/files
 function currentA(x)
   return tostring(x) * 0.125
@@ -360,12 +379,62 @@ function can_protocol.dissector(buffer, pinfo, tree)
 
   subtree:add("can_frc_type:", can_frc_type()())
   subtree:add("can_frc_mfr:", can_frc_mfr()())
+
   if can_frc_type()() == 0 then -- broadcast
     if can_frc_mfr()() == 0 then -- broadcast
       if can_frc_api_class()() == 0 then -- broadcast
         subtree:add_le(api_index_broadcast_field, buffer:range(0,4))
       end
     end
+  elseif can_frc_type()() == 1 then -- robot controller
+  elseif can_frc_type()() == 2 then -- motor controller
+    if can_frc_mfr()() == 4 then -- CTRE
+      -- see LowLevel_TalonSrx.cs
+      -- i'm not attempting to be comprehensive here.  :-)
+      if can_frc_api_class()() == 0 then -- CONTROL
+        if can_frc_api_index()() == 0 then -- CONTROL_1
+        elseif can_frc_api_index()() == 1 then -- CONTROL_2
+        elseif can_frc_api_index()() == 2 then -- CONTROL_3
+        elseif can_frc_api_index()() == 4 then -- CONTROL_5, output
+        elseif can_frc_api_index()() == 5 then -- CONTROL_6, motoin profile
+        elseif can_frc_api_index()() == 6 then -- CONTROL_7, config
+        end
+      elseif can_frc_api_class()() == 5 then -- STATUS
+        if can_frc_api_index()() == 0 then -- STATUS_1, 10ms
+        elseif can_frc_api_index()() == 1 then -- STATUS_2, 20ms
+          -- current
+          subtree:add(ctre_talon_current_h8_field, buffer:range(10,1))
+          subtree:add(ctre_talon_current_l2_field, buffer:range(9,1))
+          subtree:add("Talon Current (A):", 
+            currentA(bit.bor(bit.lshift(can_frc_ctre_talon_current_h8()(), 2), can_frc_ctre_talon_current_l2()())))
+        elseif can_frc_api_index()() == 2 then -- STATUS_3, 100ms
+        elseif can_frc_api_index()() == 3 then -- STATUS_4, 100ms
+          -- temp
+          subtree:add(ctre_talon_temp_field, buffer:range(10,1))
+          subtree:add("Talon Temp (?):", talonTemp(can_frc_ctre_talon_temp()()))
+          -- battery voltage
+          subtree:add(ctre_talon_voltage_field, buffer:range(9,1))
+          subtree:add("Talon Voltage (V):", voltage(can_frc_ctre_talon_voltage()()))
+        elseif can_frc_api_index()() == 4 then -- STATUS_5
+        elseif can_frc_api_index()() == 5 then -- STATUS_6
+        elseif can_frc_api_index()() == 6 then -- STATUS_7, 200ms
+        elseif can_frc_api_index()() == 7 then -- STATUS_8, 100ms
+        elseif can_frc_api_index()() == 8 then -- STATUS_9, 100ms
+        elseif can_frc_api_index()() == 9 then -- STATUS_10, 100ms
+        elseif can_frc_api_index()() == 10 then -- STATUS_11
+        end
+      elseif can_frc_api_class()() == 6 then -- PARAM
+        if can_frc_api_index()() == 0 then -- PARAM_REQUEST
+        elseif can_frc_api_index()() == 1 then -- PARAM_RESPONSE
+        elseif can_frc_api_index()() == 2 then -- PARAM_SET
+        end
+      end
+    end
+  elseif can_frc_type()() == 3 then -- relay controller
+  elseif can_frc_type()() == 4 then -- gyro sensor
+  elseif can_frc_type()() == 5 then -- accelerometer
+  elseif can_frc_type()() == 6 then -- ultrasonic sensor
+  elseif can_frc_type()() == 7 then -- gear tooth sensor
   elseif can_frc_type()() == 8 then -- PDP
     if can_frc_mfr()() == 4 then -- CTRE
       if can_frc_api_class()() == 5 then -- STATUS
@@ -506,6 +575,10 @@ function can_protocol.dissector(buffer, pinfo, tree)
         end
       end
     end
+  elseif can_frc_type()() == 9 then -- pneumatics controller
+  elseif can_frc_type()() == 10 then -- misc
+  elseif can_frc_type()() == 11 then -- IO Breakout
+  elseif can_frc_type()() == 31 then -- firmware update
   end
 
 end
