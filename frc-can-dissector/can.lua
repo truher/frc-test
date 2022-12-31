@@ -1,7 +1,7 @@
-local flags = require("can.flags")
-local frc_type = require("frc.type")
-local frc_mfr = require("frc.mfr")
 -- FRC CAN Dissector
+
+local flags = require("can.flags")
+local frc = require("frc.frc")
 
 -- See https://docs.wpilib.org/en/stable/docs/software/can-devices/can-addressing.html
 -- See https://github.com/carlosgj/FRC-CAN-Wireshark
@@ -197,8 +197,7 @@ reset_energy_field = ProtoField.bool("can.frc.ctre.pdp.reset_energy", "Reset Ene
 can_protocol.fields = {}
 
 flags.insert(can_protocol.fields)
-frc_type.insert(can_protocol.fields)
-frc_mfr.insert(can_protocol.fields)
+frc.insert(can_protocol.fields)
 
 --table.insert(can_protocol.fields, eff_field)
 --table.insert(can_protocol.fields, rtr_field)
@@ -370,8 +369,7 @@ function can_protocol.dissector(buffer, pinfo, tree)
 
   
   flags.dissect(buffer, pinfo, subtree)
-  frc_type.dissect(buffer, pinfo, subtree)
-  frc_mfr.dissect(buffer, pinfo, subtree)
+  frc.dissect(buffer, pinfo, subtree)
 
 --  subtree:add_le(eff_field, buffer:range(0,4)) -- should always be true!
 --  subtree:add_le(rtr_field, buffer:range(0,4))
@@ -390,15 +388,15 @@ function can_protocol.dissector(buffer, pinfo, tree)
 --  subtree:add("can_frc_type:", can_frc_type()())
 --  subtree:add("can_frc_mfr:", can_frc_mfr()())
 
-  if frc_type.can_frc_type()() == 0 then -- broadcast
-    if frc_mfr.can_frc_mfr()() == 0 then -- broadcast
+  if frc.can_frc_type()() == 0 then -- broadcast
+    if frc.can_frc_mfr()() == 0 then -- broadcast
       if can_frc_api_class()() == 0 then -- broadcast
         subtree:add_le(api_index_broadcast_field, buffer:range(0,4))
       end
     end
-  elseif frc_type.can_frc_type()() == 1 then -- robot controller
-  elseif frc_type.can_frc_type()() == 2 then -- motor controller
-    if frc_mfr.can_frc_mfr()() == 4 then -- CTRE
+  elseif frc.can_frc_type()() == 1 then -- robot controller
+  elseif frc.can_frc_type()() == 2 then -- motor controller
+    if frc.can_frc_mfr()() == 4 then -- CTRE
       -- see LowLevel_TalonSrx.cs
       -- i'm not attempting to be comprehensive here.  :-)
       if can_frc_api_class()() == 0 then -- CONTROL
@@ -440,13 +438,13 @@ function can_protocol.dissector(buffer, pinfo, tree)
         end
       end
     end
-  elseif frc_type.can_frc_type()() == 3 then -- relay controller
-  elseif frc_type.can_frc_type()() == 4 then -- gyro sensor
-  elseif frc_type.can_frc_type()() == 5 then -- accelerometer
-  elseif frc_type.can_frc_type()() == 6 then -- ultrasonic sensor
-  elseif frc_type.can_frc_type()() == 7 then -- gear tooth sensor
-  elseif frc_type.can_frc_type()() == 8 then -- PDP
-    if frc_mfr.can_frc_mfr()() == 4 then -- CTRE
+  elseif frc.can_frc_type()() == 3 then -- relay controller
+  elseif frc.can_frc_type()() == 4 then -- gyro sensor
+  elseif frc.can_frc_type()() == 5 then -- accelerometer
+  elseif frc.can_frc_type()() == 6 then -- ultrasonic sensor
+  elseif frc.can_frc_type()() == 7 then -- gear tooth sensor
+  elseif frc.can_frc_type()() == 8 then -- PDP
+    if frc.can_frc_mfr()() == 4 then -- CTRE
       if can_frc_api_class()() == 5 then -- STATUS
         if can_frc_api_index()() == 0 then -- PDP_API_STATUS1
 
@@ -585,10 +583,10 @@ function can_protocol.dissector(buffer, pinfo, tree)
         end
       end
     end
-  elseif frc_type.can_frc_type()() == 9 then -- pneumatics controller
-  elseif frc_type.can_frc_type()() == 10 then -- misc
-  elseif frc_type.can_frc_type()() == 11 then -- IO Breakout
-  elseif frc_type.can_frc_type()() == 31 then -- firmware update
+  elseif frc.can_frc_type()() == 9 then -- pneumatics controller
+  elseif frc.can_frc_type()() == 10 then -- misc
+  elseif frc.can_frc_type()() == 11 then -- IO Breakout
+  elseif frc.can_frc_type()() == 31 then -- firmware update
   end
 
 end
