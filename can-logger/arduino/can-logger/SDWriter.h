@@ -13,7 +13,7 @@
 
 // Space to hold more than 800 ms of data for 10 byte lines at 25 ksps.
 #define RING_BUF_CAPACITY 400 * 512
-#define LOG_FILENAME "SdioLogger.csv"  // TODO: unique filenames
+#define LOG_FILENAME "canlog"
 
 #define BLOCK_SIZE 512
 

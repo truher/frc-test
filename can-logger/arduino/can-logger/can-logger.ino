@@ -6,7 +6,7 @@
  * TODO: write to SD.
  */
 #include "FlexCAN_T4.h"
-#include "PcapFormat.h"
+#include "can.h"
 #include "SDWriter.h"
 
 bool ledState = false;
@@ -40,9 +40,11 @@ void canSniff(const CAN_message_t& msg) {
   packets++;
   const uint8_t* pkt = format.newRecord(msg.id, msg.buf, msg.len);
   writer.log(pkt, msg.len+24); // len + 1B len + 3B pad + 4B id + 16B pcap header
-  
-  if (packets % 10 != 0)  // too much printing overflows the rx buffer
-    return;
+
+  // for now look at all the packets
+  // TODO: remove this
+  //if (packets % 10 != 0)  // too much printing overflows the rx buffer
+    //return;
   Serial.printf("ct %d buf %d MB %d  OVERRUN: %d  LEN: %d EXT: %d TS: %d ID: %x",
                 packets, can0.getRXQueueCount(), msg.mb, msg.flags.overrun, msg.len,
                 msg.flags.extended, msg.timestamp, msg.id);
