@@ -1,7 +1,6 @@
 #ifndef SENSOR_H
 #define SENSOR_H
 #include "Data.h"
-#include "DacTone.h"
 #include <Arduino.h>
 // see https://github.com/sparkfun/SparkFun_TPA2016D2_Arduino_Library
 #include <SparkFun_TPA2016D2_Arduino_Library.h>
@@ -9,47 +8,63 @@
 class Sensor {
 public:
   void initialize() {
-    DacTone::begin();
+    pinMode(RXLED, OUTPUT);
+    pinMode(SOUNDPIN, OUTPUT);
     Wire.begin();
     if (amp.begin() == false) {
-      while (1)
-        ;
+      while (1) {
+        delay(1000);
+        Serial.println("amp begin failed");
+      }
+    } else {
+      Serial.println("amp begin succeeded");
     }
-    // for now just turn it on
-    // TODO: adjust gain with knob
-    amp.enableRightSpeaker();
-    amp.enableLeftSpeaker();
+    amp.disableShutdown();
+    amp.enableSpeakers();
     amp.disableLimiter();
     amp.disableNoiseGate();
-    amp.writeRelease(1);
-    amp.writeAttack(1);
-    amp.writeFixedGain(15);  // half
+    amp.writeAttack(0);
+    amp.writeHold(0);
+    amp.writeRelease(0);
+    amp.writeFixedGain(0);
+    amp.writeMaxGain(0);
     stop();
   }
 
   bool sense(ReportTx& reportTx) {}
 
   void indicate(ReportRx rpt) {
-    if (rpt.i1) {
-      beep(600, 300);
-    } else if (rpt.i2) {
-      steady(1600);
-    } else {
-      stop();
-    }
+
+
+    beep(600, 150);
+    //steady(1600);
+
+    // TODO: hook up the keys and use this
+    // if (rpt.i1) {
+    //   beep(600, 150);
+    // } else if (rpt.i2) {
+    //   steady(1600);
+    // } else {
+    //   stop();
+    // }
   }
 private:
   TPA2016D2 amp;
   uint32_t beep_timeout_ms;
   bool beeping;
+  static const uint8_t RXLED = 17;
+  static const uint8_t SOUNDPIN = 9;
+
 
   void beep(uint16_t frequency_hz, uint16_t duration_ms) {
     uint32_t now_ms = millis();
     if (now_ms > beep_timeout_ms) {  // flip state
       if (beeping) {
-        DacTone::stop();
+        digitalWrite(RXLED, LOW);
+        noTone(SOUNDPIN);
       } else {
-        DacTone::start(frequency_hz);
+        digitalWrite(RXLED, HIGH);
+        tone(SOUNDPIN, frequency_hz);
       }
       beep_timeout_ms = now_ms + duration_ms;
       beeping ^= 1;
@@ -59,11 +74,11 @@ private:
   void steady(uint16_t frequency_hz) {
     beep_timeout_ms = 0;
     beeping = false;
-    DacTone::start(frequency_hz);
+    tone(SOUNDPIN, frequency_hz);
   }
 
   void stop() {
-    DacTone::stop();
+    analogWrite(SOUNDPIN, 0);
     beep_timeout_ms = 0;
     beeping = false;
   }

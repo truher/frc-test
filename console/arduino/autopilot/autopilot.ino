@@ -8,10 +8,15 @@ Transceiver transceiver(Transceiver::SubConsole::AUTOPILOT, reportRx);
 Sensor sensor;
 
 void setup() {
+  Serial.begin(115200);
+  delay(1000);
+  Serial.println("autopilot setup");
   sensor.initialize();
 }
 
 void loop() {
+  //delay(1000);
+  //Serial.println("autopilot loop");
   sensor.sense(reportTx);
   transceiver.send(reportTx);
   ///////////////////////
