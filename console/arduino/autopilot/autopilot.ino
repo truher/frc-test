@@ -12,11 +12,10 @@ void setup() {
   delay(1000);
   Serial.println("autopilot setup");
   sensor.initialize();
+  sensor.splash();
 }
 
 void loop() {
-  //delay(1000);
-  //Serial.println("autopilot loop");
   sensor.sense(reportTx);
   transceiver.send(reportTx);
   ///////////////////////
@@ -28,4 +27,5 @@ void loop() {
   // TODO: remove the above line
   ///////////////////////
   sensor.indicate(reportRx);
+  sensor.loop();
 }
